@@ -63,7 +63,7 @@ class RightApiClient
 end
 
 class Resource
-  attr_reader :client, :attributes, :associations, :resource_type, :raw
+  attr_reader :client, :attributes, :associations, :actions, :resource_type, :raw
 
   def self.process(client, data, content_type)
     if data.kind_of?(Array)
@@ -74,15 +74,16 @@ class Resource
   end
 
   def inspect
-    "#<#{self.class.name} resource_type=\"#{resource_type}\", #{'name="'+name+'", ' if self.respond_to?(:name)}#{'resource_uid="'+resource_uid+'"' if self.respond_to?(:resource_uid)}>"
+    "#<#{self.class.name} resource_type=\"#{resource_type}\"#{', name='+name.inspect if self.respond_to?(:name)}#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
   end
 
   def initialize(client, hash, content_type)
     @client = client
     @content_type = content_type
     @raw = hash
-    @attributes, @associations = [], []
-    links = hash['links'] || []
+    @attributes, @associations, @actions = [], [], []
+    links = hash.delete('links') || []
+    raw_actions = hash.delete('actions') || []
 
     self_index = links.each_with_index do |link, idx|
       if link['rel'] == 'self'
@@ -99,6 +100,24 @@ class Resource
     end
 
     singleton = (class << self; self; end)
+
+    attributes << :links
+    singleton.module_eval do
+      define_method(:links) do
+        return links
+      end
+    end
+
+    raw_actions.each do |action|
+      action_name = action['rel']
+      actions << action_name.to_sym
+
+      singleton.module_eval do
+        define_method(action_name) do
+          raise "need to implement actions"
+        end
+      end
+    end
 
     hash.each do |k,v|
       if v.kind_of?(Array) && v.any? && v.first.kind_of?(Hash)
@@ -128,6 +147,7 @@ class Resource
 
     @resource_type = @content_type.scan(/\.com\.(.*)\+json/)[0][0]
 
+    # the api doesnt tell us what resources are supported by what clouds
     if resource_type =~ /cloud/
       singleton.module_eval do
         [:instances, :images].each do |rtype|
