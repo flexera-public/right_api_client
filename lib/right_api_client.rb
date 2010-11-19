@@ -5,6 +5,7 @@ require 'logger'
 require 'json'
 require 'set'
 require 'pp'
+require 'cgi'
 
 RestClient.log = Logger.new(STDOUT)
 
@@ -12,6 +13,10 @@ class RightApiClient
   def initialize(email, password, account_id)
     @email, @password, @account_id = email, password, account_id
     @client = RestClient::Resource.new("https://moo.rightscale.com")
+
+    # we authorize up front, but the cookie will eventually expire.
+    # there should be something in the get/post methods that rescues
+    # and re-authorizes when this occurs.
     @cookies = authorize()
   end
 
@@ -39,11 +44,31 @@ class RightApiClient
   end
 
   def do_get(path, params={})
-    content_type, body = @client[path].get(headers.merge('params' => params)) do |response, request, result, &block|
+    # Normally you would just pass a hash of query params to RestClient,
+    # but unfortunately it only takes them as a hash, and for filtering
+    # we need to pass multiple parameters with the same key.
+    #
+    # The result is that we have to build up the query string manually :/
+
+    filters = params.delete(:filters)
+
+    params_string = params.map{|k,v| "#{k.to_s}=#{CGI::escape(v.to_s)}" }.join('&')
+
+    if filters && filters.any?
+      path += "?filter[]=" + filters.map{|f| CGI::escape(f) }.join('&filter[]=')
+      path += "&#{params_string}"
+    else
+      path += "?#{params_string}"
+    end
+
+    # We need to return the content type so the resulting 
+    # resource object can know what kind of resource it is.
+    content_type, body = @client[path].get(headers) do |response, request, result, &block|
       case response.code
       when 200
         [result.content_type, response.body]
       else
+        p response.body
         raise "Wrong response #{response.code.to_s}"
       end
     end
@@ -53,8 +78,35 @@ class RightApiClient
     [data, content_type]
   end
 
-  def clouds
-    Resource.process(self, *do_get('/api/clouds'))
+  # just a post that expects a 201 and returns the 'location' header
+  def do_create(path, params={})
+    @client[path].post(params, headers) do |response, request, result, &block|
+      case response.code
+      when 201
+        response.headers[:location]
+      else
+        p response.body
+        raise "Wrong response #{response.code.to_s}"
+      end
+    end
+  end
+
+  # generic post
+  def do_post(path, params={})
+    @client[path].post(params, headers) do |response, request, result, &block|
+      p response.headers
+      p response.body
+      response.return!(request, result, &block)
+    end
+  end
+
+  # Some 'root' resources.
+  def clouds(params={})
+    Resource.process(self, *do_get('/api/clouds', params))
+  end
+
+  def deployments(params={})
+    Resource.process(self, *do_get('/api/deployments', params))
   end
 
 end
@@ -62,9 +114,11 @@ end
 class Resource
   attr_reader :client, :attributes, :associations, :actions, :resource_type, :raw
 
+  # Takes some response data from the API
+  # Returns a single Resource object or a collection if there were many
   def self.process(client, data, content_type)
     if data.kind_of?(Array)
-      return data.map{|obj| Resource.new(client, obj, content_type) }
+      return data.map { |obj| Resource.new(client, obj, content_type) }
     else
       Resource.new(client, data, content_type)
     end
@@ -74,32 +128,24 @@ class Resource
     "#<#{self.class.name} resource_type=\"#{resource_type}\"#{', name='+name.inspect if self.respond_to?(:name)}#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
   end
 
-  def reload
-    Resource.process(client, *client.do_get(href))
-  end
-
+  # shortcut used to build up the resource object
+  # from the api responses.
   def define_instance_method(meth, &blk)
     (class << self; self; end).module_eval do
       define_method(meth, &blk)
     end
   end
 
-  def define_caching_association(meth, &blk)
-    define_instance_method(meth) do |*args|
-      view = args.first || 'default'
-      view = view.to_s
-      instance_variable_get("@#{meth.to_s}_#{view}") || instance_variable_set("@#{meth.to_s}_#{view}", blk.call(*args))
-    end
-  end
-
   def initialize(client, hash, content_type)
     @client = client
     @content_type = content_type
-    @raw = hash
+    @raw = hash.dup
     @attributes, @associations, @actions = Set.new, Set.new, Set.new
     links = hash.delete('links') || []
     raw_actions = hash.delete('actions') || []
 
+    # we obviously can't re-define a method called 'self', so pull
+    # out the 'self' link and make it 'self_href', i guess.
     self_index = links.any? && links.each_with_index do |link, idx|
       if link['rel'] == 'self'
         break idx
@@ -117,6 +163,10 @@ class Resource
     attributes << :links
     define_instance_method(:links) { return links }
 
+    # i think all of the actions are POST or PUT except
+    # 'monitoring_data' (which i think should be a resource).
+    # But API doesn't tell us whether an action is a GET
+    # or a POST, so we can't do these dynamically yet...
     raw_actions.each do |action|
       action_name = action['rel']
       actions << action_name.to_sym
@@ -126,18 +176,25 @@ class Resource
       end
     end
 
+    # define methods that query the api
+    # for the associated resources
     links.each do |link|
       associations << link['rel'].to_sym
 
-      define_caching_association(link['rel']) do |*args|
-        view = args.first || :default
-        Resource.process(client, *client.do_get(link['href'], :view => view))
+      define_instance_method(link['rel']) do |*args|
+        Resource.process(client, *client.do_get(link['href'], *args))
       end
     end
 
     hash.each do |k,v|
+      # it's possible that the data we would have needed to
+      # query an associated resource for, was present in the
+      # response for this resource, if it was requested with a 'view'.
+      #
+      # if it's an association, but something by the same name is already
+      # present in this data structure, use that instead.
       if associations.include?(k.to_sym)
-        define_caching_association(k) { Resource.process(client, v, nil) }
+        define_instance_method(k) { Resource.process(client, v, nil) }
       else
         attributes << k.to_sym
         define_instance_method(k) { return v }
@@ -145,15 +202,15 @@ class Resource
     end
 
     if @content_type
-      @resource_type = @content_type.scan(/\.com\.(.*)\+json/)[0][0]
+      @resource_type = @content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
     end
 
-    # the api doesnt tell us what resources are supported by what clouds
+    # the api doesnt tell us what resources are supported by what clouds yet,
+    # so...define stuff here? :/
     if resource_type =~ /cloud/
-      [:instances, :images, :ip_addresses, :volumes].each do |rtype|
-        define_caching_association(rtype) do |*args|
-          view = args.first || :default
-          Resource.process(client, *client.do_get(href + "/#{rtype.to_s}", :view => view))
+      [:instances, :images, :ip_addresses, :volumes, :instance_types, :datacenters, :ssh_keys, :security_groups].each do |rtype|
+        define_instance_method(rtype) do |*args|
+          Resource.process(client, *client.do_get(href + "/#{rtype.to_s}", *args))
         end
       end
     end
@@ -161,8 +218,33 @@ class Resource
   end
 end
 
-if __FILE__ == $0
-  client = RightApiClient.new
-  clouds = client.clouds
-  instances = clouds.first.instances
+# Example of how to create a server in a deployment
+# based on an existing server template.
+#
+# You can't yet access server templates or MCIs from the API,
+# so this is a little silly, as you need to copy the server template
+# ID out of your browser...
+#
+if $0 == __FILE__
+  client = RightApiClient.new('jake@rightscale.com', 'mypass', '72')
+  deployment           = client.deployments(:filters => ['name==Jake']).first
+  cloud                = client.clouds(:filters => ['name==Cloud.com']).first
+  instance_type        = cloud.instance_types.first
+  security_group       = cloud.security_groups.first
+  datacenter           = cloud.datacenters.first
+  server_template_href = "/api/server_templates/78846"
+
+  result = client.do_create(deployment.href + "/servers", {
+    :server => {
+      :name => 'jake api test server 3',
+      :deployment_href => deployment.href,
+      :instance => {
+        :server_template_href => server_template_href,
+        :cloud_href => cloud.href,
+        :settings => {
+          :security_group_hrefs => [security_group.href]
+        }
+      }
+    }
+  })
 end
