@@ -1,23 +1,25 @@
+require 'logger'
+require 'set'
+require 'cgi'
+
 require 'rubygems'
 # requires rest client 1.6.1
 require 'rest_client'
-require 'logger'
 require 'json'
-require 'set'
-require 'pp'
-require 'cgi'
 
 RestClient.log = Logger.new(STDOUT)
 
 class RightApiClient
   def initialize(email, password, account_id)
     @email, @password, @account_id = email, password, account_id
-    @client = RestClient::Resource.new("https://moo.rightscale.com")
+    @client = RestClient::Resource.new("https://my.rightscale.com")
 
     # we authorize up front, but the cookie will eventually expire.
     # there should be something in the get/post methods that rescues
     # and re-authorizes when this occurs.
     @cookies = authorize()
+
+    @debug = false
   end
 
   def authorize
@@ -94,8 +96,12 @@ class RightApiClient
   # generic post
   def do_post(path, params={})
     @client[path].post(params, headers) do |response, request, result, &block|
-      p response.headers
-      p response.body
+      case response.code
+      when 200..299
+      else
+        p response.headers
+        p response.body 
+      end
       response.return!(request, result, &block)
     end
   end
@@ -171,8 +177,9 @@ class Resource
       action_name = action['rel']
       actions << action_name.to_sym
 
-      define_instance_method(action_name) do
-        raise "need to implement actions"
+      define_instance_method(action_name.to_sym) do |*args|
+        href = hash['href'] + "/" + action['rel']
+        client.do_post(href,args.first)
       end
     end
 
@@ -214,37 +221,13 @@ class Resource
         end
       end
     end
-
   end
-end
+  
+  # create a server in a deployment.
+  # NOTE: only works for a deployment
+  def create_server(params={})
+    uri = client.do_create(self.href + "/servers", :server => params)
+    Resource.process(client, *client.do_get(uri))
+  end
 
-# Example of how to create a server in a deployment
-# based on an existing server template.
-#
-# You can't yet access server templates or MCIs from the API,
-# so this is a little silly, as you need to copy the server template
-# ID out of your browser...
-#
-if $0 == __FILE__
-  client = RightApiClient.new('jake@rightscale.com', 'mypass', '72')
-  deployment           = client.deployments(:filters => ['name==Jake']).first
-  cloud                = client.clouds(:filters => ['name==Cloud.com']).first
-  instance_type        = cloud.instance_types.first
-  security_group       = cloud.security_groups.first
-  datacenter           = cloud.datacenters.first
-  server_template_href = "/api/server_templates/78846"
-
-  result = client.do_create(deployment.href + "/servers", {
-    :server => {
-      :name => 'jake api test server 3',
-      :deployment_href => deployment.href,
-      :instance => {
-        :server_template_href => server_template_href,
-        :cloud_href => cloud.href,
-        :settings => {
-          :security_group_hrefs => [security_group.href]
-        }
-      }
-    }
-  })
 end
