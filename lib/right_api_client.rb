@@ -1,61 +1,85 @@
-require 'logger'
+require 'rest_client' # rest_client 1.6.1
+require 'json'
 require 'set'
 require 'cgi'
-
 require 'rubygems'
-# requires rest client 1.6.1
-require 'rest_client'
-require 'json'
 
-RestClient.log = Logger.new(STDOUT)
+module RightApiClientHelper
+  # Helper used to add methods to classes
+  def define_instance_method(meth, &blk)
+    (class << self; self; end).module_eval do
+      define_method(meth, &blk)
+    end
+  end
+  
+  # Helper method that returns all api methods available to a client or resource
+  def api_methods
+    self.methods(false)
+  end  
+end
 
+# RightApiClient has the generic get/post/delete/put calls that are used by resources
 class RightApiClient
-  def initialize(email, password, account_id)
-    @email, @password, @account_id = email, password, account_id
-    @client = RestClient::Resource.new("https://my.rightscale.com")
+  include RightApiClientHelper
+  
+  def initialize(email, password, account_id, api_url = 'https://my.rightscale.com', api_version = '1.5')
+    @email, @password, @account_id, @api_url, @api_version = email, password, account_id, api_url, api_version
+    @client = RestClient::Resource.new(@api_url)
 
-    # we authorize up front, but the cookie will eventually expire.
-    # there should be something in the get/post methods that rescues
-    # and re-authorizes when this occurs.
-    @cookies = authorize()
+    # TODO: We authorize up front, but the cookie will eventually expire.
+    # There should be something in the get/post methods that rescues
+    # and re-authorizes when a 403 with a "Session cookie is expired or invalid" body happens.
+    @cookies = login()
 
-    @debug = false
+    # TODO: The API should return root resources from the session/index call so we
+    # can add them dynamically.
+    # Add root resources to the client since they can be accessed directly
+    [:session, :clouds, :deployments, :server_arrays, :servers].each do |root_resource|
+      define_instance_method(root_resource) do |*params|
+        Resource.process(self, *self.do_get("/api/#{root_resource}", *params))
+      end
+    end
   end
 
-  def authorize
+  def login
     params = {
       'email'        => @email,
       'password'     => @password,
       'account_href' => "/api/accounts/#{@account_id}"
     }
 
-    response = @client['api/session'].post(params, 'X_API_VERSION' => 1.5) do |response, request, result, &block|
-      case response.code
+    response = @client['api/session'].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
+    case response.code
       when 302
         response
       else
         response.return!(request, result, &block)
       end
     end
-
     response.cookies
   end
 
   def headers
-    {'X_API_VERSION' => 1.5, :cookies => @cookies, :accept => :json}
+    {'X_API_VERSION' => @api_version, :cookies => @cookies, :accept => :json}
   end
 
+  # Log HTTP calls to file (file can be STDOUT as well)
+  def log(file)
+    RestClient.log = file
+  end  
+
+  # Generic get
   def do_get(path, params={})
+    # Resource id is a special param as it needs to be added to the path
+    path += "/#{params.delete(:id)}" if params.has_key?(:id) 
+    
     # Normally you would just pass a hash of query params to RestClient,
     # but unfortunately it only takes them as a hash, and for filtering
-    # we need to pass multiple parameters with the same key.
-    #
-    # The result is that we have to build up the query string manually :/
-
+    # we need to pass multiple parameters with the same key. The result
+    # is that we have to build up the query string manually.
     filters = params.delete(:filters)
-
     params_string = params.map{|k,v| "#{k.to_s}=#{CGI::escape(v.to_s)}" }.join('&')
-
+    
     if filters && filters.any?
       path += "?filter[]=" + filters.map{|f| CGI::escape(f) }.join('&filter[]=')
       path += "&#{params_string}"
@@ -63,95 +87,152 @@ class RightApiClient
       path += "?#{params_string}"
     end
 
-    # We need to return the content type so the resulting 
-    # resource object can know what kind of resource it is.
-    content_type, body = @client[path].get(headers) do |response, request, result, &block|
+    # If present, remove ? and & at end of path
+    path.chomp!('&')
+    path.chomp!('?')   
+    
+    # Return content type so the resulting resource object knows what kind of resource it is.
+    resource_type, body = @client[path].get(headers) do |response, request, result, &block|
       case response.code
-      when 200
-        [result.content_type, response.body]
-      else
-        p response.body
-        raise "Wrong response #{response.code.to_s}"
+        when 200
+          # Get the resource_type from the content_type, the resource_type will
+          # be used later to add relevant methods to relevant resources. 
+          type = ''
+          if result.content_type.index('rightscale')
+            type = result.content_type.scan(/\.rightscale\.(.*)/)[0][0]
+            # Can't chop off the +json bit in the above regex since some resources don't
+            # have +json in them, so we have to do a chomp and remove it only if it's there
+            type.chomp!('+json')
+          end
+
+          [type, response.body]
+        else
+          raise "Unexpected response #{response.code.to_s}, #{response.body}"
       end
     end
 
     data = JSON.parse(body)
-
-    [data, content_type]
+    
+    [data, resource_type, path]
   end
 
-  # just a post that expects a 201 and returns the 'location' header
-  def do_create(path, params={})
-    @client[path].post(params, headers) do |response, request, result, &block|
-      case response.code
-      when 201
-        response.headers[:location]
-      else
-        p response.body
-        raise "Wrong response #{response.code.to_s}"
-      end
-    end
-  end
-
-  # generic post
+  # Generic post
   def do_post(path, params={})
     @client[path].post(params, headers) do |response, request, result, &block|
       case response.code
+      when 201, 202  
+        # Create and return the resource 
+        href = response.headers[:location]
+        Resource.process(self, *self.do_get(href))
       when 200..299
+        response.return!(request, result, &block)
       else
-        p response.headers
-        p response.body 
+        raise "Unexpected response #{response.code.to_s}, #{response.body}"
       end
-      response.return!(request, result, &block)
     end
   end
 
-  # Some 'root' resources.
-  def clouds(params={})
-    Resource.process(self, *do_get('/api/clouds', params))
+  # Generic delete
+  def do_delete(path)
+    @client[path].delete(headers) do |response, request, result, &block|
+      case response.code
+      when 200
+      else
+        raise "Unexpected response #{response.code.to_s}, #{response.body}"
+      end
+    end
   end
 
-  def deployments(params={})
-    Resource.process(self, *do_get('/api/deployments', params))
+  # Generic put
+  def do_put(path, params={})
+    @client[path].put(params, headers) do |response, request, result, &block|
+      case response.code
+      when 204  
+      else
+        raise "Unexpected response #{response.code.to_s}, #{response.body}"
+      end
+    end
   end
 
 end
 
+
+# Represents resources returned by API calls, this class dynamically adds
+# methods and properties to instances depending on what type of resource they are.
 class Resource
-  attr_reader :client, :attributes, :associations, :actions, :resource_type, :raw
+  include RightApiClientHelper
+  attr_reader :client, :attributes, :associations, :actions, :raw, :resource_type
+
+  # Insert the given term at the correct place in the path, so
+  # if there are parameters in the path then insert it before them.
+  def self.insert_in_path(path, term)
+    if path.index('?')
+      new_path = path.sub('?', "/#{term}?")
+    else
+      new_path = "#{path}/#{term}"
+    end
+  end
 
   # Takes some response data from the API
   # Returns a single Resource object or a collection if there were many
-  def self.process(client, data, content_type)
-    if data.kind_of?(Array)
-      return data.map { |obj| Resource.new(client, obj, content_type) }
+  def self.process(client, data, resource_type, path)    
+    if data.kind_of?(Array)        
+      resource_array = data.map { |obj| Resource.new(client, obj, resource_type) }
+      # Bring in the helper so we can add methods to it before it's returned, the
+      # next few if statements might be nicer as a case but some resources might
+      # need multiple methods so we'll keep things as separate if statements for now.
+      resource_array.extend(RightApiClientHelper)
+      
+      # Add create methods for the relevant resources
+      # TODO: Change ssh_keys to ssh_key once the API typo is fixed (BUG)
+      if ['deployment', 'server_array', 'server', 'ssh_keys'].include?(resource_type)
+        resource_array.define_instance_method('create') do |*args|
+          client.do_post(path, *args)
+        end        
+      end
+      
+      # Add multi methods for the instance resource
+      if ['instance'].include?(resource_type)
+        # TODO: Add 'multi_run_executable' to the following list once the API supports it.
+        ['multi_terminate'].each do |multi_action|
+          multi_action_path = Resource.insert_in_path(path, multi_action)          
+
+          resource_array.define_instance_method(multi_action) do |*args|
+            client.do_post(multi_action_path, *args)
+          end
+        end
+      end
+      
+      # Add multi_update to input resource
+      if ['input'].include?(resource_type)
+        resource_array.define_instance_method('multi_update') do |*args|
+          multi_update_path = Resource.insert_in_path(path, 'multi_update')
+
+          client.do_put(multi_update_path, *args)
+        end        
+      end
+
+      return resource_array
     else
-      Resource.new(client, data, content_type)
+      Resource.new(client, data, resource_type)
     end
   end
-
+  
   def inspect
-    "#<#{self.class.name} resource_type=\"#{resource_type}\"#{', name='+name.inspect if self.respond_to?(:name)}#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
+    "#<#{self.class.name} resource_type=\"#{@resource_type}\"#{', name='+name.inspect if self.respond_to?(:name)}#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
   end
 
-  # shortcut used to build up the resource object
-  # from the api responses.
-  def define_instance_method(meth, &blk)
-    (class << self; self; end).module_eval do
-      define_method(meth, &blk)
-    end
-  end
-
-  def initialize(client, hash, content_type)
+  def initialize(client, hash, resource_type)
     @client = client
-    @content_type = content_type
+    @resource_type = resource_type
     @raw = hash.dup
     @attributes, @associations, @actions = Set.new, Set.new, Set.new
     links = hash.delete('links') || []
+
     raw_actions = hash.delete('actions') || []
 
-    # we obviously can't re-define a method called 'self', so pull
-    # out the 'self' link and make it 'self_href', i guess.
+    # We obviously can't re-define a method called 'self', so pull
+    # out the 'self' link and make it 'self_href'.
     self_index = links.any? && links.each_with_index do |link, idx|
       if link['rel'] == 'self'
         break idx
@@ -166,68 +247,100 @@ class Resource
       hash['href'] = links.delete_at(self_index)['href']
     end
 
+    # Add links to attributes set and create a method that returns the links
     attributes << :links
     define_instance_method(:links) { return links }
 
-    # i think all of the actions are POST or PUT except
-    # 'monitoring_data' (which i think should be a resource).
-    # But API doesn't tell us whether an action is a GET
-    # or a POST, so we can't do these dynamically yet...
+    # API doesn't tell us whether a resource action is a GET or a POST, but
+    # I think they are all post so add them all as posts for now.
     raw_actions.each do |action|
       action_name = action['rel']
+      # Add it to the actions set
       actions << action_name.to_sym
 
       define_instance_method(action_name.to_sym) do |*args|
         href = hash['href'] + "/" + action['rel']
-        client.do_post(href,args.first)
+        client.do_post(href, *args)
       end
     end
 
-    # define methods that query the api
-    # for the associated resources
+    # Define methods that query the API for the associated resources
     links.each do |link|
+      # Add the link to the associations set
       associations << link['rel'].to_sym
-
+      # Create a method for it so the link can be followed
       define_instance_method(link['rel']) do |*args|
         Resource.process(client, *client.do_get(link['href'], *args))
       end
     end
-
-    hash.each do |k,v|
-      # it's possible that the data we would have needed to
-      # query an associated resource for, was present in the
-      # response for this resource, if it was requested with a 'view'.
-      #
-      # if it's an association, but something by the same name is already
-      # present in this data structure, use that instead.
+    
+    hash.each do |k, v|
+      # TODO: Implement following optimization if a resource was requested with a 'view'
       if associations.include?(k.to_sym)
-        define_instance_method(k) { Resource.process(client, v, nil) }
+        # If a parent resource is requested with a view then it might return extra
+        # data that can be used to build child resources here, without doing another
+        # get request. For example, api/servers/ID?view=instance_detail returns the
+        # data for that server's instances as well so we can define a method for those
+        # resources here and save doing another get request. This optimization can be
+        # implemented in one line:
+        # define_instance_method(k) { Resource.process(client, v, resource_type, path) }
+        #
+        # But the problem is that the not all child resources (or extra data returned
+        # by a view) have a resource_type and path. And passing nil, nil to the Resource.process
+        # isn't an option. One solution would be to do some checks on the extra data and 
+        # if it's a resource then pass in the resource_type and path, if not then don't bother
+        # implementing this optimization. 
+        # To test if the solution has worked, one can count the number of get requests needed to do:
+        # p client.servers(:id => 928822).current_instance, which should be 2, then count gets for:
+        # p client.servers(:id => 928822, :view => 'instance_detail').current_instance, which should be 1.
       else
+        # Add it to the attributes set and create a method for it
         attributes << k.to_sym
         define_instance_method(k) { return v }
       end
     end
 
-    if @content_type
-      @resource_type = @content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
-    end
-
-    # the api doesnt tell us what resources are supported by what clouds yet,
-    # so...define stuff here? :/
-    if resource_type =~ /cloud/
-      [:instances, :images, :ip_addresses, :volumes, :instance_types, :datacenters, :ssh_keys, :security_groups].each do |rtype|
+    # The API doesnt tell us what resources are supported by what clouds yet, and not all
+    # resources are linked together (e.g. no link between instances to monitoring_metrics).
+    # TODO: Remove the case code block once the API returns the required links between resources.
+    case @resource_type
+    when 'cloud'
+      [:datacenters, :images, :instance_types, :instances, :security_groups, :ssh_keys].each do |rtype|
+        define_instance_method(rtype) do |*args|
+          Resource.process(client, *client.do_get(href + "/#{rtype.to_s}", *args))
+        end
+      end  
+    when 'instance'
+      [:monitoring_metrics].each do |rtype|
         define_instance_method(rtype) do |*args|
           Resource.process(client, *client.do_get(href + "/#{rtype.to_s}", *args))
         end
       end
+      # Tasks can't be reached from the instance links so we have to add them manually.
+      define_instance_method('live_tasks') do |*args|
+          Resource.process(client, *client.do_get(href + '/live/tasks', *args))
+      end
+    when 'deployment'
+      [:server_arrays].each do |rtype|
+        define_instance_method(rtype) do |*args|
+          Resource.process(client, *client.do_get(href + "/#{rtype.to_s}", *args))
+        end
+      end      
     end
-  end
-  
-  # create a server in a deployment.
-  # NOTE: only works for a deployment
-  def create_server(params={})
-    uri = client.do_create(self.href + "/servers", :server => params)
-    Resource.process(client, *client.do_get(uri))
-  end
 
+    # Add destroy method to relevant resources
+    if ['deployment', 'server_array', 'server', 'ssh_keys'].include?(@resource_type)
+      define_instance_method('destroy') do
+          client.do_delete(href)
+      end
+    end
+
+    # Add update method to relevant resources
+    if ['deployment', 'instance', 'server_array', 'server'].include?(@resource_type)
+      define_instance_method('update') do |*args|
+          client.do_put(href, *args)
+      end
+    end
+
+  end
 end
