@@ -275,24 +275,27 @@ class Resource
     end
     
     hash.each do |k, v|
-      # TODO: Implement following optimization if a resource was requested with a 'view'
+      # If a parent resource is requested with a view then it might return extra
+      # data that can be used to build child resources here, without doing another
+      # get request. 
       if associations.include?(k.to_sym)
-        # If a parent resource is requested with a view then it might return extra
-        # data that can be used to build child resources here, without doing another
-        # get request. For example, api/servers/ID?view=instance_detail returns the
-        # data for that server's instances as well so we can define a method for those
-        # resources here and save doing another get request. This optimization can be
-        # implemented in one line:
-        # define_instance_method(k) { Resource.process(client, v, resource_type, path) }
-        #
-        # But the problem is that the not all child resources (or extra data returned
-        # by a view) have a resource_type and path. And passing nil, nil to the Resource.process
-        # isn't an option. One solution would be to do some checks on the extra data and 
-        # if it's a resource then pass in the resource_type and path, if not then don't bother
-        # implementing this optimization. 
-        # To test if the solution has worked, one can count the number of get requests needed to do:
-        # p client.servers(:id => 928822).current_instance, which should be 2, then count gets for:
-        # p client.servers(:id => 928822, :view => 'instance_detail').current_instance, which should be 1.
+        # We could use one rescue block rather than these multiple ifs, but exceptions are slow
+        # and the whole points of this code block is optimization so we'll stick to using ifs.
+        
+        # v might be an array or hash so use include rather than has_key
+        if v.include?('links')
+          child_self_link = v['links'].find{ |target| target['rel'] == 'self' }
+          if child_self_link 
+            child_href = child_self_link['href']
+            if child_href
+              # Currently, only instances need this optimization, but in the future we might like 
+              # to extract resource_type from child_href and not hard-code it.
+              if child_href.index('instance')
+                define_instance_method(k) { Resource.process(client, v, 'instance', child_href) } 
+              end
+            end
+          end
+        end
       else
         # Add it to the attributes set and create a method for it
         attributes << k.to_sym

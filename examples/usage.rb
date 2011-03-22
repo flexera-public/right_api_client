@@ -185,7 +185,7 @@ puts 'Available methods:', resource.api_methods
 #resource = client.server_arrays(:id => '12038')
 #puts 'Available methods:', resource.api_methods
 ##
-## Can't do the following as the API doesn't support it due to a bug, but instance.links has the info.
+## Can't do the following as the API doesn't support it due to a bug, but resource.links has the info.
 #p resource.current_instances
 ##
 # 
