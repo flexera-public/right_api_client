@@ -3,12 +3,12 @@
 == Installation
 - Download the lib/right_api_client.rb file and require it:
   require File.expand_path(File.dirname(__FILE__) + '/lib/right_api_client')
-- right_api_client uses rest_client 1.6.1, so gem install it if you don't have it already.
+- right_api_client uses rest_client 1.6.1:
+  gem install rest_client
 
 == Usage Instructions
 - Check the examples directory for code snippets on how to use the client.
-- New users can start with the following 2 lines of code and navigate their way around the
-API by following the available methods:
+- New users can start with the following 2 lines of code and navigate their way around the API by following the available methods:
   client = RightApiClient.new(my@email.com, my_password, my_account_id)
   puts 'Available methods:', client.api_methods
 
