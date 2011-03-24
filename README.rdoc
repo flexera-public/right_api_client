@@ -7,6 +7,10 @@
 
 == Usage Instructions
 - Check the examples directory for code snippets on how to use the client.
-- New users can start with the following 2 lines of code and navigate their way around the API by following the available methods:
+- New users can start with the following 2 lines of code and navigate their way around the
+API by following the available methods:
   client = RightApiClient.new(my@email.com, my_password, my_account_id)
   puts 'Available methods:', client.api_methods
+
+You can find your account number by logging into RightScale > Settings > Account Settings,
+the account number is at the end of the browser address bar.
