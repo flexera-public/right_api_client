@@ -13,4 +13,4 @@
   puts 'Available methods:', client.api_methods
 
 You can find your account number by logging into RightScale > Settings > Account Settings,
-the account number is at the end of the browser address bar.
+the account number is at the end of the browser address bar. 
