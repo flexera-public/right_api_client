@@ -2,3 +2,7 @@
 login.yml
 .loadpath
 .project
+.rvmrc
+.bundle
+.idea
+.idea/*

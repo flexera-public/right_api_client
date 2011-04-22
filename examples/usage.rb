@@ -1,11 +1,11 @@
 # This file provides a long list of examples that demonstrate how the
 # Right API Client can be used. Un-comment the section you want to try...
 
-
 require File.expand_path(File.dirname(__FILE__) + '/../lib/right_api_client')
 require 'yaml'
 
-# Read username, password and account_id from file
+# Read username, password and account_id from file, or you can just pass them
+# as arguments when creating a new client.
 args = YAML.load_file(File.expand_path(File.dirname(__FILE__) + '/login.yml'))
 
 puts "Creating RightScale API Client and logging in..."
@@ -26,14 +26,7 @@ client = RightApiClient.new(args[:email], args[:password], args[:account_id])
 
 puts "\n\n--Session--"
 # Creating a new client automatically creates a session and logs in.
-# TODO: the begin/rescue/end can be removed once the api/session returns a valid JSON/XML
-# body rather than just a string (API bug). 
-begin
-  client.session
-rescue JSON::ParserError => e
-  puts e.message.sub('706: unexpected token at ', '')
-end
-
+puts client.session.message
 
 puts "\n\n--Clouds--"
 # Index
@@ -126,12 +119,11 @@ puts 'Available methods:', resource.api_methods
 #  "&inputs[][name]=TEST_NAME&inputs[][value]=text:VAL1")
 #puts task.api_methods
 #
-##puts "--MultiRunExecutable--"
-## This is currently not supported by the API (the server_arrays.multi_run_executable is supported)
-##task = client.clouds(:id => 716).instances(:filters => ['name==S1']).multi_run_executable(
-##  "right_script_href=https://my.rightscale.com/api/right_scripts/296533" +
-##  "&inputs[][name]=TEST_NAME&inputs[][value]=text:VAL1")
-##puts task.api_methods
+#puts "--MultiRunExecutable--"
+#task = client.clouds(:id => 716).instances(:filters => ['name==S1']).multi_run_executable(
+#  "right_script_href=https://my.rightscale.com/api/right_scripts/296533" +
+#  "&inputs[][name]=TEST_NAME&inputs[][value]=text:VAL1")
+#puts task.api_methods
 #
 #puts "--Launch--"
 ## Multiple inputs are a bit tricky to define and have to be in this format:
@@ -153,12 +145,11 @@ puts 'Available methods:', resource.api_methods
 # Can't do the following as the API doesn't support them, but instance.links has the info.
 #p resource.server_template
 #p resource.multi_cloud_image
-# 
-# It's not possible to get instance.terminated_at attribute since doing a get on the instance's RSID 
-# doesn't work after it has been terminated (API bug?).
+#
 #instance = client.clouds(:id => 716).instances(:id => '7I0K1GBTJ2I2T')
 #instance.terminate
-#puts instance.terminated_at
+#The instance.terminated_at value is available in the extended or full view, but you have to filter and search for your instance first.
+#puts client.clouds(:id => 716, :view => 'extended', :filters => ['state==inactive', 'resource_uid==7I0K1GBTJ2I2T']).terminated_at
 
 
 #puts "\n\n--MonitoringMetics--"

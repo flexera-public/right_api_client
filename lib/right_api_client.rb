@@ -1,8 +1,11 @@
+#TODO: decide if we want to use bundler for the client code base.
+require 'rubygems'
+require 'bundler/setup'
+
 require 'rest_client' # rest_client 1.6.1
 require 'json'
 require 'set'
 require 'cgi'
-require 'rubygems'
 
 module RightApiClientHelper
   # Helper used to add methods to classes
@@ -98,6 +101,8 @@ class RightApiClient
           # Get the resource_type from the content_type, the resource_type will
           # be used later to add relevant methods to relevant resources. 
           type = ''
+          #TODO: Since the session returns valid json, we can now use the regex to strip things in one go rather than using chomp.
+          # So change the regex to what dane had in his code.
           if result.content_type.index('rightscale')
             type = result.content_type.scan(/\.rightscale\.(.*)/)[0][0]
             # Can't chop off the +json bit in the above regex since some resources don't
@@ -184,8 +189,7 @@ class Resource
       resource_array.extend(RightApiClientHelper)
       
       # Add create methods for the relevant resources
-      # TODO: Change ssh_keys to ssh_key once the API typo is fixed (BUG)
-      if ['deployment', 'server_array', 'server', 'ssh_keys'].include?(resource_type)
+      if ['deployment', 'server_array', 'server', 'ssh_key'].include?(resource_type)
         resource_array.define_instance_method('create') do |*args|
           client.do_post(path, *args)
         end        
@@ -193,8 +197,8 @@ class Resource
       
       # Add multi methods for the instance resource
       if ['instance'].include?(resource_type)
-        # TODO: Add 'multi_run_executable' to the following list once the API supports it.
-        ['multi_terminate'].each do |multi_action|
+        # TODO: Test 'multi_run_executable'
+        ['multi_terminate', 'multi_run_executable'].each do |multi_action|
           multi_action_path = Resource.insert_in_path(path, multi_action)          
 
           resource_array.define_instance_method(multi_action) do |*args|
@@ -332,7 +336,7 @@ class Resource
     end
 
     # Add destroy method to relevant resources
-    if ['deployment', 'server_array', 'server', 'ssh_keys'].include?(@resource_type)
+    if ['deployment', 'server_array', 'server', 'ssh_key'].include?(@resource_type)
       define_instance_method('destroy') do
           client.do_delete(href)
       end
