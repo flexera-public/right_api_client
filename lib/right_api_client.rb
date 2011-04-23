@@ -1,13 +1,17 @@
-#TODO: decide if we want to use bundler for the client code base.
-require 'rubygems'
-require 'bundler/setup'
-
 require 'rest_client' # rest_client 1.6.1
 require 'json'
 require 'set'
 require 'cgi'
 
 module RightApiClientHelper
+  ROOT_RESOURCE = '/api/session'
+  # The API does not provide information about the basic actions that can be performed on resources so we need to define them
+  RESOURCE_ACTIONS = {
+    :create => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment'],
+    :destroy => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment'],
+    :update => ['deployment', 'instance', 'server_array', 'server']
+  }
+
   # Helper used to add methods to classes
   def define_instance_method(meth, &blk)
     (class << self; self; end).module_eval do
@@ -27,22 +31,28 @@ class RightApiClient
   
   def initialize(email, password, account_id, api_url = 'https://my.rightscale.com', api_version = '1.5')
     @email, @password, @account_id, @api_url, @api_version = email, password, account_id, api_url, api_version
+    raise 'This API Client is only compatible with RightScale API 1.5 and upwards.' if (Float(api_version) < 1.5)
     @client = RestClient::Resource.new(@api_url)
-
-    # TODO: We authorize up front, but the cookie will eventually expire.
-    # There should be something in the get/post methods that rescues
-    # and re-authorizes when a 403 with a "Session cookie is expired or invalid" body happens.
     @cookies = login()
 
-    # TODO: The API should return root resources from the session/index call so we
-    # can add them dynamically.
-    # Add root resources to the client since they can be accessed directly
-    [:session, :clouds, :deployments, :server_arrays, :servers].each do |root_resource|
-      define_instance_method(root_resource) do |*params|
-        Resource.process(self, *self.do_get("/api/#{root_resource}", *params))
+    # Session is the root resource that has links to all the base resources,
+    # to the client since they can be accessed directly
+    define_instance_method(:session) do |*params|
+        Resource.process(self, *self.do_get(ROOT_RESOURCE, *params))
+    end
+    session.links.each do |base_resource|
+      define_instance_method(base_resource['rel']) do |*params|
+        Resource.process(self, *self.do_get(base_resource['href'], *params))
       end
     end
   end
+
+  # Log HTTP calls to file (file can be STDOUT as well)
+  def log(file)
+    RestClient.log = file
+  end
+
+  # Users shouldn't need to call the following methods directly
 
   def login
     params = {
@@ -51,7 +61,7 @@ class RightApiClient
       'account_href' => "/api/accounts/#{@account_id}"
     }
 
-    response = @client['api/session'].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
+    response = @client[ROOT_RESOURCE].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
     case response.code
       when 302
         response
@@ -65,11 +75,6 @@ class RightApiClient
   def headers
     {'X_API_VERSION' => @api_version, :cookies => @cookies, :accept => :json}
   end
-
-  # Log HTTP calls to file (file can be STDOUT as well)
-  def log(file)
-    RestClient.log = file
-  end  
 
   # Generic get
   def do_get(path, params={})
@@ -101,13 +106,8 @@ class RightApiClient
           # Get the resource_type from the content_type, the resource_type will
           # be used later to add relevant methods to relevant resources. 
           type = ''
-          #TODO: Since the session returns valid json, we can now use the regex to strip things in one go rather than using chomp.
-          # So change the regex to what dane had in his code.
           if result.content_type.index('rightscale')
-            type = result.content_type.scan(/\.rightscale\.(.*)/)[0][0]
-            # Can't chop off the +json bit in the above regex since some resources don't
-            # have +json in them, so we have to do a chomp and remove it only if it's there
-            type.chomp!('+json')
+            type = result.content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
           end
 
           [type, response.body]
@@ -183,13 +183,13 @@ class Resource
   def self.process(client, data, resource_type, path)    
     if data.kind_of?(Array)        
       resource_array = data.map { |obj| Resource.new(client, obj, resource_type) }
-      # Bring in the helper so we can add methods to it before it's returned, the
+      # Bring in the helper so we can add methods to it before it's returned. The
       # next few if statements might be nicer as a case but some resources might
       # need multiple methods so we'll keep things as separate if statements for now.
       resource_array.extend(RightApiClientHelper)
       
       # Add create methods for the relevant resources
-      if ['deployment', 'server_array', 'server', 'ssh_key'].include?(resource_type)
+      if RESOURCE_ACTIONS[:create].include?(resource_type)
         resource_array.define_instance_method('create') do |*args|
           client.do_post(path, *args)
         end        
@@ -197,7 +197,6 @@ class Resource
       
       # Add multi methods for the instance resource
       if ['instance'].include?(resource_type)
-        # TODO: Test 'multi_run_executable'
         ['multi_terminate', 'multi_run_executable'].each do |multi_action|
           multi_action_path = Resource.insert_in_path(path, multi_action)          
 
@@ -307,43 +306,23 @@ class Resource
       end
     end
 
-    # The API doesnt tell us what resources are supported by what clouds yet, and not all
-    # resources are linked together (e.g. no link between instances to monitoring_metrics).
-    # TODO: Remove the case code block once the API returns the required links between resources.
+    # Some resources are not linked together, so they have to be manually added here.
     case @resource_type
-    when 'cloud'
-      [:datacenters, :images, :instance_types, :instances, :security_groups, :ssh_keys].each do |rtype|
-        define_instance_method(rtype) do |*args|
-          Resource.process(client, *client.do_get(href + "/#{rtype.to_s}", *args))
-        end
-      end  
     when 'instance'
-      [:monitoring_metrics].each do |rtype|
-        define_instance_method(rtype) do |*args|
-          Resource.process(client, *client.do_get(href + "/#{rtype.to_s}", *args))
-        end
-      end
-      # Tasks can't be reached from the instance links so we have to add them manually.
       define_instance_method('live_tasks') do |*args|
           Resource.process(client, *client.do_get(href + '/live/tasks', *args))
       end
-    when 'deployment'
-      [:server_arrays].each do |rtype|
-        define_instance_method(rtype) do |*args|
-          Resource.process(client, *client.do_get(href + "/#{rtype.to_s}", *args))
-        end
-      end      
     end
 
     # Add destroy method to relevant resources
-    if ['deployment', 'server_array', 'server', 'ssh_key'].include?(@resource_type)
+    if RESOURCE_ACTIONS[:destroy].include?(@resource_type)
       define_instance_method('destroy') do
           client.do_delete(href)
       end
     end
 
     # Add update method to relevant resources
-    if ['deployment', 'instance', 'server_array', 'server'].include?(@resource_type)
+    if RESOURCE_ACTIONS[:update].include?(@resource_type)
       define_instance_method('update') do |*args|
           client.do_put(href, *args)
       end

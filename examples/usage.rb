@@ -1,8 +1,10 @@
 # This file provides a long list of examples that demonstrate how the
 # Right API Client can be used. Un-comment the section you want to try...
 
+require 'bundler/setup' # only needed if you want to use Bundler
+require 'yaml' # only needed if you want to put your creds in .yml file
+
 require File.expand_path(File.dirname(__FILE__) + '/../lib/right_api_client')
-require 'yaml'
 
 # Read username, password and account_id from file, or you can just pass them
 # as arguments when creating a new client.
@@ -11,8 +13,9 @@ args = YAML.load_file(File.expand_path(File.dirname(__FILE__) + '/login.yml'))
 puts "Creating RightScale API Client and logging in..."
 # Account ID is available from the browser address bar on this page: dashboard > Settings > Account Settings
 client = RightApiClient.new(args[:email], args[:password], args[:account_id])
+puts client.session.message
 #puts 'Available methods:', client.api_methods
-# Can also specify api_url and api_version, which is useful for testing, e.g.:
+##Can also specify api_url and api_version, which is useful for testing, e.g.:
 #client = RightApiClient.new(args[:email], args[:password], args[:account_id], 'https://test.rightscale.com', '2.0')
 
 
@@ -24,15 +27,11 @@ client = RightApiClient.new(args[:email], args[:password], args[:account_id])
 #client.log(Logger.new(STDOUT))
 
 
-puts "\n\n--Session--"
-# Creating a new client automatically creates a session and logs in.
-puts client.session.message
-
 puts "\n\n--Clouds--"
 # Index
 p client.clouds
 # Show
-resource = client.clouds(:id => 907)
+resource = client.clouds(:id => 734)
 puts 'Available methods:', resource.api_methods
 
 
@@ -60,7 +59,7 @@ puts 'Available methods:', resource.api_methods
 #p resource
 #
 #params = {:deployment => {
-#  :naame => 'MyNewDeploymentName',
+#  :name => 'MyNewDeploymentName',
 #  :description => 'This is my updated deployment.'
 #}} 
 #client.deployments(:id => 80890).update(params)
@@ -141,9 +140,9 @@ puts 'Available methods:', resource.api_methods
 #puts "--MultiTerminate--"
 #task = client.clouds(:id => 716).instances(:filters => ['name==S1']).multi_terminate
 #puts task.api_methods
-#
-# Can't do the following as the API doesn't support them, but instance.links has the info.
 #p resource.server_template
+#
+# Can't do the following as the API doesn't support it yet, but instance.links has the info.
 #p resource.multi_cloud_image
 #
 #instance = client.clouds(:id => 716).instances(:id => '7I0K1GBTJ2I2T')
@@ -175,15 +174,9 @@ puts 'Available methods:', resource.api_methods
 ## Show
 #resource = client.server_arrays(:id => '12038')
 #puts 'Available methods:', resource.api_methods
-##
-## Can't do the following as the API doesn't support it due to a bug, but resource.links has the info.
-#p resource.current_instances
-##
-# 
+#
 #puts "--Create--"
-## You can't yet access server templates or MCIs from the API,
-## so you need to copy the server template ID out of your browser...
-#server_template_href = "/api/server_templates/65866"
+#server_template_href = client.server_templates(:filters => ['name==InstApiST']).first.href
 #cloud_com = client.clouds(:id => 716)
 #params = { :server_array => {
 #  :array_type => 'alert',
@@ -215,7 +208,7 @@ puts 'Available methods:', resource.api_methods
 #new_server_array = client.server_arrays.create(params)
 #p new_server_array
 #
-# You can also create server_array from a specefic deployment, where :deployment_href param isn't needed
+# You can also create server_array from a specific deployment, where :deployment_href param isn't needed
 #new_server_array = client.deployments(:id => 79259).server_arrays.create(params)
 #p new_server_array
 #
@@ -258,9 +251,7 @@ puts 'Available methods:', resource.api_methods
 ##
 # 
 #puts "--Create--"
-# You can't yet access server templates or MCIs from the API,
-# so you need to copy the server template ID out of your browser.
-#server_template_href = "/api/server_templates/65866"
+#server_template_href = client.server_templates(:filters => ['name==InstApiST']).first.href
 #cloud_com = client.clouds(:id => 716)
 #params = { :server => {
 #  :name => 'S1',
@@ -274,7 +265,7 @@ puts 'Available methods:', resource.api_methods
 #}}
 #new_server = client.servers.create(params)
 #p new_server
-## You can also create server from a specefic deployment, where :deployment_href param isn't needed
+## You can also create server from a specific deployment, where :deployment_href param isn't needed
 ##new_server = client.deployments(:id => 79259).servers.create(params)
 ##p new_server
 #

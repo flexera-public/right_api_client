@@ -6,7 +6,7 @@ require 'yaml'
 describe RightApiClient do
   before(:all) do
     # Read username, password and account_id from file
-    args = YAML.load_file(File.expand_path('../examples/login.yml'))
+    args = YAML.load_file(File.expand_path(File.dirname(__FILE__) + '/../examples/login.yml'))
     @client = RightApiClient.new(args[:email], args[:password], args[:account_id])
   end
   
@@ -14,7 +14,7 @@ describe RightApiClient do
     @client.headers[:cookies].should_not be_nil
   end   
     
-  it "should have root resources" do
+  it "should have root and base resources" do
     @client.api_methods.should include(:session)
     @client.api_methods.should_not be_empty
   end
@@ -24,15 +24,15 @@ describe RightApiClient do
   end
 
   it "should return single object for a resource with specific id" do
-    @client.clouds[0].should be_kind_of(Resource)
+    @client.clouds.first.should be_kind_of(Resource)
   end
 
   it "should have attributes for a resource" do
-    @client.clouds[0].attributes.should_not be_empty
+    @client.clouds.first.attributes.should_not be_empty
   end
 
   it "should have actions for a resource" do
-    actions = @client.servers[0].actions.to_a
+    actions = @client.servers.first.actions.to_a
     (actions.include?(:launch) || actions.include?(:terminate)).should == true
   end
 
