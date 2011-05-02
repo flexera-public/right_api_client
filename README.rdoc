@@ -2,9 +2,11 @@
 
 == Installation
 - right_api_client uses rest_client 1.6.1:
+  
   gem install rest-client
 
 - Download the lib/right_api_client.rb file and require it:
+  
   require File.expand_path('lib/right_api_client')
 
 == Usage Instructions
