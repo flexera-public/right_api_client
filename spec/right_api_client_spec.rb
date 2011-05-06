@@ -5,9 +5,7 @@ require 'yaml'
 # be extended in the future to improve test coverage.
 describe RightApiClient do
   before(:all) do
-    # Read username, password and account_id from file
-    args = YAML.load_file(File.expand_path(File.dirname(__FILE__) + '/../examples/login.yml'))
-    @client = RightApiClient.new(:email =>args[:email], :password => args[:password], :account_id => args[:account_id])
+    @client = RightApiClient.new(YAML.load_file(File.expand_path(File.dirname(__FILE__) + '/../examples/login.yml')))
   end
   
   it "should login" do
