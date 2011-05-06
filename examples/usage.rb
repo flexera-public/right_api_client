@@ -12,12 +12,14 @@ args = YAML.load_file(File.expand_path(File.dirname(__FILE__) + '/login.yml'))
 
 puts "Creating RightScale API Client and logging in..."
 # Account ID is available from the browser address bar on this page: dashboard > Settings > Account Settings
-client = RightApiClient.new(args[:email], args[:password], args[:account_id])
+client = RightApiClient.new(:email =>args[:email], :password => args[:password], :account_id => args[:account_id])
 puts client.session.message
 #puts 'Available methods:', client.api_methods
 ##Can also specify api_url and api_version, which is useful for testing, e.g.:
-#client = RightApiClient.new(args[:email], args[:password], args[:account_id], 'https://test.rightscale.com', '2.0')
-
+#client = RightApiClient.new(:email => args[:email], :password => args[:password], :account_id => args[:account_id],
+#                            :api_url => 'https://test.rightscale.com', :api_version => '2.0')
+##Or you can just tell the client to use an already-authenticated cookie (from another client or session), e.g.:
+#client = RightApiClient.new(:cookies => my_already_authenticated_cookies)
 
 # The HTTP calls made by RightApiClient can be logged in two ways:
 # Log to a file
@@ -31,8 +33,8 @@ puts "\n\n--Clouds--"
 # Index
 p client.clouds
 # Show
-resource = client.clouds(:id => 734)
-puts 'Available methods:', resource.api_methods
+resource = client.clouds(:id => 907)
+puts 'Available methods for a cloud:', resource.api_methods
 
 
 #puts "\n\nDatacenters"

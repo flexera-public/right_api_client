@@ -12,6 +12,9 @@ module RightApiClientHelper
     :update => ['deployment', 'instance', 'server_array', 'server']
   }
 
+  #Permitted parameters for initializing
+  AUTH_PARAMS = %w(email password account_id api_url api_version cookies)
+
   # Helper used to add methods to classes
   def define_instance_method(meth, &blk)
     (class << self; self; end).module_eval do
@@ -29,11 +32,19 @@ end
 class RightApiClient
   include RightApiClientHelper
   
-  def initialize(email, password, account_id, api_url = 'https://my.rightscale.com', api_version = '1.5')
-    @email, @password, @account_id, @api_url, @api_version = email, password, account_id, api_url, api_version
-    raise 'This API Client is only compatible with RightScale API 1.5 and upwards.' if (Float(api_version) < 1.5)
+  def initialize args
+
+    # Default params
+    @api_url, @api_version = 'https://my.rightscale.com', '1.5'
+
+    # Initializing all instance variables from hash
+    args.each { |key,value| instance_variable_set("@#{key}", value) if value && AUTH_PARAMS.include?(key.to_s) } if args.is_a? Hash
+
+    raise 'This API Client is only compatible with RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
     @client = RestClient::Resource.new(@api_url)
-    @cookies = login()
+
+    # There are two options for login: credentials or if the user already has the cookies they can just use those
+    @cookies ||= login()
 
     # Session is the root resource that has links to all the base resources,
     # to the client since they can be accessed directly
