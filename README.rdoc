@@ -13,7 +13,7 @@
 - Check the examples directory for code snippets on how to use the client.
 - New users can start with the following 2 lines of code and navigate their way around the API by following the available methods:
 
-  client = RightApiClient.new(my@email.com, 'my_password', 'my_account_id')
+  client = RightApiClient.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
  
   puts 'Available methods:', client.api_methods
 
