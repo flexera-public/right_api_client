@@ -1,8 +1,10 @@
 .DS_Store
 login.yml
+local_login.yml
 .loadpath
 .project
 .rvmrc
 .bundle
 .idea
 .idea/*
+rc.rb
