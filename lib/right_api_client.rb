@@ -60,7 +60,11 @@ class RightApiClient
       end
     end
   end
-
+  
+  def to_s
+    "#<RightApiClient>"
+  end
+    
   # Log HTTP calls to file (file can be STDOUT as well)
   def log(file)
     RestClient.log = file
