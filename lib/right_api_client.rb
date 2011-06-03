@@ -109,21 +109,30 @@ class RightApiClient
     # If present, remove ? and & at end of path
     path.chomp!('&')
     path.chomp!('?')   
-    
-    # Return content type so the resulting resource object knows what kind of resource it is.
-    resource_type, body = @client[path].get(headers) do |response, request, result, &block|
-      case response.code
-        when 200
-          # Get the resource_type from the content_type, the resource_type will
-          # be used later to add relevant methods to relevant resources. 
-          type = ''
-          if result.content_type.index('rightscale')
-            type = result.content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
-          end
 
-          [type, response.body]
-        else
-          raise "Unexpected response #{response.code.to_s}, #{response.body}"
+    begin
+      # Return content type so the resulting resource object knows what kind of resource it is.
+      resource_type, body = @client[path].get(headers) do |response, request, result, &block|
+        case response.code
+          when 200
+            # Get the resource_type from the content_type, the resource_type will
+            # be used later to add relevant methods to relevant resources.
+            type = ''
+            if result.content_type.index('rightscale')
+              type = result.content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
+            end
+
+            [type, response.body]
+          else
+            raise "Unexpected response #{response.code.to_s}, #{response.body}"
+        end
+      end
+    rescue RuntimeError => e
+      if e.message.index('403')
+        @cookies = login()
+        retry
+      else
+        raise e
       end
     end
 
@@ -134,38 +143,65 @@ class RightApiClient
 
   # Generic post
   def do_post(path, params={})
-    @client[path].post(params, headers) do |response, request, result, &block|
-      case response.code
-      when 201, 202  
-        # Create and return the resource 
-        href = response.headers[:location]
-        Resource.process(self, *self.do_get(href))
-      when 200..299
-        response.return!(request, result, &block)
+    begin
+      @client[path].post(params, headers) do |response, request, result, &block|
+        case response.code
+        when 201, 202
+          # Create and return the resource
+          href = response.headers[:location]
+          Resource.process(self, *self.do_get(href))
+        when 200..299
+          response.return!(request, result, &block)
+        else
+          raise "Unexpected response #{response.code.to_s}, #{response.body}"
+        end
+      end
+    rescue RuntimeError => e
+      if e.message.index('403')
+        @cookies = login()
+        retry
       else
-        raise "Unexpected response #{response.code.to_s}, #{response.body}"
+        raise e
       end
     end
   end
 
   # Generic delete
   def do_delete(path)
-    @client[path].delete(headers) do |response, request, result, &block|
-      case response.code
-      when 200
+    begin
+      @client[path].delete(headers) do |response, request, result, &block|
+        case response.code
+        when 200
+        else
+          raise "Unexpected response #{response.code.to_s}, #{response.body}"
+        end
+      end
+    rescue RuntimeError => e
+      if e.message.index('403')
+        @cookies = login()
+        retry
       else
-        raise "Unexpected response #{response.code.to_s}, #{response.body}"
+        raise e
       end
     end
   end
 
   # Generic put
   def do_put(path, params={})
-    @client[path].put(params, headers) do |response, request, result, &block|
-      case response.code
-      when 204  
+    begin
+      @client[path].put(params, headers) do |response, request, result, &block|
+        case response.code
+        when 204
+        else
+          raise "Unexpected response #{response.code.to_s}, #{response.body}"
+        end
+      end
+    rescue RuntimeError => e
+      if e.message.index('403')
+        @cookies = login()
+        retry
       else
-        raise "Unexpected response #{response.code.to_s}, #{response.body}"
+        raise e
       end
     end
   end
