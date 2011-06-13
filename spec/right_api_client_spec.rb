@@ -22,7 +22,7 @@ describe RightApiClient do
   end
 
   it "should return single object for a resource with specific id" do
-    @client.clouds.first.should be_kind_of(Resource)
+    @client.clouds.first.should be_kind_of(RightApiClient::Resource)
   end
 
   it "should have attributes for a resource" do
