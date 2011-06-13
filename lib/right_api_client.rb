@@ -39,7 +39,9 @@ class RightApiClient
     @api_url, @api_version = 'https://my.rightscale.com', '1.5'
 
     # Initializing all instance variables from hash
-    args.each { |key,value| instance_variable_set("@#{key}", value) if value && AUTH_PARAMS.include?(key.to_s) } if args.is_a? Hash
+    args.each { |key,value|
+      instance_variable_set("@#{key}", value) if value && AUTH_PARAMS.include?(key.to_s)
+    } if args.is_a? Hash
 
     raise 'This API Client is only compatible with RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
     @client = RestClient::Resource.new(@api_url)
@@ -50,7 +52,7 @@ class RightApiClient
     # Session is the root resource that has links to all the base resources,
     # to the client since they can be accessed directly
     define_instance_method(:session) do |*params|
-        Resource.process(self, *self.do_get(ROOT_RESOURCE, *params))
+      Resource.process(self, *self.do_get(ROOT_RESOURCE, *params))
     end
     session.links.each do |base_resource|
       define_instance_method(base_resource['rel']) do |*params|
@@ -75,11 +77,11 @@ class RightApiClient
 
     response = @client[ROOT_RESOURCE].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
     case response.code
-      when 302
-        response
-      else
-        response.return!(request, result, &block)
-      end
+    when 302
+      response
+    else
+      response.return!(request, result, &block)
+    end
     end
     response.cookies
   end
@@ -115,17 +117,17 @@ class RightApiClient
       # Return content type so the resulting resource object knows what kind of resource it is.
       resource_type, body = @client[path].get(headers) do |response, request, result, &block|
         case response.code
-          when 200
-            # Get the resource_type from the content_type, the resource_type will
-            # be used later to add relevant methods to relevant resources.
-            type = ''
-            if result.content_type.index('rightscale')
-              type = result.content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
-            end
+        when 200
+          # Get the resource_type from the content_type, the resource_type will
+          # be used later to add relevant methods to relevant resources.
+          type = ''
+          if result.content_type.index('rightscale')
+            type = result.content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
+          end
 
-            [type, response.body]
-          else
-            raise "Unexpected response #{response.code.to_s}, #{response.body}"
+          [type, response.body]
+        else
+          raise "Unexpected response #{response.code.to_s}, #{response.body}"
         end
       end
     rescue RuntimeError => e
@@ -278,7 +280,10 @@ class RightApiClient
     end
 
     def inspect
-      "#<#{self.class.name} resource_type=\"#{@resource_type}\"#{', name='+name.inspect if self.respond_to?(:name)}#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
+      "#<#{self.class.name} " +
+      "resource_type=\"#{@resource_type}\"" +
+      "#{', name='+name.inspect if self.respond_to?(:name)}" +
+      "#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
     end
 
     def initialize(client, hash, resource_type)
@@ -344,7 +349,7 @@ class RightApiClient
 
           # v might be an array or hash so use include rather than has_key
           if v.include?('links')
-            child_self_link = v['links'].find{ |target| target['rel'] == 'self' }
+            child_self_link = v['links'].find { |target| target['rel'] == 'self' }
             if child_self_link
               child_href = child_self_link['href']
               if child_href
