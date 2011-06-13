@@ -21,17 +21,17 @@ module RightApiClientHelper
       define_method(meth, &blk)
     end
   end
-  
+
   # Helper method that returns all api methods available to a client or resource
   def api_methods
     self.methods(false)
-  end  
+  end
 end
 
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 class RightApiClient
   include RightApiClientHelper
-  
+
   def initialize args
 
     # Default params
@@ -90,15 +90,15 @@ class RightApiClient
   # Generic get
   def do_get(path, params={})
     # Resource id is a special param as it needs to be added to the path
-    path += "/#{params.delete(:id)}" if params.has_key?(:id) 
-    
+    path += "/#{params.delete(:id)}" if params.has_key?(:id)
+
     # Normally you would just pass a hash of query params to RestClient,
     # but unfortunately it only takes them as a hash, and for filtering
     # we need to pass multiple parameters with the same key. The result
     # is that we have to build up the query string manually.
     filters = params.delete(:filters)
     params_string = params.map{|k,v| "#{k.to_s}=#{CGI::escape(v.to_s)}" }.join('&')
-    
+
     if filters && filters.any?
       path += "?filter[]=" + filters.map{|f| CGI::escape(f) }.join('&filter[]=')
       path += "&#{params_string}"
@@ -108,7 +108,7 @@ class RightApiClient
 
     # If present, remove ? and & at end of path
     path.chomp!('&')
-    path.chomp!('?')   
+    path.chomp!('?')
 
     begin
       # Return content type so the resulting resource object knows what kind of resource it is.
@@ -137,7 +137,7 @@ class RightApiClient
     end
 
     data = JSON.parse(body)
-    
+
     [data, resource_type, path]
   end
 
@@ -227,39 +227,39 @@ class Resource
 
   # Takes some response data from the API
   # Returns a single Resource object or a collection if there were many
-  def self.process(client, data, resource_type, path)    
-    if data.kind_of?(Array)        
+  def self.process(client, data, resource_type, path)
+    if data.kind_of?(Array)
       resource_array = data.map { |obj| Resource.new(client, obj, resource_type) }
       # Bring in the helper so we can add methods to it before it's returned. The
       # next few if statements might be nicer as a case but some resources might
       # need multiple methods so we'll keep things as separate if statements for now.
       resource_array.extend(RightApiClientHelper)
-      
+
       # Add create methods for the relevant resources
       if RESOURCE_ACTIONS[:create].include?(resource_type)
         resource_array.define_instance_method('create') do |*args|
           client.do_post(path, *args)
-        end        
+        end
       end
-      
+
       # Add multi methods for the instance resource
       if ['instance'].include?(resource_type)
         ['multi_terminate', 'multi_run_executable'].each do |multi_action|
-          multi_action_path = Resource.insert_in_path(path, multi_action)          
+          multi_action_path = Resource.insert_in_path(path, multi_action)
 
           resource_array.define_instance_method(multi_action) do |*args|
             client.do_post(multi_action_path, *args)
           end
         end
       end
-      
+
       # Add multi_update to input resource
       if ['input'].include?(resource_type)
         resource_array.define_instance_method('multi_update') do |*args|
           multi_update_path = Resource.insert_in_path(path, 'multi_update')
 
           client.do_put(multi_update_path, *args)
-        end        
+        end
       end
 
       return resource_array
@@ -267,7 +267,7 @@ class Resource
       Resource.new(client, data, resource_type)
     end
   end
-  
+
   def inspect
     "#<#{self.class.name} resource_type=\"#{@resource_type}\"#{', name='+name.inspect if self.respond_to?(:name)}#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
   end
@@ -323,25 +323,25 @@ class Resource
         Resource.process(client, *client.do_get(link['href'], *args))
       end
     end
-    
+
     hash.each do |k, v|
       # If a parent resource is requested with a view then it might return extra
       # data that can be used to build child resources here, without doing another
-      # get request. 
+      # get request.
       if associations.include?(k.to_sym)
         # We could use one rescue block rather than these multiple ifs, but exceptions are slow
         # and the whole points of this code block is optimization so we'll stick to using ifs.
-        
+
         # v might be an array or hash so use include rather than has_key
         if v.include?('links')
           child_self_link = v['links'].find{ |target| target['rel'] == 'self' }
-          if child_self_link 
+          if child_self_link
             child_href = child_self_link['href']
             if child_href
-              # Currently, only instances need this optimization, but in the future we might like 
+              # Currently, only instances need this optimization, but in the future we might like
               # to extract resource_type from child_href and not hard-code it.
               if child_href.index('instance')
-                define_instance_method(k) { Resource.process(client, v, 'instance', child_href) } 
+                define_instance_method(k) { Resource.process(client, v, 'instance', child_href) }
               end
             end
           end
