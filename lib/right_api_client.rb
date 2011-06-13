@@ -32,7 +32,7 @@ end
 class RightApiClient
   include RightApiClientHelper
 
-  def initialize args
+  def initialize(args)
 
     # Default params
     @api_url, @api_version = 'https://my.rightscale.com', '1.5'
