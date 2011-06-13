@@ -7,11 +7,11 @@ describe RightApiClient do
   before(:all) do
     @client = RightApiClient.new(YAML.load_file(File.expand_path(File.dirname(__FILE__) + '/../examples/login.yml')))
   end
-  
+
   it "should login" do
     @client.headers[:cookies].should_not be_nil
-  end   
-    
+  end
+
   it "should have root and base resources" do
     @client.api_methods.should include(:session)
     @client.api_methods.should_not be_empty
@@ -41,5 +41,5 @@ describe RightApiClient do
       @client.send(resource)[0].api_methods.should include(:update)
     end
   end
-  
+
 end
