@@ -4,7 +4,7 @@ require File.join(File.dirname(__FILE__), 'spec_helper')
 # be extended in the future to improve test coverage.
 describe RightApiClient do
   before(:all) do
-    @client = RightApiClient.new(YAML.load_file(File.expand_path(File.dirname(__FILE__) + '/../examples/login.yml')))
+    @client = example_client
   end
 
   it "should login" do
@@ -43,26 +43,32 @@ describe RightApiClient do
 
   describe "#initialize" do
 
-    it 'creates a logged in client' do
+    it "creates a logged in client" do
 
-      args = YAML.load_file(
-        File.join(File.dirname(__FILE__), '../examples/login.yml'))
-
-      client = RightApiClient.new(args)
+      client = RightApiClient.new(example_args)
 
       client.headers[:cookies].should_not == nil
     end
 
-    it 'accepts a cookie argument' do
+    it "accepts a cookie argument" do
 
-      args = YAML.load_file(
-        File.join(File.dirname(__FILE__), '../examples/login.yml'))
-
-      client1 = RightApiClient.new(args.merge('cookies' => @client.cookies))
-      client2 = RightApiClient.new(args)
+      client1 = RightApiClient.new(
+        example_args.merge('cookies' => @client.cookies))
+      client2 = RightApiClient.new(
+        example_args)
 
       client1.cookies.should == @client.cookies
       client2.cookies.should_not == @client.cookies
+    end
+
+    it "logs in anyway if the cookie is corrupt" do
+
+      cookies = @client.cookies.dup
+      cookies['rs_gbl'] = 'nada'
+
+      client = RightApiClient.new(example_args.merge('cookies' => cookies))
+
+      client.cookies.should_not == cookies
     end
   end
 
@@ -70,7 +76,7 @@ describe RightApiClient do
 
     it "returns a resource given a path" do
 
-      cloud = @client.resource('/api/clouds/232')
+      cloud = @client.resource(@client.clouds.first.href)
 
       cloud.class.should == RightApiClient::Resource
       cloud.resource_type.should == 'cloud'
