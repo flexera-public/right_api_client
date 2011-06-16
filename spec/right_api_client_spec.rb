@@ -34,10 +34,11 @@ describe RightApiClient do
   end
 
   it "should have create, update and destroy methods for resources" do
-    ['deployments', 'server_arrays', 'servers'].each do |resource|
-      @client.send(resource).api_methods.should include(:create)
-      @client.send(resource)[0].api_methods.should include(:destroy)
-      @client.send(resource)[0].api_methods.should include(:update)
+    ['deployments', 'server_arrays', 'servers'].each do |res|
+      resource = @client.send(res)
+      resource.api_methods.should include(:create)
+      resource[0].api_methods.should include(:destroy)
+      resource[0].api_methods.should include(:update)
     end
   end
 
