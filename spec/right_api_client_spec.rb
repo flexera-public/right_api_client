@@ -41,6 +41,31 @@ describe RightApiClient do
     end
   end
 
+  describe "#initialize" do
+
+    it 'creates a logged in client' do
+
+      args = YAML.load_file(
+        File.join(File.dirname(__FILE__), '../examples/login.yml'))
+
+      client = RightApiClient.new(args)
+
+      client.headers[:cookies].should_not == nil
+    end
+
+    it 'accepts a cookie argument' do
+
+      args = YAML.load_file(
+        File.join(File.dirname(__FILE__), '../examples/login.yml'))
+
+      client1 = RightApiClient.new(args.merge('cookies' => @client.cookies))
+      client2 = RightApiClient.new(args)
+
+      client1.cookies.should == @client.cookies
+      client2.cookies.should_not == @client.cookies
+    end
+  end
+
   describe "#resource" do
 
     it "returns a resource given a path" do
