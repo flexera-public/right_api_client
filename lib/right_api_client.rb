@@ -81,12 +81,12 @@ class RightApiClient
     }
 
     response = @client[ROOT_RESOURCE].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
-    case response.code
-    when 302
-      response
-    else
-      response.return!(request, result, &block)
-    end
+      case response.code
+      when 302
+        response
+      else
+        response.return!(request, result, &block)
+      end
     end
     response.cookies
   end
