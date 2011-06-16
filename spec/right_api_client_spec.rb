@@ -51,4 +51,13 @@ describe RightApiClient do
       cloud.resource_type.should == 'cloud'
     end
   end
+
+  describe "#cookies" do
+
+    it "returns a Hash with a 'domain' and a '_session_id'" do
+
+      @client.cookies.class.should == Hash
+      @client.cookies.keys.sort.should == %w[ _session_id domain rs_gbl ]
+    end
+  end
 end

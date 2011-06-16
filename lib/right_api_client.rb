@@ -35,6 +35,9 @@ class RightApiClient
 
   include Helper
 
+  # The cookies for our client.
+  attr_reader :cookies
+
   def initialize(args)
 
     # Default params
