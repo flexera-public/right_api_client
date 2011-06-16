@@ -1,5 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/../lib/right_api_client')
-require 'yaml'
+require File.join(File.dirname(__FILE__), 'spec_helper')
 
 # These tests cover the basic operations of the client, and can certainly
 # be extended in the future to improve test coverage.
@@ -42,4 +41,14 @@ describe RightApiClient do
     end
   end
 
+  describe "#resource" do
+
+    it "returns a resource given a path" do
+
+      cloud = @client.resource('/api/clouds/232')
+
+      cloud.class.should == RightApiClient::Resource
+      cloud.resource_type.should == 'cloud'
+    end
+  end
 end
