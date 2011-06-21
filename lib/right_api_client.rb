@@ -7,6 +7,8 @@ require 'cgi'
 # by resources
 class RightApiClient
 
+  VERSION = '0.9.0'
+
   ROOT_RESOURCE = '/api/session'
 
   # permitted parameters for initializing
@@ -32,6 +34,9 @@ class RightApiClient
   end
 
   include Helper
+
+  # The cookies for our client.
+  attr_reader :cookies
 
   def initialize(args)
 
@@ -80,12 +85,12 @@ class RightApiClient
     }
 
     response = @client[ROOT_RESOURCE].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
-    case response.code
-    when 302
-      response
-    else
-      response.return!(request, result, &block)
-    end
+      case response.code
+      when 302
+        response
+      else
+        response.return!(request, result, &block)
+      end
     end
     response.cookies
   end
@@ -211,6 +216,12 @@ class RightApiClient
         raise e
       end
     end
+  end
+
+  # Given a path returns a RightApiClient::Resource instance.
+  #
+  def resource(path)
+    Resource.process(self, *do_get(path))
   end
 
   # Represents resources returned by API calls, this class dynamically adds
