@@ -1,6 +1,5 @@
 .DS_Store
-login.yml
-local_login.yml
+*login.yml
 .loadpath
 .project
 .rvmrc
