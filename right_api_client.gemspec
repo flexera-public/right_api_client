@@ -26,7 +26,6 @@ RightScale API HTTP client. Spiders the API to discover its resources on the fly
   ]
 
   s.add_runtime_dependency 'rest-client', '1.6.3'
-  #s.add_runtime_dependency 'em-http-request', '1.0.0.beta.4'
 
   s.add_development_dependency 'rake'
   s.add_development_dependency 'bundler'

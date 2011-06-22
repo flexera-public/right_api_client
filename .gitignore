@@ -7,4 +7,4 @@ local_login.yml
 .bundle
 .idea
 .idea/*
-rc.rb
+*~

@@ -1,7 +1,7 @@
 = RightScale API Client
 
 == Installation
-- right_api_client uses rest_client 1.6.1:
+- right_api_client uses rest_client 1.6.3:
   
   gem install rest-client
 
