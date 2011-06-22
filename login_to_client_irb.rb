@@ -6,13 +6,13 @@ require './lib/right_api_client'
 require 'yaml'
 require 'irb'
 
-client = RightApiClient.new(YAML.load_file(File.dirname(__FILE__) + '/examples/login.yml'))
-puts "logged-in to the API, use the 'client' variable to use the client:"
-client.session.message
+@client = RightApiClient.new(YAML.load_file(File.dirname(__FILE__) + '/examples/login.yml'))
+puts "logged-in to the API, use the '@client' variable to use the client, e.g. '@client.session.message' will output:"
+puts @client.session.message
 begin
-  local_client = RightApiClient.new(YAML.load_file(File.dirname(__FILE__) + '/examples/local_login.yml'))
-  puts 'local_client is also available.'
+  @local_client = RightApiClient.new(YAML.load_file(File.dirname(__FILE__) + '/examples/local_login.yml'))
+  puts '@local_client is also available - this will run against the local API server'
 rescue
-  puts 'local_client is not available, API is probably not running locally.'
+  puts '@local_client is not available, API is probably not running locally.'
 end
 IRB.start

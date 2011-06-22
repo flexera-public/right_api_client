@@ -311,7 +311,7 @@ class RightApiClient
       raw_actions = hash.delete('actions') || []
 
       # We obviously can't re-define a method called 'self', so pull
-      # out the 'self' link and make it 'self_href'.
+      # out the 'self' link and make it 'href'.
       self_index = links.any? && links.each_with_index do |link, idx|
         if link['rel'] == 'self'
           break idx
