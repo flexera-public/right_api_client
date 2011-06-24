@@ -220,8 +220,8 @@ class RightApiClient
 
   # Given a path returns a RightApiClient::Resource instance.
   #
-  def resource(path)
-    Resource.process(self, *do_get(path))
+  def resource(path,params={})
+    Resource.process(self, *do_get(path,params))
   end
 
   # Represents resources returned by API calls, this class dynamically adds
