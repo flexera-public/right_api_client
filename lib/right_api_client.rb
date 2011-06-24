@@ -62,7 +62,17 @@ class RightApiClient
     session.links.each do |base_resource|
       define_instance_method(base_resource['rel']) do |*params|
         Resource.process(self, *self.do_get(base_resource['href'], *params))
-      end
+      end if base_resource['rel'] != 'tags'
+      
+      # there is no /api/tags/ so tags_by_resources, tags_by_tags, ... are added to the root resource.
+      # @@@@ ToDo: change this
+
+      # This will be the other way to do it
+      ['by_tag', 'by_resource', 'multi_add', 'multi_delete'].each {|meth| 
+        define_instance_method(('tags_' + meth).to_sym) do |*args|
+          self.do_post(base_resource['href'] + '/' + meth, *args)
+        end
+      } if base_resource['rel'] == 'tags'
     end
   end
   
@@ -163,7 +173,13 @@ class RightApiClient
           href = response.headers[:location]
           Resource.process(self, *self.do_get(href))
         when 200..299
-          response.return!(request, result, &block)
+          # @@ ToDo, refactor this code
+          if response.code == 200 && response.headers[:content_type].index('rightscale')
+            type = response.headers[:content_type].scan(/\.rightscale\.(.*)\+json/)[0][0]
+            Resource.process(self, JSON.parse(response), type, path)
+          else          
+            response.return!(request, result, &block)
+          end
         else
           raise "Unexpected response #{response.code.to_s}, #{response.body}"
         end
@@ -223,6 +239,7 @@ class RightApiClient
   def resource(path)
     Resource.process(self, *do_get(path))
   end
+
 
   # Represents resources returned by API calls, this class dynamically adds
   # methods and properties to instances depending on what type of resource
@@ -344,14 +361,51 @@ class RightApiClient
       end
 
       # Define methods that query the API for the associated resources
+      # Some resources have many links with the same rel.
+      # We want to capture all these href in the same method, returning an array
+      
+      # First go through the links and group the rels together
+      rels = {}
       links.each do |link|
-        # Add the link to the associations set
-        associations << link['rel'].to_sym
-        # Create a method for it so the link can be followed
-        define_instance_method(link['rel']) do |*args|
-          Resource.process(client, *client.do_get(link['href'], *args))
+        if rels[link['rel'].to_sym]  # if we have already seen this rel attribute
+          rels[link['rel'].to_sym] << link['href']
+        else
+          rels[link['rel'].to_sym] = [link['href']]
         end
       end
+      
+      rels.each do |rel,hrefs|
+        # Add the link to the associations set
+        associations << rel
+        # Create methods so that the link can be followed
+        define_instance_method(rel) do |*args|
+          if hrefs.size == 1 # Only one link for the specific rel attribute
+            Resource.process(client, *client.do_get(hrefs.first, *args))
+          else
+            resources = []
+            hrefs.each do |href|
+              resources << Resource.process(client, *client.do_get(href, *args))
+            end
+            # return the array
+            resources
+          end
+        end
+      end
+      # links.each do |link|
+      #   # Add the link to the associations set
+      #   associations << link['rel'].to_sym
+      #   # Create a method for it so the link can be followed
+      #   
+      #   # if a method already exists, add to that existing method
+      #   # this should be triggered for the tags.resource method 
+      #   if self.respond_to?(link['rel'])
+      #     puts "hi"
+      #   else 
+      #     define_instance_method(link['rel']) do |*args|
+      #       Resource.process(client, *client.do_get(link['href'], *args))
+      #     end
+      #   end
+      # end
 
       hash.each do |k, v|
         # If a parent resource is requested with a view then it might return
