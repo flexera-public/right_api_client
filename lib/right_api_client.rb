@@ -64,15 +64,20 @@ class RightApiClient
         Resource.process(self, *self.do_get(base_resource['href'], *params))
       end if base_resource['rel'] != 'tags'
       
-      # there is no /api/tags/ so tags_by_resources, tags_by_tags, ... are added to the root resource.
-      # @@@@ ToDo: change this
+      # Design choice for tags:
+      #  Instead of having tags_by_tag, tags_by_resource, tags_multi_add, and tags_multi_delete as root resources
+      #  we allow tags to be a root resource, creating dummy object that has these methods with their corresponding actions
+      define_instance_method(base_resource['rel']) do |*params|
+        DummyResouce.new(self, base_resource['href'], {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'})
+      end if base_resource['rel'] == 'tags'
 
-      # This will be the other way to do it
+      # @@ This is the other way to do it. It bloats the root resources a little too much
       ['by_tag', 'by_resource', 'multi_add', 'multi_delete'].each {|meth| 
         define_instance_method(('tags_' + meth).to_sym) do |*args|
           self.do_post(base_resource['href'] + '/' + meth, *args)
         end
       } if base_resource['rel'] == 'tags'
+      # @@ end
     end
   end
   
@@ -141,7 +146,7 @@ class RightApiClient
           # be used later to add relevant methods to relevant resources.
           type = ''
           if result.content_type.index('rightscale')
-            type = result.content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
+            type = get_resource_type(result.content_type)
           end
 
           [type, response.body]
@@ -162,7 +167,8 @@ class RightApiClient
 
     [data, resource_type, path]
   end
-
+  
+  
   # Generic post
   def do_post(path, params={})
     begin
@@ -173,9 +179,8 @@ class RightApiClient
           href = response.headers[:location]
           Resource.process(self, *self.do_get(href))
         when 200..299
-          # @@ ToDo, refactor this code
           if response.code == 200 && response.headers[:content_type].index('rightscale')
-            type = response.headers[:content_type].scan(/\.rightscale\.(.*)\+json/)[0][0]
+            type = get_resource_type(response.headers[:content_type])
             Resource.process(self, JSON.parse(response), type, path)
           else          
             response.return!(request, result, &block)
@@ -234,13 +239,36 @@ class RightApiClient
     end
   end
 
+
+  # returns the resource_type
+  def get_resource_type(content_type)
+    content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
+  end
+
   # Given a path returns a RightApiClient::Resource instance.
   #
   def resource(path)
     Resource.process(self, *do_get(path))
   end
 
-
+  # This is need for resources like tags where the api/tags/ call is not supported.
+  # This will define a dummy object and its methods
+  class DummyResouce
+    include Helper
+    # path is the base_resource's href
+    # params is a hash where:
+    #  key = method name
+    #  value = action that is needed (like do_post, do_get...)
+    def initialize(client, path, params={})
+      params.each do |meth, action|
+        define_instance_method(meth) do |*args|
+          # send converts action (a string) into a method call
+          client.send action, (path.to_str + '/' + meth.to_s), *args
+        end
+      end
+    end
+  end
+  
   # Represents resources returned by API calls, this class dynamically adds
   # methods and properties to instances depending on what type of resource
   # they are.
@@ -391,6 +419,7 @@ class RightApiClient
           end
         end
       end
+      # @@ TO delete
       # links.each do |link|
       #   # Add the link to the associations set
       #   associations << link['rel'].to_sym
@@ -406,7 +435,8 @@ class RightApiClient
       #     end
       #   end
       # end
-
+      # @@ end
+      
       hash.each do |k, v|
         # If a parent resource is requested with a view then it might return
         # extra data that can be used to build child resources here, without
