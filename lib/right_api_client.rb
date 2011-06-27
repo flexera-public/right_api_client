@@ -10,9 +10,10 @@ class RightApiClient
   VERSION = '0.9.0'
 
   ROOT_RESOURCE = '/api/session'
+  ROOT_INSTANCE_RESOURCE = '/api/session/instance'
 
   # permitted parameters for initializing
-  AUTH_PARAMS = %w(email password account_id api_url api_version cookies)
+  AUTH_PARAMS = %w(email password account_id api_url api_version cookies instance_token)
 
   #
   # Methods shared by the RightApiClient, Resource and resource arrays.
@@ -46,8 +47,9 @@ class RightApiClient
         end
       end
       
+      # Note: hrefs will be an array, even if there is only one link with that rel
       rels.each do |rel,hrefs|
-        # Add the link to the associations set
+        # Add the link to the associations set if present. This is to accommodate Resource objects
         associations << rel if associations != nil
         
         # Create methods so that the link can be followed
@@ -59,12 +61,12 @@ class RightApiClient
             hrefs.each do |href|
               resources << Resource.process(client, *client.do_get(href, *args))
             end
-            # return the array
+            # return the array of resource objects
             resources
           end
         end if rels != :tags
         
-        # Design choice for tags:
+        # Design choice for tags since you cannot querry do_get on /api/tags:
         #  Instead of having tags_by_tag, tags_by_resource, tags_multi_add, and tags_multi_delete as root resources
         #  we allow tags to be a root resource, creating dummy object that has these methods with their corresponding actions
         define_instance_method(rel) do |*params|
@@ -94,15 +96,26 @@ class RightApiClient
     raise 'This API Client is only compatible with RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
     @client = RestClient::Resource.new(@api_url)
 
-    # There are two options for login: credentials or if the user already has the cookies they can just use those
+    # There are three options for login: credentials, instance token, or if the user already has the cookies they can just use those
     @cookies ||= login()
 
-    # Session is the root resource that has links to all the base resources,
-    # to the client since they can be accessed directly
-    define_instance_method(:session) do |*params|
-      Resource.process(self, *self.do_get(ROOT_RESOURCE, *params))
+    if @instance_token
+      define_instance_method(:get_instance) do |*params|
+        Resource.process(self, *self.do_get(ROOT_INSTANCE_RESOURCE, *params))
+      end
+      # Like tags, you cannot call api/clouds when using an instance_token
+      define_instance_method(:clouds) do |*params|
+        path = add_id_to_path("/api/clouds", *params)
+        DummyResouce.new(self, path, {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get'})
+      end
+    else  
+      # Session is the root resource that has links to all the base resources,
+      # to the client since they can be accessed directly
+      define_instance_method(:session) do |*params|
+        Resource.process(self, *self.do_get(ROOT_RESOURCE, *params))
+      end
+      get_associated_resources(self, session.links, nil)
     end
-    get_associated_resources(self, session.links, nil)
     # @@ 
     # session.links.each do |base_resource|
     #       define_instance_method(base_resource['rel']) do |*params|
@@ -127,6 +140,11 @@ class RightApiClient
     # @@
   end
   
+  def add_id_to_path(path, params = {})
+    path += "/#{params.delete(:id)}" if params.has_key?(:id)
+    path
+  end
+  
   def to_s
     "#<RightApiClient>"
   end
@@ -138,14 +156,23 @@ class RightApiClient
 
   # Users shouldn't need to call the following methods directly
 
+  # you can login with username and password or with an instance_token
   def login
-    params = {
-      'email'        => @email,
-      'password'     => @password,
-      'account_href' => "/api/accounts/#{@account_id}"
-    }
+    if @instance_token
+      params = {
+        'instance_token' => @instance_token
+      }
+      path = ROOT_INSTANCE_RESOURCE
+    else
+      params = {
+        'email'        => @email,
+        'password'     => @password,
+      }
+      path = ROOT_RESOURCE
+    end
+    params['account_href'] = "/api/accounts/#{@account_id}"
 
-    response = @client[ROOT_RESOURCE].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
+    response = @client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
       case response.code
       when 302
         response
@@ -163,7 +190,7 @@ class RightApiClient
   # Generic get
   def do_get(path, params={})
     # Resource id is a special param as it needs to be added to the path
-    path += "/#{params.delete(:id)}" if params.has_key?(:id)
+    path = add_id_to_path(path, params)
 
     # Normally you would just pass a hash of query params to RestClient,
     # but unfortunately it only takes them as a hash, and for filtering
@@ -308,8 +335,13 @@ class RightApiClient
     def initialize(client, path, params={})
       params.each do |meth, action|
         define_instance_method(meth) do |*args|
-          # send converts action (a string) into a method call
-          client.send action, (path.to_str + '/' + meth.to_s), *args
+          # do_get does not return a resource object (unlike do_post)
+          if action == 'do_get'
+            Resource.process(client, *client.do_get(path.to_str + '/' + meth.to_s, *args))
+          else
+            # send converts action (a string) into a method call
+            client.send action, (path.to_str + '/' + meth.to_s), *args
+          end
         end
       end
     end
