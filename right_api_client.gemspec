@@ -1,13 +1,13 @@
 # encoding: utf-8
 
-require File.join(File.dirname(__FILE__), 'lib/right_api_client')
+#require File.join(File.dirname(__FILE__), 'lib/right_api_client')
   # bundler wants absolute path
 
 
 Gem::Specification.new do |s|
 
   s.name = 'right_api_client'
-  s.version = RightApiClient::VERSION
+  s.version = "0.9.0"
   s.platform = Gem::Platform::RUBY
   s.authors = [ 'Ali Khajeh-Hosseini' ]
   s.email = [ 'alikhajeh1@gmail.com' ]
