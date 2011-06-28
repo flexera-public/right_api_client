@@ -71,7 +71,7 @@ class RightApiClient
         #  we allow tags to be a root resource, creating dummy object that has these methods with their corresponding actions
         define_instance_method(rel) do |*params|
           # hrefs will only have one element namely api/tags
-          DummyResouce.new(client, hrefs.first, {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'})
+          DummyResource.new(client, hrefs.first, {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'})
         end if rel == :tags
       end
     end
@@ -106,7 +106,7 @@ class RightApiClient
       # Like tags, you cannot call api/clouds when using an instance_token
       define_instance_method(:clouds) do |*params|
         path = add_id_to_path("/api/clouds", *params)
-        DummyResouce.new(self, path, {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get'})
+        DummyResource.new(self, path, {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get'})
       end
     else  
       # Session is the root resource that has links to all the base resources,
@@ -326,7 +326,7 @@ class RightApiClient
 
   # This is need for resources like tags where the api/tags/ call is not supported.
   # This will define a dummy object and its methods
-  class DummyResouce
+  class DummyResource
     include Helper
     # path is the base_resource's href
     # params is a hash where:

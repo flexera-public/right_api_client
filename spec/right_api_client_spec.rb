@@ -28,6 +28,10 @@ describe RightApiClient do
     @client.clouds.first.attributes.should_not be_empty
   end
 
+  it "should have associations for a resource" do
+    @client.clouds.first.associations.should_not be_empty
+  end
+  
   it "should have actions for a resource" do
     actions = @client.servers.first.actions.to_a
     (actions.include?(:launch) || actions.include?(:terminate)).should == true
@@ -92,4 +96,20 @@ describe RightApiClient do
       @client.cookies.keys.sort.should == %w[ _session_id domain rs_gbl ]
     end
   end
+  
+  # tags -- returning a dummyResource, calling one of its methods will return a resource
+  describe "#tags" do
+    it "should return a dummy resource object" do
+      @client.tags.should be_kind_of(RightApiClient::DummyResource)
+    end
+    it "should have methods" do
+      @client.tags.api_methods.should_not be_empty
+      @client.tags.api_methods.should include(:by_tag)
+      @client.tags.api_methods.should include(:by_resource)
+      @client.tags.api_methods.should include(:multi_add)
+      @client.tags.api_methods.should include(:multi_delete)
+    end
+  end
+    
+  
 end

@@ -310,3 +310,26 @@ puts 'Available methods for a cloud:', resource.api_methods
 ## Show
 #resource = client.clouds(:id => 716).instances(:id => '6B2I3GAKGG57V').live_tasks(:id => 'ae-55973312')
 #puts 'Available methods:', resource.api_methods
+
+
+#puts "\n\n --Tags--"
+#puts 'Available methods: ', client.tags.api_methods
+#client.tags.by_resource(:resource_hrefs => ['/api/servers/967063'])
+#puts "server methods ", client.tags.by_resource(:resource_hrefs => ['/api/servers/967063']).first.resource.api_methods
+#puts "the first server's (that has tag == ns_tag) methods ", client.tags.by_tag(:resource_type => 'servers', :tags => ['ns_tag']).first.resource.first.api_methods
+#client.tags.multi_add(:resource_hrefs => ['/api/servers/967063'], :tags => ['ns_other_tag'])
+#client.tags.multi_delete(:resource_hrefs => ['/api/servers/967063'], :tags => ['ns_other_tag'])
+
+#puts "\n\n --Instance Facing Calls --"
+#instance_client = RightApiClient.new(YAML.load_file(File.dirname(__FILE__) + '/examples/instance_login.yml'))
+#puts "Avaliable methods ", instance_client.api_methods
+#puts instance_client.get_instance.links
+#instance_client.clouds(:id => 716).api_methods
+#instance_client.clouds(:id => 716).volumes.first.api_methods
+#instance_client.clouds(:id => 716).volume_snapshots.first.api_methods
+#instance_client.clouds(:id => 716).volume_types.first.api_methods
+#instance_client.clouds(:id => 716).volume_attachments.first.api_methods
+
+
+
+
