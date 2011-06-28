@@ -1,3 +1,8 @@
+# To Run:
+# Make sure you have a valid examples/login.yml (see login.yml.example for details)
+# > cd spec
+# > bundle exec spec right_api_client_spec.rb 
+
 require File.join(File.dirname(__FILE__), 'spec_helper')
 
 # These tests cover the basic operations of the client, and can certainly
@@ -97,7 +102,6 @@ describe RightApiClient do
     end
   end
   
-  # tags -- returning a dummyResource, calling one of its methods will return a resource
   describe "#tags" do
     it "should return a dummy resource object" do
       @client.tags.should be_kind_of(RightApiClient::DummyResource)

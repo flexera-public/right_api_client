@@ -1,3 +1,26 @@
+# This is an example login.yml which will be needed for login_to_client_irb.rb
+# You can either login with email and password or with an instance token
+
+# To login with email and password:
+# copy and fill out the correct information into examples/login.yml
+
 :email: my@email.com
 :password: my_password
 :account_id: my_account_id
+# Optional parameters
+:api_url:       (this defaults to https://my.rightscale.com)
+:api_version:   (this defaults to 1.5)
+
+
+
+# To login with instance token
+# copy and fill out the correct information into examples/instance_login.yml
+
+:instance_token:  
+:account_id: my_account_id
+
+# To find the instance_token
+#  Launch a server, navigate to the info page and under User Data you will see RS_API_TOKEN = your_account_id:the_instance_token)
+# Optional parameters
+:api_url:       (this defaults to https://my.rightscale.com)
+:api_version:   (this defaults to 1.5)
