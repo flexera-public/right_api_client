@@ -116,28 +116,6 @@ class RightApiClient
       end
       get_associated_resources(self, session.links, nil)
     end
-    # @@ 
-    # session.links.each do |base_resource|
-    #       define_instance_method(base_resource['rel']) do |*params|
-    #         Resource.process(self, *self.do_get(base_resource['href'], *params))
-    #       end if base_resource['rel'] != 'tags'
-    #       
-    #       # Design choice for tags:
-    #       #  Instead of having tags_by_tag, tags_by_resource, tags_multi_add, and tags_multi_delete as root resources
-    #       #  we allow tags to be a root resource, creating dummy object that has these methods with their corresponding actions
-    #       define_instance_method(base_resource['rel']) do |*params|
-    #         DummyResouce.new(self, base_resource['href'], {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'})
-    #       end if base_resource['rel'] == 'tags'
-    # 
-    #       # @@ This is the other way to do it. It bloats the root resources a little too much
-    #       ['by_tag', 'by_resource', 'multi_add', 'multi_delete'].each {|meth| 
-    #         define_instance_method(('tags_' + meth).to_sym) do |*args|
-    #           self.do_post(base_resource['href'] + '/' + meth, *args)
-    #         end
-    #       } if base_resource['rel'] == 'tags'
-    #       # @@ end
-    #     end
-    # @@
   end
   
   def add_id_to_path(path, params = {})
@@ -466,57 +444,6 @@ class RightApiClient
         end
       end
       get_associated_resources(client, links, associations)
-      # Define methods that query the API for the associated resources
-      # Some resources have many links with the same rel.
-      # We want to capture all these href in the same method, returning an array
-      
-      # First go through the links and group the rels together
-      # @@
-      # rels = {}
-      #       links.each do |link|
-      #         if rels[link['rel'].to_sym]  # if we have already seen this rel attribute
-      #           rels[link['rel'].to_sym] << link['href']
-      #         else
-      #           rels[link['rel'].to_sym] = [link['href']]
-      #         end
-      #       end
-      #       
-      #       rels.each do |rel,hrefs|
-      #         # Add the link to the associations set
-      #         associations << rel
-      #         # Create methods so that the link can be followed
-      #         define_instance_method(rel) do |*args|
-      #           if hrefs.size == 1 # Only one link for the specific rel attribute
-      #             Resource.process(client, *client.do_get(hrefs.first, *args))
-      #           else
-      #             resources = []
-      #             hrefs.each do |href|
-      #               resources << Resource.process(client, *client.do_get(href, *args))
-      #             end
-      #             # return the array
-      #             resources
-      #           end
-      #         end
-      #       end
-      # @@
-      
-      # @@ TO delete
-      # links.each do |link|
-      #   # Add the link to the associations set
-      #   associations << link['rel'].to_sym
-      #   # Create a method for it so the link can be followed
-      #   
-      #   # if a method already exists, add to that existing method
-      #   # this should be triggered for the tags.resource method 
-      #   if self.respond_to?(link['rel'])
-      #     puts "hi"
-      #   else 
-      #     define_instance_method(link['rel']) do |*args|
-      #       Resource.process(client, *client.do_get(link['href'], *args))
-      #     end
-      #   end
-      # end
-      # @@ end
       
       hash.each do |k, v|
         # If a parent resource is requested with a view then it might return
