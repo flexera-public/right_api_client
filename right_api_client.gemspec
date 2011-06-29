@@ -25,6 +25,7 @@ RightScale API HTTP client. Spiders the API to discover its resources on the fly
     '*.gemspec', '*.txt', '*.rdoc', '*.md'
   ]
 
+  s.add_runtime_dependency 'json'
   s.add_runtime_dependency 'rest-client', '1.6.3'
 
   s.add_development_dependency 'rake'
