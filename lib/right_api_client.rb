@@ -14,7 +14,11 @@ class RightApiClient
 
   # permitted parameters for initializing
   AUTH_PARAMS = %w(email password account_id api_url api_version cookies instance_token)
-
+  
+  INSTANCE_ACTIONS = {
+    :clouds => {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get'},
+  }
+  
   #
   # Methods shared by the RightApiClient, Resource and resource arrays.
   #
@@ -104,9 +108,11 @@ class RightApiClient
         Resource.process(self, *self.do_get(ROOT_INSTANCE_RESOURCE, *params))
       end
       # Like tags, you cannot call api/clouds when using an instance_token
-      define_instance_method(:clouds) do |*params|
-        path = add_id_to_path("/api/clouds", *params)
-        DummyResource.new(self, path, {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get'})
+      INSTANCE_ACTIONS.each do |dummy_meth, meths|
+        define_instance_method(dummy_meth) do |*params|
+          path = add_id_to_path("/api/clouds", *params)
+          DummyResource.new(self, path, meths)
+        end
       end
     else  
       # Session is the root resource that has links to all the base resources,
@@ -205,8 +211,9 @@ class RightApiClient
           raise "Unexpected response #{response.code.to_s}, #{response.body}"
         end
       end
+      #Session cookie is expired or invalid
     rescue RuntimeError => e
-      if e.message.index('403')
+      if re_login?(e)
         @cookies = login()
         retry
       else
@@ -219,7 +226,6 @@ class RightApiClient
     [data, resource_type, path]
   end
   
-  
   # Generic post
   def do_post(path, params={})
     begin
@@ -230,6 +236,8 @@ class RightApiClient
           href = response.headers[:location]
           Resource.process(self, *self.do_get(href))
         when 200..299
+          # this is needed for the tags Resource -- which returns a 200 and has a content type
+          # therefore, a resource object needs to be returned
           if response.code == 200 && response.headers[:content_type].index('rightscale')
             type = get_resource_type(response.headers[:content_type])
             Resource.process(self, JSON.parse(response), type, path)
@@ -241,7 +249,7 @@ class RightApiClient
         end
       end
     rescue RuntimeError => e
-      if e.message.index('403')
+      if re_login?(e)
         @cookies = login()
         retry
       else
@@ -261,7 +269,7 @@ class RightApiClient
         end
       end
     rescue RuntimeError => e
-      if e.message.index('403')
+      if re_login?(e)
         @cookies = login()
         retry
       else
@@ -281,7 +289,7 @@ class RightApiClient
         end
       end
     rescue RuntimeError => e
-      if e.message.index('403')
+      if re_login?(e)
         @cookies = login()
         retry
       else
@@ -290,7 +298,10 @@ class RightApiClient
     end
   end
 
-
+  def re_login?(e)
+    e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid) 
+  end
+  
   # returns the resource_type
   def get_resource_type(content_type)
     content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
