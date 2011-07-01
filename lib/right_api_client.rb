@@ -10,10 +10,15 @@ class RightApiClient
   VERSION = '0.9.0'
 
   ROOT_RESOURCE = '/api/session'
+  ROOT_INSTANCE_RESOURCE = '/api/session/instance'
 
   # permitted parameters for initializing
-  AUTH_PARAMS = %w(email password account_id api_url api_version cookies)
-
+  AUTH_PARAMS = %w(email password account_id api_url api_version cookies instance_token)
+  
+  INSTANCE_ACTIONS = {
+    :clouds => {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get'},
+  }
+  
   #
   # Methods shared by the RightApiClient, Resource and resource arrays.
   #
@@ -31,6 +36,50 @@ class RightApiClient
     def api_methods
       self.methods(false)
     end
+    
+    # Define methods that query the API for the associated resources
+    # Some resources have many links with the same rel.
+    # We want to capture all these href in the same method, returning an array
+    def get_associated_resources(client, links, associations)
+      # First go through the links and group the rels together
+      rels = {}
+      links.each do |link|
+        if rels[link['rel'].to_sym]  # if we have already seen this rel attribute
+          rels[link['rel'].to_sym] << link['href']
+        else
+          rels[link['rel'].to_sym] = [link['href']]
+        end
+      end
+      
+      # Note: hrefs will be an array, even if there is only one link with that rel
+      rels.each do |rel,hrefs|
+        # Add the link to the associations set if present. This is to accommodate Resource objects
+        associations << rel if associations != nil
+        
+        # Create methods so that the link can be followed
+        define_instance_method(rel) do |*args|
+          if hrefs.size == 1 # Only one link for the specific rel attribute
+            Resource.process(client, *client.do_get(hrefs.first, *args))
+          else
+            resources = []
+            hrefs.each do |href|
+              resources << Resource.process(client, *client.do_get(href, *args))
+            end
+            # return the array of resource objects
+            resources
+          end
+        end if rels != :tags
+        
+        # Design choice for tags since you cannot querry do_get on /api/tags:
+        #  Instead of having tags_by_tag, tags_by_resource, tags_multi_add, and tags_multi_delete as root resources
+        #  we allow tags to be a root resource, creating dummy object that has these methods with their corresponding actions
+        define_instance_method(rel) do |*params|
+          # hrefs will only have one element namely api/tags
+          DummyResource.new(client, hrefs.first, {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'})
+        end if rel == :tags
+      end
+    end
+      
   end
 
   include Helper
@@ -51,19 +100,33 @@ class RightApiClient
     raise 'This API Client is only compatible with RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
     @client = RestClient::Resource.new(@api_url)
 
-    # There are two options for login: credentials or if the user already has the cookies they can just use those
+    # There are three options for login: credentials, instance token, or if the user already has the cookies they can just use those
     @cookies ||= login()
 
-    # Session is the root resource that has links to all the base resources,
-    # to the client since they can be accessed directly
-    define_instance_method(:session) do |*params|
-      Resource.process(self, *self.do_get(ROOT_RESOURCE, *params))
-    end
-    session.links.each do |base_resource|
-      define_instance_method(base_resource['rel']) do |*params|
-        Resource.process(self, *self.do_get(base_resource['href'], *params))
+    if @instance_token
+      define_instance_method(:get_instance) do |*params|
+        Resource.process(self, *self.do_get(ROOT_INSTANCE_RESOURCE, *params))
       end
+      # Like tags, you cannot call api/clouds when using an instance_token
+      INSTANCE_ACTIONS.each do |dummy_meth, meths|
+        define_instance_method(dummy_meth) do |*params|
+          path = add_id_to_path("/api/clouds", *params)
+          DummyResource.new(self, path, meths)
+        end
+      end
+    else  
+      # Session is the root resource that has links to all the base resources,
+      # to the client since they can be accessed directly
+      define_instance_method(:session) do |*params|
+        Resource.process(self, *self.do_get(ROOT_RESOURCE, *params))
+      end
+      get_associated_resources(self, session.links, nil)
     end
+  end
+  
+  def add_id_to_path(path, params = {})
+    path += "/#{params.delete(:id)}" if params.has_key?(:id)
+    path
   end
   
   def to_s
@@ -77,14 +140,23 @@ class RightApiClient
 
   # Users shouldn't need to call the following methods directly
 
+  # you can login with username and password or with an instance_token
   def login
-    params = {
-      'email'        => @email,
-      'password'     => @password,
-      'account_href' => "/api/accounts/#{@account_id}"
-    }
+    if @instance_token
+      params = {
+        'instance_token' => @instance_token
+      }
+      path = ROOT_INSTANCE_RESOURCE
+    else
+      params = {
+        'email'        => @email,
+        'password'     => @password,
+      }
+      path = ROOT_RESOURCE
+    end
+    params['account_href'] = "/api/accounts/#{@account_id}"
 
-    response = @client[ROOT_RESOURCE].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
+    response = @client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
       case response.code
       when 302
         response
@@ -102,7 +174,7 @@ class RightApiClient
   # Generic get
   def do_get(path, params={})
     # Resource id is a special param as it needs to be added to the path
-    path += "/#{params.delete(:id)}" if params.has_key?(:id)
+    path = add_id_to_path(path, params)
 
     # Normally you would just pass a hash of query params to RestClient,
     # but unfortunately it only takes them as a hash, and for filtering
@@ -131,7 +203,7 @@ class RightApiClient
           # be used later to add relevant methods to relevant resources.
           type = ''
           if result.content_type.index('rightscale')
-            type = result.content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
+            type = get_resource_type(result.content_type)
           end
 
           [type, response.body]
@@ -139,8 +211,9 @@ class RightApiClient
           raise "Unexpected response #{response.code.to_s}, #{response.body}"
         end
       end
+      #Session cookie is expired or invalid
     rescue RuntimeError => e
-      if e.message.index('403')
+      if re_login?(e)
         @cookies = login()
         retry
       else
@@ -152,7 +225,7 @@ class RightApiClient
 
     [data, resource_type, path]
   end
-
+  
   # Generic post
   def do_post(path, params={})
     begin
@@ -163,13 +236,20 @@ class RightApiClient
           href = response.headers[:location]
           Resource.process(self, *self.do_get(href))
         when 200..299
-          response.return!(request, result, &block)
+          # this is needed for the tags Resource -- which returns a 200 and has a content type
+          # therefore, a resource object needs to be returned
+          if response.code == 200 && response.headers[:content_type].index('rightscale')
+            type = get_resource_type(response.headers[:content_type])
+            Resource.process(self, JSON.parse(response), type, path)
+          else          
+            response.return!(request, result, &block)
+          end
         else
           raise "Unexpected response #{response.code.to_s}, #{response.body}"
         end
       end
     rescue RuntimeError => e
-      if e.message.index('403')
+      if re_login?(e)
         @cookies = login()
         retry
       else
@@ -189,7 +269,7 @@ class RightApiClient
         end
       end
     rescue RuntimeError => e
-      if e.message.index('403')
+      if re_login?(e)
         @cookies = login()
         retry
       else
@@ -209,7 +289,7 @@ class RightApiClient
         end
       end
     rescue RuntimeError => e
-      if e.message.index('403')
+      if re_login?(e)
         @cookies = login()
         retry
       else
@@ -218,12 +298,47 @@ class RightApiClient
     end
   end
 
+  def re_login?(e)
+    e.message.index('403')
+    # This will be added when the API distinguishes a session expired with this message
+    # Note; delete the spec that checks if the cookie is corrupted when you add this line 
+    #&& e.message =~ %r(.*Session cookie is expired or invalid) 
+  end
+  
+  # returns the resource_type
+  def get_resource_type(content_type)
+    content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
+  end
+
   # Given a path returns a RightApiClient::Resource instance.
   #
   def resource(path,params={})
     Resource.process(self, *do_get(path,params))
   end
 
+  # This is need for resources like tags where the api/tags/ call is not supported.
+  # This will define a dummy object and its methods
+  class DummyResource
+    include Helper
+    # path is the base_resource's href
+    # params is a hash where:
+    #  key = method name
+    #  value = action that is needed (like do_post, do_get...)
+    def initialize(client, path, params={})
+      params.each do |meth, action|
+        define_instance_method(meth) do |*args|
+          # do_get does not return a resource object (unlike do_post)
+          if action == 'do_get'
+            Resource.process(client, *client.do_get(path.to_str + '/' + meth.to_s, *args))
+          else
+            # send converts action (a string) into a method call
+            client.send action, (path.to_str + '/' + meth.to_s), *args
+          end
+        end
+      end
+    end
+  end
+  
   # Represents resources returned by API calls, this class dynamically adds
   # methods and properties to instances depending on what type of resource
   # they are.
@@ -342,17 +457,8 @@ class RightApiClient
           client.do_post(href, *args)
         end
       end
-
-      # Define methods that query the API for the associated resources
-      links.each do |link|
-        # Add the link to the associations set
-        associations << link['rel'].to_sym
-        # Create a method for it so the link can be followed
-        define_instance_method(link['rel']) do |*args|
-          Resource.process(client, *client.do_get(link['href'], *args))
-        end
-      end
-
+      get_associated_resources(client, links, associations)
+      
       hash.each do |k, v|
         # If a parent resource is requested with a view then it might return
         # extra data that can be used to build child resources here, without
