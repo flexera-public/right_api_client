@@ -7,8 +7,6 @@ require 'cgi'
 # by resources
 class RightApiClient
 
-  VERSION = '0.9.0'
-
   ROOT_RESOURCE = '/api/session'
   ROOT_INSTANCE_RESOURCE = '/api/session/instance'
 
