@@ -66,7 +66,7 @@ class RightApiClient
             # return the array of resource objects
             resources
           end
-        end if rels != :tags
+        end if rels != :tags || rels != :backups
         
         # Design choice for tags since you cannot querry do_get on /api/tags:
         #  Instead of having tags_by_tag, tags_by_resource, tags_multi_add, and tags_multi_delete as root resources
@@ -75,6 +75,17 @@ class RightApiClient
           # hrefs will only have one element namely api/tags
           DummyResource.new(client, hrefs.first, {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'})
         end if rel == :tags
+        
+        # Specific to backups. A hack :<(
+        # Index, show, update, destroy and restore all need to take in parameters so args will not be empty.
+        define_instance_method(rel) do |*args|
+          if args != []
+            Resource.process(client, *client.do_get(hrefs.first, *args))
+          else
+            DummyResource.new(client, hrefs.first, {:create => 'do_post', :cleanup => 'do_post'})
+          end
+        end if rel == :backups
+        
       end
     end
       
@@ -328,6 +339,8 @@ class RightApiClient
           # do_get does not return a resource object (unlike do_post)
           if action == 'do_get'
             Resource.process(client, *client.do_get(path.to_str + '/' + meth.to_s, *args))
+          elsif meth == :create
+            client.send action, path, *args
           else
             # send converts action (a string) into a method call
             client.send action, (path.to_str + '/' + meth.to_s), *args
@@ -347,8 +360,8 @@ class RightApiClient
     # performed on resources so we need to define them
     RESOURCE_ACTIONS = {
       :create => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment'],
-      :destroy => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment'],
-      :update => ['deployment', 'instance', 'server_array', 'server']
+      :destroy => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment', 'backup'],
+      :update => ['deployment', 'instance', 'server_array', 'server', 'backup']
     }
 
     attr_reader :client, :attributes, :associations, :actions, :raw, :resource_type

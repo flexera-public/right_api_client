@@ -332,4 +332,51 @@ puts 'Available methods for a cloud:', resource.api_methods
 
 
 
+#puts "\n\n --Backups--"
+# client.api_methods    # => Should have backups in there
+# Need a running instance and at least one attached volume
+
+# puts "\n\n --Create A backup -- "
+# params = {:backup => {:lineage => "ns_lineage", :name => "NS Backup3", :volume_attachment_hrefs => ["/api/clouds/907/volume_attachments/BO7026O3JDKMB", "/api/clouds/907/volume_attachments/31AD6V5JJLN95"]}}
+# b = client.backups.create(params)
+
+# Index
+# client.backups(:lineage => "ns_lineage") # => returns an array of #<RightApiClient::Resource 
+
+# client.backups.api_methods # => This should have create, cleanup
+
+
+
+# Show
+# client.backups(:lineage => "ns_lineage").first.href   # => to get the id
+# client.backups(:id => 'db7e2120-ad75-11e0-92f2-12313b000806')
+# client.backups(:id => 'db7e2120-ad75-11e0-92f2-12313b000806').api_methods  # => That should have name, lineage, restore, volume_snapshots, created_at, completed, from_master, volume_snapshot_count, commited, links, href, description,   update, destroy, restore     as methods 
+
+# Feel free to follow some of these methods
+# Example:
+#  client.backups(:id => 'db7e2120-ad75-11e0-92f2-12313b000806').volume_snapshots
+
+# Update
+# params = {:backup => {:committed => "false"}}
+# client.backups(:id => 'db7e2120-ad75-11e0-92f2-12313b000806').update(params)
+
+# cleanup
+# params = {:keep_last => "1", :lineage => "ns_lineage"}
+# client.backups.cleanup(params)
+
+# Destroy
+# client.backups(:id => 'db7e2120-ad75-11e0-92f2-12313b000806').destroy
+
+# Restore
+# params = {:instance_href => "/api/clouds/907/instances/A9IIPCV6U56DU"}
+# taks = client.backups(:id => 'd4f4d20e-acfd-11e0-9ea8-12313b000806').restore(params)
+
+
+
+
+
+
+
+
+
 
