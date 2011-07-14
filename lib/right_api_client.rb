@@ -95,7 +95,7 @@ class RightApiClient
         end
       end
     end 
-    #private :add_in_backups
+
     def add_id_to_path(path, params = {})
       path += "/#{params.delete(:id)}" if params.has_key?(:id)
       path
