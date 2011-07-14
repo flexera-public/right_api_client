@@ -319,10 +319,7 @@ class RightApiClient
   end
 
   def re_login?(e)
-    e.message.index('403')
-    # This will be added when the API distinguishes a session expired with this message
-    # Note; delete the spec that checks if the cookie is corrupted when you add this line 
-    #&& e.message =~ %r(.*Session cookie is expired or invalid) 
+    e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid) 
   end
   
   # returns the resource_type

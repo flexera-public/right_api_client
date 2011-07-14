@@ -70,16 +70,6 @@ describe RightApiClient do
       client1.cookies.should == @client.cookies
       client2.cookies.should_not == @client.cookies
     end
-
-    it "logs in anyway if the cookie is corrupt" do
-
-      cookies = @client.cookies.dup
-      cookies['rs_gbl'] = 'nada'
-
-      client = RightApiClient.new(example_args.merge('cookies' => cookies))
-
-      client.cookies.should_not == cookies
-    end
   end
 
   describe "#resource" do
