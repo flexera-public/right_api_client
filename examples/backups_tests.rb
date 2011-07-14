@@ -21,7 +21,7 @@ resource_uid_2 = "i-57fe1f10"
 # ||||||||||||||||||||||||||||||||||||||||||||
 
 # Get the necessary information. Must have @client pointing to where you want it
-@test_client = @yellow_client
+@test_client = @client
 @instance1_id = @test_client.clouds(:id => 907).instances(:filters => ["resource_uid==#{resource_uid_1}"]).first.href.split("/")[-1]
 @instance2_id = @test_client.clouds(:id => 907).instances(:filters => ["resource_uid==#{resource_uid_2}"]).first.href.split("/")[-1]
 
@@ -30,7 +30,7 @@ resource_uid_2 = "i-57fe1f10"
 
 @volume_attachment_href_2 = @test_client.clouds(:id => 907).instances(:id => @instance1_id).volume_attachments[1].href
 
-# |||||||||||||| CHANGE HERE ||||||||||||||
+# |||||||||||||| CHANGE HERE if you want to test the instance facing calls||||||||||||||
 @test_client = @instance_client
 # ||||||||||||||||||||||||||||||||||||||||||||
 

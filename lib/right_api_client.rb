@@ -13,8 +13,9 @@ class RightApiClient
   # permitted parameters for initializing
   AUTH_PARAMS = %w(email password account_id api_url api_version cookies instance_token)
   
+  # NOTE: instances will be handled in a special case 
   INSTANCE_ACTIONS = {
-    :clouds => {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get', :instances => 'new_dummy'}
+    :clouds => {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get', :instances => 'get_new_dummy_class'}
   }
   
   #
