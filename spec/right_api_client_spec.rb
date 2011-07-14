@@ -115,5 +115,14 @@ describe RightApiClient do
     end
   end
     
-  
+  describe "#backups" do
+    it "should return a dummy resource object" do
+      @client.backups.should be_kind_of(RightApiClient::DummyResource)
+    end
+    it "should have methods" do
+      @client.backups.api_methods.should_not be_empty
+      @client.backups.api_methods.should include(:create)
+      @client.backups.api_methods.should include(:cleanup)
+    end
+  end
 end

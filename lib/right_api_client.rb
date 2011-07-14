@@ -14,7 +14,7 @@ class RightApiClient
   AUTH_PARAMS = %w(email password account_id api_url api_version cookies instance_token)
   
   INSTANCE_ACTIONS = {
-    :clouds => {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get'},
+    :clouds => {:volumes => 'do_get', :volume_types => 'do_get', :volume_attachments => 'do_get', :volume_snapshots => 'do_get', :instances => 'new_dummy'}
   }
   
   #
@@ -76,20 +76,32 @@ class RightApiClient
           DummyResource.new(client, hrefs.first, {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'})
         end if rel == :tags
         
-        # Specific to backups. A hack :<(
-        # Index, show, update, destroy and restore all need to take in parameters so args will not be empty.
-        define_instance_method(rel) do |*args|
-          if args != []
-            Resource.process(client, *client.do_get(hrefs.first, *args))
-          else
-            DummyResource.new(client, hrefs.first, {:create => 'do_post', :cleanup => 'do_post'})
-          end
-        end if rel == :backups
-        
+        # The backups hack
+        add_in_backups(client, hrefs.first) if rel == :backups
       end
     end
-      
+    
+    # Specific to backups. A hack :<(
+    # This extra hack is needed because:
+    #   We want to call client.backups.create(params)  but client.backups does a GET and therefore needs the lineage as a parameter
+    # Index, show, update, destroy and restore all need to take in parameters when you call backup so args will not be empty.
+    
+    def add_in_backups(client, path)
+      define_instance_method(:backups) do |*args|
+        if args != []
+          Resource.process(client, *client.do_get(path, *args))
+        else
+          DummyResource.new(client, path, {:create => 'do_post', :cleanup => 'do_post'})
+        end
+      end
+    end 
+    #private :add_in_backups
+    def add_id_to_path(path, params = {})
+      path += "/#{params.delete(:id)}" if params.has_key?(:id)
+      path
+    end
   end
+  
 
   include Helper
 
@@ -123,6 +135,8 @@ class RightApiClient
           DummyResource.new(self, path, meths)
         end
       end
+      # add in the hack for the backups
+      add_in_backups(self, "/api/backups")
     else  
       # Session is the root resource that has links to all the base resources,
       # to the client since they can be accessed directly
@@ -133,10 +147,7 @@ class RightApiClient
     end
   end
   
-  def add_id_to_path(path, params = {})
-    path += "/#{params.delete(:id)}" if params.has_key?(:id)
-    path
-  end
+  
   
   def to_s
     "#<RightApiClient>"
@@ -337,7 +348,12 @@ class RightApiClient
       params.each do |meth, action|
         define_instance_method(meth) do |*args|
           # do_get does not return a resource object (unlike do_post)
-          if action == 'do_get'
+          if meth == :instances
+            path = path.to_str + add_id_to_path("/instances", *args)
+            DummyResource.new(client, path, {:live_tasks => 'do_get'})
+          elsif meth == :live_tasks
+            Resource.process(client, *client.do_get(path.to_str + '/live/tasks', *args))
+          elsif action == 'do_get'
             Resource.process(client, *client.do_get(path.to_str + '/' + meth.to_s, *args))
           elsif meth == :create
             client.send action, path, *args
