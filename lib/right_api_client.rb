@@ -58,11 +58,23 @@ class RightApiClient
         # Create methods so that the link can be followed
         define_instance_method(rel) do |*args|
           if hrefs.size == 1 # Only one link for the specific rel attribute
-            Resource.process(client, *client.do_get(hrefs.first, *args))
+            # Do a new resource with the different methods-- create, index (general_resources). Need to know rel
+            # (specific_resources) -- show, destory, update
+            
+            if has_id(*args)
+              # They want to do a show, or an update, or a delete
+              Resource.new(client, *client.do_get(hrefs.first, *args))
+            else
+              p '***************** No id, ', *args
+              path = add_filters_to_path(hrefs.first, *args)
+              RootResource.new(client, path, rel)
+              #Resource.new(client, *client.do_get(hrefs.first, *args))
+            end
           else
+            # @@ To Do
             resources = []
             hrefs.each do |href|
-              resources << Resource.process(client, *client.do_get(href, *args))
+              resources << Resource.new(client, *client.do_get(href, *args))
             end
             # return the array of resource objects
             resources
@@ -90,7 +102,7 @@ class RightApiClient
     def add_in_backups(client, path)
       define_instance_method(:backups) do |*args|
         if args != []
-          Resource.process(client, *client.do_get(path, *args))
+          Resource.new(client, *client.do_get(path, *args))
         else
           DummyResource.new(client, path, {:create => 'do_post', :cleanup => 'do_post'})
         end
@@ -98,7 +110,29 @@ class RightApiClient
     end 
 
     def add_id_to_path(path, params = {})
-      path += "/#{params.delete(:id)}" if params.has_key?(:id)
+      path += "/#{params.delete(:id)}" if has_id(params)
+      path
+    end
+    
+    def has_id(params = {})
+      params.has_key?(:id)
+    end
+    
+    def add_filters_to_path(path, params ={})
+      filters = params.delete(:filters)
+      params_string = params.map{|k,v| "#{k.to_s}=#{CGI::escape(v.to_s)}" }.join('&')
+      p "The path is #{path}"
+      p "&&&&&&&&&&&&&&&&& #{params_string}"
+      if filters && filters.any?
+        path += "?filter[]=" + filters.map{|f| CGI::escape(f) }.join('&filter[]=')
+        path += "&#{params_string}"
+      else
+        path += "?#{params_string}"
+      end
+
+      # If present, remove ? and & at end of path
+      path.chomp!('&')
+      path.chomp!('?')
       path
     end
   end
@@ -127,7 +161,7 @@ class RightApiClient
 
     if @instance_token
       define_instance_method(:get_instance) do |*params|
-        Resource.process(self, *self.do_get(ROOT_INSTANCE_RESOURCE, *params))
+        Resource.new(self, *self.do_get(ROOT_INSTANCE_RESOURCE, *params))
       end
       # Like tags, you cannot call api/clouds when using an instance_token
       INSTANCE_ACTIONS.each do |dummy_meth, meths|
@@ -142,7 +176,7 @@ class RightApiClient
       # Session is the root resource that has links to all the base resources,
       # to the client since they can be accessed directly
       define_instance_method(:session) do |*params|
-        Resource.process(self, *self.do_get(ROOT_RESOURCE, *params))
+        Resource.new(self, *self.do_get(ROOT_RESOURCE, *params))
       end
       get_associated_resources(self, session.links, nil)
     end
@@ -201,19 +235,7 @@ class RightApiClient
     # but unfortunately it only takes them as a hash, and for filtering
     # we need to pass multiple parameters with the same key. The result
     # is that we have to build up the query string manually.
-    filters = params.delete(:filters)
-    params_string = params.map{|k,v| "#{k.to_s}=#{CGI::escape(v.to_s)}" }.join('&')
-
-    if filters && filters.any?
-      path += "?filter[]=" + filters.map{|f| CGI::escape(f) }.join('&filter[]=')
-      path += "&#{params_string}"
-    else
-      path += "?#{params_string}"
-    end
-
-    # If present, remove ? and & at end of path
-    path.chomp!('&')
-    path.chomp!('?')
+    path = add_filters_to_path(path, params)
 
     begin
       # Return content type so the resulting resource object knows what kind of resource it is.
@@ -244,7 +266,7 @@ class RightApiClient
 
     data = JSON.parse(body)
 
-    [data, resource_type, path]
+    [data, resource_type]
   end
   
   # Generic post
@@ -255,13 +277,13 @@ class RightApiClient
         when 201, 202
           # Create and return the resource
           href = response.headers[:location]
-          Resource.process(self, *self.do_get(href))
+          Resource.new(self, *self.do_get(href))
         when 200..299
           # this is needed for the tags Resource -- which returns a 200 and has a content type
           # therefore, a resource object needs to be returned
           if response.code == 200 && response.headers[:content_type].index('rightscale')
             type = get_resource_type(response.headers[:content_type])
-            Resource.process(self, JSON.parse(response), type, path)
+            Resource.new(self, JSON.parse(response), type, path)
           else          
             response.return!(request, result, &block)
           end
@@ -331,7 +353,7 @@ class RightApiClient
   # Given a path returns a RightApiClient::Resource instance.
   #
   def resource(path,params={})
-    Resource.process(self, *do_get(path,params))
+    Resource.new(self, *do_get(path,params))
   end
 
   # This is need for resources like tags where the api/tags/ call is not supported.
@@ -350,9 +372,9 @@ class RightApiClient
             path = path.to_str + add_id_to_path("/instances", *args)
             DummyResource.new(client, path, {:live_tasks => 'do_get'})
           elsif meth == :live_tasks
-            Resource.process(client, *client.do_get(path.to_str + '/live/tasks', *args))
+            Resource.new(client, *client.do_get(path.to_str + '/live/tasks', *args))
           elsif action == 'do_get'
-            Resource.process(client, *client.do_get(path.to_str + '/' + meth.to_s, *args))
+            Resource.new(client, *client.do_get(path.to_str + '/' + meth.to_s, *args))
           elsif meth == :create
             client.send action, path, *args
           else
@@ -364,6 +386,62 @@ class RightApiClient
     end
   end
   
+  
+  class RootResource
+    include Helper
+    ROOT_RESOURCE_ACTIONS = {
+      :create => [:deployments, :server_arrays, :servers, :ssh_keys, :volumes, :volume_snapshots, :volume_attachments],
+      :index => [:clouds],
+      
+    }
+    ROOT_RESOURCE_SPECAIL_ACTIONS = {
+      # Special cases
+      :instances => {:multi_terminate => 'do_post', :multi_run_executable => 'do_post'},
+      :input => {:multi_update => 'do_put'}
+    }
+
+    def initialize(client, path, resource_type)
+      # Add create methods for the relevant root resources
+      if ROOT_RESOURCE_ACTIONS[:create].include?(resource_type)
+        self.define_instance_method('create') do |*args|
+          client.do_post(path, *args)
+        end
+      end
+      if ROOT_RESOURCE_ACTIONS[:index].include?(resource_type)
+        self.define_instance_method('index') do |*args|
+          Resource.new(client, *client.do_get(path, *args))
+        end
+      end
+      
+      # ADDING IN SPECIAL CASES
+      ROOT_RESOURCE_SPECAIL_ACTIONS[resource_type].each do |meth, action|
+        action_path = Resource.insert_in_path(path, meth)
+        self.define_instance_method(meth) do |*args|
+          client.send action, action_path, *args
+        end
+      end
+      
+      # if ['instance'].include?(resource_type)
+      #         ['multi_terminate', 'multi_run_executable'].each do |multi_action|
+      #           multi_action_path = Resource.insert_in_path(path, multi_action)
+      #           self.define_instance_method(multi_action) do |*args|
+      #             client.do_post(multi_action_path, *args)
+      #           end
+      #         end
+      #       end
+      # 
+      #       # Add multi_update to input resource
+      #       if ['input'].include?(resource_type)
+      #         self.define_instance_method('multi_update') do |*args|
+      #           multi_update_path = Resource.insert_in_path(path, 'multi_update')
+      #           client.do_put(multi_update_path, *args)
+      #         end
+      #       end
+      
+    end
+  end
+  
+  
   # Represents resources returned by API calls, this class dynamically adds
   # methods and properties to instances depending on what type of resource
   # they are.
@@ -373,9 +451,9 @@ class RightApiClient
     # The API does not provide information about the basic actions that can be
     # performed on resources so we need to define them
     RESOURCE_ACTIONS = {
-      :create => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment'],
       :destroy => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment', 'backup'],
-      :update => ['deployment', 'instance', 'server_array', 'server', 'backup']
+      :update => ['deployment', 'instance', 'server_array', 'server', 'backup'],
+      :show => ['cloud']
     }
 
     attr_reader :client, :attributes, :associations, :actions, :raw, :resource_type
@@ -392,47 +470,57 @@ class RightApiClient
 
     # Takes some response data from the API
     # Returns a single Resource object or a collection if there were many
-    def self.process(client, data, resource_type, path)
-      if data.kind_of?(Array)
-        resource_array = data.map { |obj| Resource.new(client, obj, resource_type) }
-        # Bring in the helper so we can add methods to it before it's returned.
-        # The next few if statements might be nicer as a case but some
-        # resources might need multiple methods so we'll keep things as
-        # separate if statements for now.
-        resource_array.extend(Helper)
-
-        # Add create methods for the relevant resources
-        if RESOURCE_ACTIONS[:create].include?(resource_type)
-          resource_array.define_instance_method('create') do |*args|
-            client.do_post(path, *args)
-          end
-        end
-
-        # Add multi methods for the instance resource
-        if ['instance'].include?(resource_type)
-          ['multi_terminate', 'multi_run_executable'].each do |multi_action|
-            multi_action_path = Resource.insert_in_path(path, multi_action)
-
-            resource_array.define_instance_method(multi_action) do |*args|
-              client.do_post(multi_action_path, *args)
-            end
-          end
-        end
-
-        # Add multi_update to input resource
-        if ['input'].include?(resource_type)
-          resource_array.define_instance_method('multi_update') do |*args|
-            multi_update_path = Resource.insert_in_path(path, 'multi_update')
-
-            client.do_put(multi_update_path, *args)
-          end
-        end
-
-        resource_array
-      else
-        Resource.new(client, data, resource_type)
-      end
-    end
+    # def self.process(client, data, resource_type, path)
+    #       if data.kind_of?(Array)
+    #         resource_array = data.map { |obj| Resource.new(client, obj, resource_type) }
+    #         # Bring in the helper so we can add methods to it before it's returned.
+    #         # The next few if statements might be nicer as a case but some
+    #         # resources might need multiple methods so we'll keep things as
+    #         # separate if statements for now.
+    #         resource_array.extend(Helper)
+    # 
+    #         # Add create methods for the relevant resources
+    #         if RESOURCE_ACTIONS[:create].include?(resource_type)
+    #           resource_array.define_instance_method('create') do |*args|
+    #             client.do_post(path, *args)
+    #           end
+    #         end
+    #         # Add create methods for the relevant resources
+    #         if RESOURCE_ACTIONS[:show].include?(resource_type)
+    #           resource_array.define_instance_method('show') do |*args|
+    #             client.do_get(path, *args)
+    #           end
+    #         end
+    #         
+    #         # && Add in the resource_actions: the special cases: no need for dummy_object. 
+    #         # ADD IN HERE:
+    # 
+    #         # Add multi methods for the instance resource
+    #         if ['instance'].include?(resource_type)
+    #           ['multi_terminate', 'multi_run_executable'].each do |multi_action|
+    #             multi_action_path = Resource.insert_in_path(path, multi_action)
+    # 
+    #             resource_array.define_instance_method(multi_action) do |*args|
+    #               client.do_post(multi_action_path, *args)
+    #             end
+    #           end
+    #         end
+    # 
+    #         # Add multi_update to input resource
+    #         if ['input'].include?(resource_type)
+    #           resource_array.define_instance_method('multi_update') do |*args|
+    #             multi_update_path = Resource.insert_in_path(path, 'multi_update')
+    # 
+    #             client.do_put(multi_update_path, *args)
+    #           end
+    #         end
+    # 
+    #         resource_array
+    #       else
+    #         p "****************************"
+    #         Resource.new(client, data, resource_type)
+    #       end
+    #     end
 
     def inspect
       "#<#{self.class.name} " +
@@ -503,7 +591,7 @@ class RightApiClient
                 # future we might like to extract resource_type from child_href
                 # and not hard-code it.
                 if child_href.index('instance')
-                  define_instance_method(k) { Resource.process(client, v, 'instance', child_href) }
+                  define_instance_method(k) { Resource.new(client, v, 'instance', child_href) }
                 end
               end
             end
@@ -515,15 +603,21 @@ class RightApiClient
         end
       end
 
+      
       # Some resources are not linked together, so they have to be manually
       # added here.
       case @resource_type
       when 'instance'
         define_instance_method('live_tasks') do |*args|
-          Resource.process(client, *client.do_get(href + '/live/tasks', *args))
+          Resource.new(client, *client.do_get(href + '/live/tasks', *args))
         end
       end
 
+      if RESOURCE_ACTIONS[:show].include?(@resource_type)
+        define_instance_method('show') do |*args|
+          client.do_get(href, *args)
+        end
+      end
       # Add destroy method to relevant resources
       if RESOURCE_ACTIONS[:destroy].include?(@resource_type)
         define_instance_method('destroy') do
