@@ -1,3 +1,20 @@
+
+# view = default, inputs...
+# filters when can add them
+# look at the two print one
+
+# Questions:
+
+# Instance-facing-calls don't use the same notation as for normal calls
+
+# Read through this code
+# put them in separate files
+# Do the instance-facing-calls
+# make gem
+
+# test cases/ specs
+
+
 require 'rest_client' # rest_client 1.6.1
 require 'json'
 require 'set'
@@ -15,26 +32,25 @@ class RightApiClient
   
   
   
-  
+# |||||||||||||||||||||||||||||||||||||||||||||||||||||| HELPER MODULE |||||||||||||||||||||||||||||||||||||||||||||||||||| 
   #
   # Methods shared by the RightApiClient, Resource and resource arrays.
   #
   module Helper
 
-    # Helper used to add methods to classes
+    # Helper used to add methods to classes dynamically
     def define_instance_method(meth, &blk)
       (class << self; self; end).module_eval do
         define_method(meth, &blk)
       end
     end
 
-    # Helper method that returns all api methods available to a client
-    # or resource
+    # Helper method that returns all api methods available to a client or resource
     def api_methods
       self.methods(false)
     end
     
-    # Define methods that query the API for the associated resources
+    # Helper method that returns associated resources from links
     # Some resources have many links with the same rel.
     # We want to capture all these href in the same method, returning an array
     def get_associated_resources(client, links, associations)
@@ -56,17 +72,36 @@ class RightApiClient
         # Create methods so that the link can be followed
         define_instance_method(rel) do |*args|
           if hrefs.size == 1 # Only one link for the specific rel attribute
-            if has_id(*args) || is_singular?(rel) # Want to get a single resource. Either doing a show, update, delete...
-              SingleResource.process(client, *client.do_get(hrefs.first, *args))
+            if has_id(*args) || is_singular?(rel)
+              # User wants a single resource. Either doing a show, update, delete...
+              path = add_id_and_params_to_path(hrefs.first, *args)
+              # The resource_type is the singular form the the method (ie. clouds will turn to cloud)
+              resource_type = make_singular(rel)
+              Resource.process(client, resource_type, path)
             else
-              #path = add_filters_to_path(hrefs.first, *args)
-              ResourceType.new(client, hrefs.first, rel)
+              # Returns the class of this resource
+              resource_type = rel
+              Resources.new(client, hrefs.first, resource_type)
             end
           else
-            # @@ To Do YIKES!
+            # There were multiple links with the same relation name
+            # This occurs in tags.by_resource 
             resources = []
-            hrefs.each do |href|
-              resources << SingleResource.process(client, *client.do_get(href, *args))
+            p "we are heerererere"
+            if has_id(*args) || is_singular?(rel)
+              hrefs.each do |href|
+                # User wants a single resource. Either doing a show, update, delete...
+                path = add_id_and_params_to_path(href, *args)
+                # The resource_type is the singular form the the method (ie. clouds will turn to cloud)
+                resource_type = make_singular(rel)
+                resources << Resource.process(client, resource_type, path)
+              end
+            else
+              hrefs.each do |href|
+                # Returns the class of this resource
+                resource_type = rel
+                resources << Resources.new(client, href, resource_type)
+              end
             end
             # return the array of resource objects
             resources
@@ -75,20 +110,19 @@ class RightApiClient
       end
     end
     
-    def add_id_to_path(path, params = {})
-      path += "/#{params.delete(:id)}" if has_id(params)
-      path
-    end
     
+    # Helper method that checks whether params contains a key :id
     def has_id(params = {})
       params.has_key?(:id)
     end
     
-     # Normally you would just pass a hash of query params to RestClient,
+    # Helper method that adds filters and other parameters to the path
+    # Normally you would just pass a hash of query params to RestClient,
       # but unfortunately it only takes them as a hash, and for filtering
       # we need to pass multiple parameters with the same key. The result
       # is that we have to build up the query string manually.
-    def add_filters_to_path(path, params ={})
+    def add_id_and_params_to_path(path, params = {})
+      path += "/#{params.delete(:id)}" if has_id(params)
       filters = params.delete(:filter)
       params_string = params.map{|k,v| "#{k.to_s}=#{CGI::escape(v.to_s)}" }.join('&')
       if filters && filters.any?
@@ -104,8 +138,8 @@ class RightApiClient
       path
     end
     
-    # Insert the given term at the correct place in the path, so
-    # if there are parameters in the path then insert it before them.
+    # Helper method that inserts the given term at the correct place in the path
+    # If there are parameters in the path then insert it before them.
     def insert_in_path(path, term)
       if path.index('?')
         new_path = path.sub('?', "/#{term}?")
@@ -114,14 +148,36 @@ class RightApiClient
       end
     end
     
+    # Helper method that checks whether the string is singular
     def is_singular?(str)
-      str = str.to_s
-      str[-1] != 's'
+      (str.to_s)[-1] != 's'
       #str.pluralize.singularize == str
+    end
+    
+    def get_href_from_links(links)
+      self_index = links.any? && links.each_with_index do |link, idx|
+        if link['rel'] == 'self'
+          break idx
+        end
+
+        if idx == links.size-1
+          break nil
+        end
+      end
+
+      if self_index
+        return links.delete_at(self_index)['href']
+      end
+      return nil
+    end
+    
+    def make_singular(str)
+      str.to_s.chomp!('s')
     end
   end
   
 
+# ||||||||||||||||||||||||||||||||||||||||||||||||||| RightAPI Client |||||||||||||||||||||||||||||||||||||||||||||||||||||
   include Helper
 
   # The cookies for our client.
@@ -144,32 +200,53 @@ class RightApiClient
     @cookies ||= login()
 
     if @instance_token
+      # Add in the top level links for instance_facing_calls here:
+      resource_type, path, data = self.do_get(ROOT_INSTANCE_RESOURCE)
+      # The instance's href
+      instance_href = get_href_from_links(data['links'])
+      cloud_href = instance_href.split('/instances')[0]
+      # Don't follow the links here?
       define_instance_method(:get_instance) do |*params|
-        SingleResource.process(self, *self.do_get(ROOT_INSTANCE_RESOURCE, *params))
+        ResourceDetail.new(self, resource_type, path, data)
       end
-      # Like tags, you cannot call api/clouds when using an instance_token
-      # @@ To Do
-      define_instance_method('clouds') do |*args|
-        if has_id(*args)
-          SingleResource.process(client, *client.do_get(hrefs.first, *args))
+
+      [:volumes, :volume_attachments, :volume_snapshots, :volume_types].each do |meth|
+        define_instance_method(meth) do |*args|
+          path = cloud_href + '/' + meth.to_s
+          if has_id(*args)
+            path = add_id_and_params_to_path(path, *args)
+            Resource.process(self, make_singular(meth), path)
+          else
+            Resources.new(self, path, meth)
+          end
         end
       end
-      
-      define_instance_method('backups') do |*args|
+        
+      define_instance_method(:live_tasks) do |*args|
+        path = instance_href + '/live/tasks'
+        if has_id(*args) # can only call this with an id
+          path = add_id_and_params_to_path(path, *args)
+          Resource.process(self, 'live_task', path)
+        end
+      end
+
+      define_instance_method(:backups) do |*args|
         path = '/api/backups'
         if has_id(*args)
-            SingleResource.process(client, *client.do_get(path, *args))
+            path = add_id_and_params_to_path(path, *args)
+            Resource.process(self, 'backup', path)
         else
-            ResourceType.new(client, path, 'backups')
+            Resources.new(self, path, :backups)
         end
       end
-    else  
-      # Session is the root resource that has links to all the base resources,
-      # to the client since they can be accessed directly
+    else 
+      # Not an instance-facing-call: 
+      # Session is the root resource that has links to all the base resources
       define_instance_method(:session) do |*params|
-        SingleResource.process(self, *self.do_get(ROOT_RESOURCE, *params))
+        Resources.new(self, ROOT_RESOURCE, 'session')
       end
-      get_associated_resources(self, session.links, nil)
+      # Allow the base resources to be accessed directly
+      get_associated_resources(self, session.index.links, nil)
     end
   end
   
@@ -184,6 +261,7 @@ class RightApiClient
     RestClient.log = file
   end
 
+# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| REST Specific |||||||||||||||||||||||||||||||||||||||||||
   # Users shouldn't need to call the following methods directly
 
   # you can login with username and password or with an instance_token
@@ -213,6 +291,7 @@ class RightApiClient
     response.cookies
   end
 
+  # Returns the request headers
   def headers
     {'X_API_VERSION' => @api_version, :cookies => @cookies, :accept => :json}
   end
@@ -220,9 +299,7 @@ class RightApiClient
   # Generic get
   def do_get(path, params={})
     # Resource id is a special param as it needs to be added to the path
-    path = add_id_to_path(path, params)
-    
-    path = add_filters_to_path(path, params)
+    path = add_id_and_params_to_path(path, params)
 
     begin
       # Return content type so the resulting resource object knows what kind of resource it is.
@@ -253,7 +330,7 @@ class RightApiClient
 
     data = JSON.parse(body)
 
-    [data, resource_type]
+    [resource_type, path, data]
   end
   
   # Generic post
@@ -264,14 +341,18 @@ class RightApiClient
         when 201, 202
           # Create and return the resource
           href = response.headers[:location]
-          href = href.split(@api_url)[-1]
-          SingleResource.process(self, *self.do_get(href))
+          relative_href = href.split(@api_url)[-1]
+          # Return the resource that was just created
+          # Determine the resource_type from the href: (eg. .../clouds/id).
+          # This is based on the assumption that we can determine the resource_type without doing a do_get
+          resource_type = make_singular(relative_href.split('/')[-2])
+          Resource.process(self, resource_type, relative_href)
         when 200..299
           # this is needed for the tags Resource -- which returns a 200 and has a content type
           # therefore, a resource object needs to be returned
           if response.code == 200 && response.headers[:content_type].index('rightscale')
-            type = get_resource_type(response.headers[:content_type])
-            SingleResource.process(self, JSON.parse(response), type, path)
+            resource_type = get_resource_type(response.headers[:content_type])
+            Resource.process(self, resource_type, path)
           else          
             response.return!(request, result, &block)
           end
@@ -338,48 +419,14 @@ class RightApiClient
     content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
   end
 
-  # Given a path returns a RightApiClient::SingleResource instance.
-  #
-  def resource(path,params={})
-    SingleResource.process(self, *do_get(path,params))
-  end
 
-  # This is need for resources like tags where the api/tags/ call is not supported.
-  # This will define a dummy object and its methods
-  # class DummyResource
-  #     include Helper
-  #     # path is the base_resource's href
-  #     # params is a hash where:
-  #     #  key = method name
-  #     #  value = action that is needed (like do_post, do_get...)
-  #     def initialize(client, path, params={})
-  #       params.each do |meth, action|
-  #         define_instance_method(meth) do |*args|
-  #           # do_get does not return a resource object (unlike do_post)
-  #           if meth == :instancesjhjhjgjhghghfhvhjfjfghjgf  
-  #             path = path.to_str + add_id_to_path("/instances", *args)
-  #             DummyResource.process(client, path, {:live_tasks => 'do_get'})
-  #           elsif meth == :live_tasks
-  #             Resource.process(client, *client.do_get(path.to_str + '/live/tasks', *args))
-  #           elsif action == 'do_get'
-  #             Resource.process(client, *client.do_get(path.to_str + '/' + meth.to_s, *args))
-  #           elsif meth == :create
-  #             client.send action, path, *args
-  #           else
-  #             # send converts action (a string) into a method call
-  #             client.send action, (path.to_str + '/' + meth.to_s), *args
-  #           end
-  #         end
-  #       end
-  #     end
-  #   end
-  
+# ||||||||||||||||||||||||||||||||||||||||||||| RESOURCES||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  
   
   # This class defines the different resource types and the methods that one can call on them
   # This class dynamically adds methods and properties to instances depending on what type of resource they are.
     # This is a filler class so that we don't always have to do an index before anything else
     # This class gets instantiated when the user calls (for example) client.clouds ... (ie. when you want the generic class: no id present) 
-  class ResourceType
+  class Resources
     include Helper
     # These are the actions that you can call on this resource class
     RESOURCE_TYPE_ACTIONS = {
@@ -387,7 +434,8 @@ class RightApiClient
       :no_index => [:tags, :tasks]    # Easier to specify the resources that don't need an index call
     }
     
-    # Some resources have methods that operate on the resource type itself and not on a particular one (ie: without specifing an id). Place these here:
+    # Some resources have methods that operate on the resource type itself 
+      # and not on a particular one (ie: without specifing an id). Place these here:
     RESOURCE_TYPE_SPECIAL_ACTIONS = {
       :instances => {:multi_terminate => 'do_post', :multi_run_executable => 'do_post'},
       :inputs => {:multi_update => 'do_put'},
@@ -401,7 +449,7 @@ class RightApiClient
     end
     
     # Since this is just a fillter class, only define instance methods and the method api_methods()
-      # resource_type is what the rel for that link is
+    # Resource_type should always be plural.
     def initialize(client, path, resource_type)
       @resource_type = resource_type
       # Add create methods for the relevant root resources
@@ -414,7 +462,12 @@ class RightApiClient
       # Add in index methods for the relevant root resources
       if !RESOURCE_TYPE_ACTIONS[:no_index].include?(resource_type)
         self.define_instance_method('index') do |*args|
-          SingleResource.process(client, *client.do_get(path, *args))
+          # Session uses .index like a .show
+          if resource_type == 'session'
+            ResourceDetail.new(client, *client.do_get(path, *args))
+          else
+            Resource.process(client, *client.do_get(path, *args))
+          end
         end
       end
       
@@ -428,10 +481,11 @@ class RightApiClient
     end
   end
   
+# ||||||||||||||||||||||||||||||||||||||||||||||||| SINGLE RESOURCE ||||||||||||||||||||||||||||||||||||||||||||||||||||||||  
   
   # Represents a single resource returned by an API call
     # This class once again dynamically adds methods and properties to instances depending on what type of resource they are.
-  class SingleResource
+  class Resource
     include Helper
 
     # The API does not provide information about the basic actions that can be
@@ -442,31 +496,80 @@ class RightApiClient
       :no_show => ['input', 'session', 'tag']  # Once again, easier to define those that don't have a show call associated with them
     }
 
-    # @@ To do
-    INSTANCE_RESOURCE_SPECIAL_ACTIONS = {
-      :cloud => ['volumes', 'volume_types', 'volume_attachments', 'volume_snapshots', 'instances']
-    }
-    
-    
-    attr_reader :client, :attributes, :associations, :actions, :raw, :resource_type
 
     # Will create a (or an array of) new Resource object(s)
-    def self.process(client, data, resource_type)
+    def self.process(client, resource_type, path, data={})
       if data.kind_of?(Array)  # This is needed for the index call to return an array of all the resources
-        data.map { |obj| SingleResource.new(client, obj, resource_type) }
+        data.map { |obj|
+          # we need to get the path for this specific resource
+          obj_path = client.get_href_from_links(obj["links"])
+          Resource.new(client, resource_type, obj_path, obj) }
       else
-        SingleResource.new(client, data, resource_type)
+        Resource.new(client, resource_type, path, data)
       end
     end
         
     def inspect
       "#<#{self.class.name} " +
       "resource_type=\"#{@resource_type}\"" +
+      "#{', name='+@hash["name"].inspect if @hash.has_key?("name")}" +
+      "#{', resource_uid='+@hash["resource_uid"].inspect if @hash.has_key?("resource_uid")}>"
+    end
+
+    # Hash is only used for index calls so we can parse out the name and resource_uid
+    def initialize(client, resource_type, href, hash={})
+      # For the inspect function:
+      @resource_type = resource_type
+      @hash = hash
+      
+      # Add destroy method to relevant resources
+      if RESOURCE_ACTIONS[:destroy].include?(resource_type)
+        define_instance_method('destroy') do
+          client.do_delete(href)
+        end
+      end
+
+      # Add update method to relevant resources
+      if RESOURCE_ACTIONS[:update].include?(resource_type)
+        define_instance_method('update') do |*args|
+          client.do_put(href, *args)
+        end
+      end
+      
+      # Add show method to relevant resources
+      if !RESOURCE_ACTIONS[:no_show].include?(resource_type)
+        define_instance_method('show') do |*args|
+          ResourceDetail.new(client, *client.do_get(href, *args)) 
+        end
+      end
+
+      # Some resources are not linked together, so they have to be manually
+      # added here.
+      case resource_type
+      when 'instance'
+        define_instance_method('live_tasks') do |*args|
+          if has_id(*args)
+            path = href + '/live/tasks'
+            path = add_id_and_params_to_path(path, *args)
+            Resource.process(client, 'live_task', path)
+          end
+        end
+      end
+    end
+  end
+  
+  class ResourceDetail
+    include Helper
+    attr_reader :client, :attributes, :associations, :actions, :raw, :resource_type
+    
+    def inspect
+      "#<#{self.class.name} " +
+      "resource_type=\"#{@resource_type}\"" +
       "#{', name='+name.inspect if self.respond_to?(:name)}" +
       "#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
     end
-
-    def initialize(client, hash, resource_type)
+    
+    def initialize(client, resource_type, href, hash)
       @client = client
       @resource_type = resource_type
       @raw = hash.dup
@@ -475,22 +578,8 @@ class RightApiClient
       links = hash.delete('links') || []
       raw_actions = hash.delete('actions') || []
 
-      # We obviously can't re-define a method called 'self', so pull
-      # out the 'self' link and make it 'href'.
-      self_index = links.any? && links.each_with_index do |link, idx|
-        if link['rel'] == 'self'
-          break idx
-        end
-
-        if idx == links.size-1
-          break nil
-        end
-      end
-
-      if self_index
-        hash['href'] = links.delete_at(self_index)['href']
-      end
-
+      hash['href'] = get_href_from_links(links)
+      
       # Add links to attributes set and create a method that returns the links
       attributes << :links
       define_instance_method(:links) { return links }
@@ -508,61 +597,15 @@ class RightApiClient
           client.do_post(href, *args)
         end
       end
-      
+
       # Follow the links to create methods
-      get_associated_resources(client, links, associations)
-      
-      
-      
-      # @@ to do
-      INSTANCE_RESOURCE_SPECIAL_ACTIONS[@resource_type].each do |meth, action|
-        define_instance_method(meth) do |*args|
-          if has_id(*args) # Want to get a single resource. Either doing a show, update, delete...
-            SingleResource.process(client, *client.do_get(href, *args))
-          else
-            #path = add_filters_to_path(hrefs.first, *args)
-            ResourceType.new(client, href, meth)
-          end
-        end
-      end if client.instance_token && INSTANCE_RESOURCE_SPECIAL_ACTIONS[@resource_type] 
-
-
-
-
-
-      # Add destroy method to relevant resources
-      if RESOURCE_ACTIONS[:destroy].include?(@resource_type)
-        define_instance_method('destroy') do
-          client.do_delete(href)
-        end
+      if !client.instance_token
+        get_associated_resources(client, links, associations)
       end
 
-      # Add update method to relevant resources
-      if RESOURCE_ACTIONS[:update].include?(@resource_type)
-        define_instance_method('update') do |*args|
-          client.do_put(href, *args)
-        end
-      end
-      
-      # Add show method to relevant resources
-      if !RESOURCE_ACTIONS[:no_show].include?(@resource_type)
-        define_instance_method('show') do |*args|
-          data, resource_type = client.do_get(href, *args)
-          data
-        end
-      end
-      
-      
-      # Some resources are not linked together, so they have to be manually
-      # added here.
-      case @resource_type
-      when 'instance'
-        define_instance_method('live_tasks') do |*args|
-          SingleResource.process(client, *client.do_get(href + '/live/tasks', *args))
-        end
-      end
-      
+      # @@ look at what this does
       hash.each do |k, v|
+        p "The hash is ", hash
         # If a parent resource is requested with a view then it might return
         # extra data that can be used to build child resources here, without
         # doing another get request.
@@ -573,6 +616,7 @@ class RightApiClient
 
           # v might be an array or hash so use include rather than has_key
           if v.include?('links')
+            p "%%%%%%%%% optimization"
             child_self_link = v['links'].find { |target| target['rel'] == 'self' }
             if child_self_link
               child_href = child_self_link['href']
@@ -581,7 +625,8 @@ class RightApiClient
                 # future we might like to extract resource_type from child_href
                 # and not hard-code it.
                 if child_href.index('instance')
-                  define_instance_method(k) { SingleResource.process(client, v, 'instance', child_href) }
+                  # No special case, no data, path=child_href
+                  define_instance_method(k) { Resource.process(client, 'instance', child_href, v) }
                 end
               end
             end
@@ -594,5 +639,6 @@ class RightApiClient
       end
     end
   end
+
 end
 
