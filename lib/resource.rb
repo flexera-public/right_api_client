@@ -10,7 +10,7 @@ require File.join(File.dirname(__FILE__), 'resource_detail')
 require File.join(File.dirname(__FILE__), 'helper')
 
 
-# Represents a single resource returned by an API call
+# Represents a Resource. This is a fillter class for a single resource
   # This class once again dynamically adds methods and properties to instances depending on what type of resource they are.
 class Resource
   include Helper
@@ -20,7 +20,7 @@ class Resource
   RESOURCE_ACTIONS = {
     :destroy => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment', 'backup'],
     :update => ['deployment', 'instance', 'server_array', 'server', 'backup'],
-    :no_show => ['input', 'session', 'tag']  # Once again, easier to define those that don't have a show call associated with them
+    :no_show => ['input', 'session', 'resource_tag']  # Once again, easier to define those that don't have a show call associated with them
   }
 
 
@@ -28,9 +28,18 @@ class Resource
   def self.process(client, resource_type, path, data={})
     if data.kind_of?(Array)  # This is needed for the index call to return an array of all the resources
       data.map { |obj|
-        # we need to get the path for this specific resource
-        obj_path = client.get_href_from_links(obj["links"])
-        Resource.new(client, resource_type, obj_path, obj) }
+        # Resource_tag is returned after querrying tags.by_resource or tags.by_tags.
+        # You cannot do a show on a resource_tag, but that is basically what we want to do
+        # So add in a special case here
+        # The call returns a 200 so that we can parse the exact resource_type and not take it from the url
+        if resource_type == 'resource_tag'
+          ResourceDetail.new(client, resource_type, path, obj)
+        else
+          # we need to get the path for this specific resource
+          obj_path = client.get_href_from_links(obj["links"])
+          Resource.new(client, resource_type, obj_path, obj)
+        end
+      }
     else
       Resource.new(client, resource_type, path, data)
     end
@@ -43,7 +52,7 @@ class Resource
     "#{', resource_uid='+@hash["resource_uid"].inspect if @hash.has_key?("resource_uid")}>"
   end
 
-  # Hash is only used for index calls so we can parse out the name and resource_uid
+  # Hash is only used for index calls so we can parse out the name and resource_uid for the inspect call
   def initialize(client, resource_type, href, hash={})
     # For the inspect function:
     @resource_type = resource_type
@@ -70,17 +79,5 @@ class Resource
       end
     end
 
-    # Some resources are not linked together, so they have to be manually
-    # added here.
-    case resource_type
-    when 'instance'
-      define_instance_method('live_tasks') do |*args|
-        if has_id(*args)
-          path = href + '/live/tasks'
-          path = add_id_and_params_to_path(path, *args)
-          Resource.process(client, 'live_task', path)
-        end
-      end
-    end
   end
 end

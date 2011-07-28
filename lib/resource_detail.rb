@@ -29,7 +29,10 @@ class ResourceDetail
     links = hash.delete('links') || []
     raw_actions = hash.delete('actions') || []
 
-    hash['href'] = get_href_from_links(links)
+    self_hash = get_href_from_links(links)
+    if self_hash != nil
+      hash['href'] = self_hash
+    end
     
     # Add links to attributes set and create a method that returns the links
     attributes << :links
@@ -54,9 +57,20 @@ class ResourceDetail
       get_associated_resources(client, links, associations)
     end
 
-    # @@ look at what this does
+    # Some resources are not linked together, so they have to be manually
+    # added here.
+    case resource_type
+    when 'instance'
+      define_instance_method('live_tasks') do |*args|
+        if has_id(*args)
+          path = href + '/live/tasks'
+          path = add_id_and_params_to_path(path, *args)
+          Resource.process(client, 'live_task', path)
+        end
+      end
+    end
+    
     hash.each do |k, v|
-      p "The hash is ", hash
       # If a parent resource is requested with a view then it might return
       # extra data that can be used to build child resources here, without
       # doing another get request.
@@ -67,7 +81,6 @@ class ResourceDetail
 
         # v might be an array or hash so use include rather than has_key
         if v.include?('links')
-          p "%%%%%%%%% optimization"
           child_self_link = v['links'].find { |target| target['rel'] == 'self' }
           if child_self_link
             child_href = child_self_link['href']

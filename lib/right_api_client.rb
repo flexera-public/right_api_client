@@ -1,25 +1,3 @@
-
-# view = default, inputs...
-# filters when can add them
-# look at the two print one
-
-# Questions:
-
-# Instance-facing-calls don't use the same notation as for normal calls. don't follow the links
-# singular..
-# derive the resource_type from the href not the do_get
-# now type .show, .index...
-# how test this stuff...
-# resource, resources, resourceDetail...
-
-# Read through this code
-# put them in separate files
-# Do the instance-facing-calls
-# make gem
-
-# test cases/ specs
-
-
 require 'rest_client' # rest_client 1.6.1
 require 'json'
 require 'set'
@@ -68,7 +46,6 @@ class RightApiClient
       # The instance's href
       instance_href = get_href_from_links(data['links'])
       cloud_href = instance_href.split('/instances')[0]
-      # Don't follow the links here?
       define_instance_method(:get_instance) do |*params|
         ResourceDetail.new(self, resource_type, path, data)
       end
@@ -214,7 +191,8 @@ class RightApiClient
           # therefore, a resource object needs to be returned
           if response.code == 200 && response.headers[:content_type].index('rightscale')
             resource_type = get_resource_type(response.headers[:content_type])
-            Resource.process(self, resource_type, path)
+            data = JSON.parse(response)
+            Resource.process(self, resource_type, path, data)
           else          
             response.return!(request, result, &block)
           end

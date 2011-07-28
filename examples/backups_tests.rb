@@ -6,7 +6,7 @@
 # Manual Commands to shell:
 # client
 # Manual Commands to irb:
-# load "~/Desktop/test_backup.rb"
+# load "~/work/right_api_client/examples/backups_tests.rb"
 
 
 # NOTE: will retore to instance2
@@ -16,22 +16,22 @@
 
 # |||||||||||||| CHANGE HERE ||||||||||||||
 # For right now manually add these resource_uids of the two servers that you launched.
-resource_uid_1 = "i-917a9cd6"
-resource_uid_2 = "i-57fe1f10"
+resource_uid_1 = "i-999f75de"
+resource_uid_2 = "i-939f75d4"
 # ||||||||||||||||||||||||||||||||||||||||||||
 
 # Get the necessary information. Must have @client pointing to where you want it
-@test_client = @client
-@instance1_id = @test_client.clouds(:id => 907).instances(:filters => ["resource_uid==#{resource_uid_1}"]).first.href.split("/")[-1]
-@instance2_id = @test_client.clouds(:id => 907).instances(:filters => ["resource_uid==#{resource_uid_2}"]).first.href.split("/")[-1]
+@test_client = @moo
+@instance1_id = @test_client.clouds(:id => 907).show.instances.index(:filter => ["resource_uid==#{resource_uid_1}"]).first.show.href.split("/")[-1]
+@instance2_id = @test_client.clouds(:id => 907).show.instances.index(:filter => ["resource_uid==#{resource_uid_2}"]).first.show.href.split("/")[-1]
 
 
-@volume_attachment_href_1 = @test_client.clouds(:id => 907).instances(:id => @instance1_id).volume_attachments[0].href
+@volume_attachment_href_1 = @test_client.clouds(:id => 907).show.instances(:id => @instance1_id).show.volume_attachments.index[0].show.href
 
-@volume_attachment_href_2 = @test_client.clouds(:id => 907).instances(:id => @instance1_id).volume_attachments[1].href
+@volume_attachment_href_2 = @test_client.clouds(:id => 907).show.instances(:id => @instance1_id).show.volume_attachments.index[1].show.href
 
 # |||||||||||||| CHANGE HERE if you want to test the instance facing calls||||||||||||||
-@test_client = @instance_client
+#@test_client = @instance_client
 # ||||||||||||||||||||||||||||||||||||||||||||
 
 def create(name)
@@ -42,35 +42,35 @@ end
 
 def index
   p "Doing an index ..."
-  return @test_client.backups(:lineage => "ns_backup_test_lineage")
+  return @test_client.backups.index(:lineage => "ns_backup_test_lineage")
 end
 
 
 def show
   p "Doing a show on the first backup ..."
-  backup = @test_client.backups(:lineage => "ns_backup_test_lineage").first
+  backup = @test_client.backups.index(:lineage => "ns_backup_test_lineage").first
   if backup
-    id = backup.href.split("/")[-1]   # => to get the id
+    id = backup.show.href.split("/")[-1]   # => to get the id
     resource = @test_client.backups(:id => id)
-    p "The api methods are: #{resource.api_methods}"
-    p "The volume snapshots are: #{resource.volume_snapshots}"
+    p "The api methods are: #{resource.show.api_methods}"
+    p "The volume snapshots are: #{resource.show.volume_snapshots}"
     return @test_client.backups(:id => id)
   else
-    p "there are no backups: #{@test_client.backups(:lineage => "ns_backup_test_lineage").first}"
+    p "there are no backups: #{@test_client.backups(:lineage => "ns_backup_test_lineage")}"
   end
 end
 
 def update
   p "Doing an update on ALL backups ..."
-  for backup in @test_client.backups(:lineage => "ns_backup_test_lineage")
-    id = backup.href.split("/")[-1]   # => to get the id
+  for backup in @test_client.backups.index(:lineage => "ns_backup_test_lineage")
+    id = backup.show.href.split("/")[-1]   # => to get the id
     resource = @test_client.backups(:id => id)
-    p "The committed for right now is: #{resource.committed}"
+    p "The committed for right now is: #{resource.show.committed}"
     params = {:backup => {:committed => "true"}}
     p "Updating it."
     resource.update(params)
     resource = @test_client.backups(:id => id)
-    p "The committed now is: #{resource.committed}"
+    p "The committed now is: #{resource.show.committed}"
   end
 end
   
@@ -98,8 +98,8 @@ end
 def restore
   p "Doing a restore ..."
   params = {:instance_href => "/api/clouds/907/instances/#{@instance2_id}"}
-  id = @test_client.backups(:lineage => "ns_backup_test_lineage").first.href.split("/")[-1]   # => to get the id
-  task = @test_client.backups(:id => id).restore(params)
+  id = @test_client.backups.index(:lineage => "ns_backup_test_lineage").first.show.href.split("/")[-1]   # => to get the id
+  task = @test_client.backups(:id => id).show.restore(params)
   return task
 end
 
@@ -107,14 +107,14 @@ end
 
 def destroy
   p "Doing a destroy ..."
-  id = @test_client.backups(:lineage => "ns_backup_test_lineage").first.href.split("/")[-1]   # => to get the id
+  id = @test_client.backups.index(:lineage => "ns_backup_test_lineage").first.show.href.split("/")[-1]   # => to get the id
   @test_client.backups(:id => id).destroy
 end
 
 
 def follow_task(task)
-  task_id = task.href.split("/")[-1]
-  p "The summary so far is: #{@test_client.clouds(:id => 907).instances(:id => @instance2_id).live_tasks(:id => task_id).summary}"
+  task_id = task.show.href.split("/")[-1]
+  p "The summary so far is: #{@test_client.clouds(:id => 907).show.instances(:id => @instance2_id).show.live_tasks(:id => task_id).show.summary}"
   p "Querry this again to get an even more updated summary!"
 end
 

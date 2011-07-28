@@ -21,24 +21,28 @@ describe RightApiClient do
     @client.api_methods.should_not be_empty
   end
 
+  it "should return a Resources class for collection of resources" do
+    @client.clouds.should be_kind_of(Resources)
+  end
+  
   it "should return arrays for collection of resources" do
-    @client.clouds.should be_kind_of(Array)
+    @client.clouds.index.should be_kind_of(Array)
   end
 
   it "should return single object for a resource with specific id" do
-    @client.clouds.first.should be_kind_of(RightApiClient::Resource)
+    @client.clouds.index.first.should be_kind_of(Resource)
   end
 
   it "should have attributes for a resource" do
-    @client.clouds.first.attributes.should_not be_empty
+    @client.clouds.index.first.show.attributes.should_not be_empty
   end
 
   it "should have associations for a resource" do
-    @client.clouds.first.associations.should_not be_empty
+    @client.clouds.index.first.show.associations.should_not be_empty
   end
   
   it "should have actions for a resource" do
-    actions = @client.servers.first.actions.to_a
+    actions = @client.servers.index.first.show.actions.to_a
     (actions.include?(:launch) || actions.include?(:terminate)).should == true
   end
 
@@ -46,8 +50,8 @@ describe RightApiClient do
     ['deployments', 'server_arrays', 'servers'].each do |res|
       resource = @client.send(res)
       resource.api_methods.should include(:create)
-      resource[0].api_methods.should include(:destroy)
-      resource[0].api_methods.should include(:update)
+      resource.index[0].api_methods.should include(:destroy)
+      resource.index[0].api_methods.should include(:update)
     end
   end
 
@@ -72,16 +76,6 @@ describe RightApiClient do
     end
   end
 
-  describe "#resource" do
-
-    it "returns a resource given a path" do
-
-      cloud = @client.resource(@client.clouds.first.href)
-
-      cloud.class.should == RightApiClient::Resource
-      cloud.resource_type.should == 'cloud'
-    end
-  end
 
   describe "#cookies" do
 
@@ -93,8 +87,8 @@ describe RightApiClient do
   end
   
   describe "#tags" do
-    it "should return a dummy resource object" do
-      @client.tags.should be_kind_of(RightApiClient::DummyResource)
+    it "should return a Resources object" do
+      @client.tags.should be_kind_of(Resources)
     end
     it "should have methods" do
       @client.tags.api_methods.should_not be_empty
@@ -107,10 +101,11 @@ describe RightApiClient do
     
   describe "#backups" do
     it "should return a dummy resource object" do
-      @client.backups.should be_kind_of(RightApiClient::DummyResource)
+      @client.backups.should be_kind_of(Resources)
     end
     it "should have methods" do
       @client.backups.api_methods.should_not be_empty
+      @client.backups.api_methods.should include(:index)
       @client.backups.api_methods.should include(:create)
       @client.backups.api_methods.should include(:cleanup)
     end

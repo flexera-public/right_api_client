@@ -15,6 +15,13 @@ require File.join(File.dirname(__FILE__), 'resource_detail')
 
 module Helper
 
+  # Some resource_types are not the same as the last thing in the URL: put these here to ensure consistency
+  UNCONSISTENT_RESOURCE_TYPES = {
+    'current_instance' => 'instance',
+    'data'  => 'monitoring_metric_data', 
+    'setting'  => 'multi_cloud_image_setting'
+  }
+  
   # Helper used to add methods to classes dynamically
   def define_instance_method(meth, &blk)
     (class << self; self; end).module_eval do
@@ -52,32 +59,31 @@ module Helper
           if has_id(*args) || is_singular?(rel)
             # User wants a single resource. Either doing a show, update, delete...
             path = add_id_and_params_to_path(hrefs.first, *args)
-            # The resource_type is the singular form the the method (ie. clouds will turn to cloud)
-            resource_type = make_singular(rel)
+            resource_type = make_singular(path.split('/')[-2]) 
             Resource.process(client, resource_type, path)
           else
             # Returns the class of this resource
-            resource_type = rel
-            Resources.new(client, hrefs.first, resource_type)
+            path = add_id_and_params_to_path(hrefs.first, *args)
+            resource_type = hrefs.first.split('/')[-1] 
+            Resources.new(client, path, resource_type)
           end
         else
           # There were multiple links with the same relation name
           # This occurs in tags.by_resource 
           resources = []
-          p "we are heerererere"
           if has_id(*args) || is_singular?(rel)
             hrefs.each do |href|
               # User wants a single resource. Either doing a show, update, delete...
               path = add_id_and_params_to_path(href, *args)
-              # The resource_type is the singular form the the method (ie. clouds will turn to cloud)
-              resource_type = make_singular(rel)
+              resource_type = make_singular(path.split('/')[-2])
               resources << Resource.process(client, resource_type, path)
             end
           else
             hrefs.each do |href|
               # Returns the class of this resource
-              resource_type = rel
-              resources << Resources.new(client, href, resource_type)
+              path = add_id_and_params_to_path(href, *args)
+              resource_type = href.split('/')[-1]
+              resources << Resources.new(client, path, resource_type)
             end
           end
           # return the array of resource objects
@@ -149,6 +155,8 @@ module Helper
   end
   
   def make_singular(str)
-    str.to_s.chomp!('s')
+    str = str.to_s
+    str.chomp!('s')
+    str
   end
 end
