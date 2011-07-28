@@ -54,6 +54,9 @@ class Resource
 
   # Hash is only used for index calls so we can parse out the name and resource_uid for the inspect call
   def initialize(client, resource_type, href, hash={})
+    if UNCONSISTENT_RESOURCE_TYPES.has_key?(resource_type)
+      resource_type = UNCONSISTENT_RESOURCE_TYPES[resource_type]
+    end 
     # For the inspect function:
     @resource_type = resource_type
     @hash = hash

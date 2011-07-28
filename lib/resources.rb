@@ -39,7 +39,9 @@ class Resources
   # Since this is just a fillter class, only define instance methods and the method api_methods()
   # Resource_type should always be plural.
   def initialize(client, path, resource_type)
-    #if UNCONSISTENT_RESOURCE_TYPES.has_key?(resource_type.make_singular)
+    if UNCONSISTENT_RESOURCE_TYPES.has_key?(make_singular(resource_type))
+      resource_type = UNCONSISTENT_RESOURCE_TYPES[resource_type] + 's'
+    end
     @resource_type = resource_type
     # Add create methods for the relevant root resources
     if RESOURCE_TYPE_ACTIONS[:create].include?(resource_type)
