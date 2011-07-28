@@ -215,7 +215,7 @@ module RightApi
       begin
         @client[path].delete(headers) do |response, request, result, &block|
           case response.code
-          when 200 || 204
+          when 200, 204
           else
             raise "Unexpected response #{response.code.to_s}, #{response.body}"
           end
