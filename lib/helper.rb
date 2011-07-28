@@ -13,7 +13,7 @@ require File.join(File.dirname(__FILE__), 'resource_detail')
 #
 
 
-module Helper
+module RightApiHelper
 
   # Some resource_types are not the same as the last thing in the URL: put these here to ensure consistency
   UNCONSISTENT_RESOURCE_TYPES = {
@@ -60,12 +60,12 @@ module Helper
             # User wants a single resource. Either doing a show, update, delete...
             path = add_id_and_params_to_path(hrefs.first, *args)
             resource_type = make_singular(path.split('/')[-2]) 
-            Resource.process(client, resource_type, path)
+            RightApi::Resource.process(client, resource_type, path)
           else
             # Returns the class of this resource
             path = add_id_and_params_to_path(hrefs.first, *args)
             resource_type = hrefs.first.split('/')[-1] 
-            Resources.new(client, path, resource_type)
+            RightApi::Resources.new(client, path, resource_type)
           end
         else
           # There were multiple links with the same relation name
@@ -76,14 +76,14 @@ module Helper
               # User wants a single resource. Either doing a show, update, delete...
               path = add_id_and_params_to_path(href, *args)
               resource_type = make_singular(path.split('/')[-2])
-              resources << Resource.process(client, resource_type, path)
+              resources << RightApi::Resource.process(client, resource_type, path)
             end
           else
             hrefs.each do |href|
               # Returns the class of this resource
               path = add_id_and_params_to_path(href, *args)
               resource_type = href.split('/')[-1]
-              resources << Resources.new(client, path, resource_type)
+              resources << RightApi::Resources.new(client, path, resource_type)
             end
           end
           # return the array of resource objects
