@@ -47,10 +47,10 @@ module RightApi
         # Add in the top level links for instance_facing_calls here:
         resource_type, path, data = self.do_get(ROOT_INSTANCE_RESOURCE)
         # The instance's href
-        instance_href = get_href_from_links(data['links'])
+        instance_href = get_href_from_links(data['links']).dup
         cloud_href = instance_href.split('/instances')[0]
         define_instance_method(:get_instance) do |*params|
-          RightApi::ResourceDetail.new(self, resource_type, path, data)
+          RightApi::ResourceDetail.new(self, resource_type, path.dup, data.dup)
         end
 
         [:volumes, :volume_attachments, :volume_snapshots, :volume_types].each do |meth|
