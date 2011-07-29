@@ -227,9 +227,12 @@ puts "\n\n--InstanceTypes--"
 puts "\n\n--Instances--"
 
 ## Index
+# Two ways to do it
 @yellow_client.clouds(:id => 907).show.instances
 @yellow_client.clouds(:id => 907).show.instances.api_methods
 @yellow_client.clouds(:id => 907).show.instances.index
+
+@yellow_client.server_arrays(:id => 13356).show.current_instances
 ## Show
 @yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV')
 @yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').api_methods
@@ -261,7 +264,10 @@ task.api_methods
 task.show.api_methods
 
 #puts "--Reboot--"
+# Two ways
 @yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.reboot
+
+@yellow_client.servers(:id => 967094).show.reboot
 
 #puts "--Launch--"
 ## Multiple inputs are a bit tricky to define and have to be in this format:
@@ -282,8 +288,6 @@ task.show.api_methods
 #The instance.terminated_at value is available in the extended or full view, but you have to filter and search for your instance first.
 @yellow_client.clouds(:id => 716).show(:view => 'extended', :filter => ['state==inactive', 'resource_uid==7I0K1GBTJ2I2T']).terminated_at
 
-# reboot
-@yellow_client.clouds(:id => 907).show.instances(:id => '6TJPO0I5C716C').show.reboot
 
 
 
@@ -317,14 +321,25 @@ puts "\n\n--MonitoringMetics--"
 # --MultiCloudImages
 # Index, show
 # Index
+# Two ways
 @local_client.multi_cloud_images
 @local_client.multi_cloud_images.api_methods
 @local_client.multi_cloud_images.index
+
+@local_client.server_templates(:id => 2).show.multi_cloud_images
+@local_client.server_templates(:id => 2).show.multi_cloud_images.api_methods
+@local_client.server_templates(:id => 2).show.multi_cloud_images.index
 # Show
+# Two ways
 @local_client.multi_cloud_images(:id => 52426)
 @local_client.multi_cloud_images(:id => 52426).api_methods
 @local_client.multi_cloud_images(:id => 52426).show
 @local_client.multi_cloud_images(:id => 52426).show.api_methods
+
+@local_client.server_templates(:id => 2).show.multi_cloud_images(:id => 7099)
+@local_client.server_templates(:id => 2).show.multi_cloud_images(:id => 7099).api_methods
+@local_client.server_templates(:id => 2).show.multi_cloud_images(:id => 7099).show
+@local_client.server_templates(:id => 2).show.multi_cloud_images(:id => 7099).show.api_methods
 #:links, :settings, :revision, :description, :name, :href
 
 
@@ -494,8 +509,11 @@ inputs = "inputs[][name]=TEST_NAME&inputs[][value]=text:VAL1&inputs[][name]=rs_u
 @yellow_client.servers.index(:filter => ['name==The Ultra Client Server Test']).first.show.launch(inputs)
 #
 #puts "--Update--"
+# Two ways
 params = {:server => {:name => 'NewServerName'}}
 @yellow_client.servers(:id => id).update(params)
+
+@yellow_client.deployments(:id => '89065').show.servers(:id => id).update(params)
 
 # Destroy (two ways to do it)
 @yellow_client.servers(:id => id).destroy
@@ -546,14 +564,131 @@ id = resource.show.href.split('/')[-1]
 
 
 # Volume_attachments
+# Index
+# Two ways
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.volume_attachments
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.volume_attachments.api_methods
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.volume_attachments.index
+
+@yellow_client.clouds(:id => 907).show.volume_attachments
+@yellow_client.clouds(:id => 907).show.volume_attachments.api_methods
+@yellow_client.clouds(:id => 907).show.volume_attachments.index
+
+# Show
+# Three ways to do it
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.volume_attachments(:id => 'BAO92HS0PASUR')
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.volume_attachments(:id => 'BAO92HS0PASUR').api_methods
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.volume_attachments(:id => 'BAO92HS0PASUR').show
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.volume_attachments(:id => 'BAO92HS0PASUR').show.api_methods
+
+@yellow_client.clouds(:id => 907).show.volume_attachments(:id => 'BAO92HS0PASUR')
+@yellow_client.clouds(:id => 907).show.volume_attachments(:id => 'BAO92HS0PASUR').api_methods
+@yellow_client.clouds(:id => 907).show.volume_attachments(:id => 'BAO92HS0PASUR').show
+@yellow_client.clouds(:id => 907).show.volume_attachments(:id => 'BAO92HS0PASUR').show.api_methods
+
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.current_volume_attachment
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.current_volume_attachment.api_methods
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.current_volume_attachment.show
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.current_volume_attachment.show.api_methods
+
+# Create
+instance_href = @yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.href
+volume_href = @yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.href
+params = {:volume_attachment => {:instance_href => instance_href, :volume_href => volume_href, :device => '/dev/sdk'}}
+
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.volume_attachments.create(params)
+
+@yellow_client.clouds(:id => 907).show.volume_attachments.create(params)
+
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.current_volume_attachment
+
+# Destroy
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.volume_attachments(:id => 'BAO92HS0PASUR').destroy
+
+@yellow_client.clouds(:id => 907).show.volume_attachments(:id => 'BAO92HS0PASUR').destroy
+
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.current_volume_attachment.destroy
+
+
+
 
 # Volume_snapshots
+# Index
+# Two ways
+@yellow_client.clouds(:id => 907).show.volume_snapshots
+@yellow_client.clouds(:id => 907).show.volume_snapshots.api_methods
+@yellow_client.clouds(:id => 907).show.volume_snapshots.index
+id = @yellow_client.clouds(:id => 907).show.volume_snapshots.index.first.show.href.split('/')[-1]
+
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.volume_snapshots
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.volume_snapshots.api_methods
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.volume_snapshots.index
+
+# Show
+# Two ways
+@yellow_client.clouds(:id => 907).show.volume_snapshots(:id => id)
+@yellow_client.clouds(:id => 907).show.volume_snapshots(:id => id).api_methods
+@yellow_client.clouds(:id => 907).show.volume_snapshots(:id => id).show
+@yellow_client.clouds(:id => 907).show.volume_snapshots(:id => id).show.api_methods
+
+@yellow_client.clouds(:id => 907).show.volumes(:id => 'AGC6G2PSSUVVD').show.volume_snapshots(:id => 'CMTFBMGLTRU5S')
+@yellow_client.clouds(:id => 907).show.volumes(:id => 'AGC6G2PSSUVVD').show.volume_snapshots(:id => 'CMTFBMGLTRU5S').api_methods
+@yellow_client.clouds(:id => 907).show.volumes(:id => 'AGC6G2PSSUVVD').show.volume_snapshots(:id => 'CMTFBMGLTRU5S').show
+@yellow_client.clouds(:id => 907).show.volumes(:id => 'AGC6G2PSSUVVD').show.volume_snapshots(:id => 'CMTFBMGLTRU5S').show.api_methods
+
+ 
+
+# Create
+# Two ways
+params = {:volume_snapshot => {:name => 'Client test volume snapshot'}}
+snap = @yellow_client.clouds(:id => 907).show.volume_snapshots.create(params)
+
+snap = @yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.volume_snapshots.create(params)
+id = snap.show.href.split('/')[-1]
+
+# Destroy
+# Two ways
+@yellow_client.clouds(:id => 907).show.volume_snapshots(:id => id).destroy
+
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.volume_snapshots(:id => id).destroy
+
+
 
 # Volume_types
+# Index
+@yellow_client.clouds(:id => 716).show.volume_types
+@yellow_client.clouds(:id => 716).show.volume_types.api_methods
+@yellow_client.clouds(:id => 716).show.volume_types.index
+id = @yellow_client.clouds(:id => 716).show.volume_types.index.first.show.href.split('/')[-1]
+
+#Show
+@yellow_client.clouds(:id => 716).show.volume_types(:id => id)
+@yellow_client.clouds(:id => 716).show.volume_types(:id => id).api_methods
+@yellow_client.clouds(:id => 716).show.volume_types(:id => id).show
+@yellow_client.clouds(:id => 716).show.volume_types(:id => id).show.api_methods
 
 # Volumes
+#Index
+@yellow_client.clouds(:id => 907).show.volumes
+@yellow_client.clouds(:id => 907).show.volumes.api_methods
+@yellow_client.clouds(:id => 907).show.volumes.index
+@yellow_client.clouds(:id => 907).show.volumes.index(:filter => ['resource_uid==vol-92b504fd']).first.show.href
 
 
+#Show
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M')
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').api_methods
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show
+@yellow_client.clouds(:id => 907).show.volumes(:id => '2QQBRFJUIUI3M').show.api_methods
+
+#create
+datacenter_href = @yellow_client.clouds(:id => 907).show.datacenters.index.first.show.href
+params = {:volume => {:name => 'Client Volume Test', :datacenter_href => datacenter_href, :size => '5'} }
+volume = @yellow_client.clouds(:id => 907).show.volumes.create(params)
+id = volume.show.href.split('/')[-1]
+
+# Destroy
+@yellow_client.clouds(:id => 907).show.volumes(:id => id).destroy
 
 
 # ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
