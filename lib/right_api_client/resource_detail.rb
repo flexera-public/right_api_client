@@ -44,9 +44,7 @@ module RightApi
       end
 
       # Follow the links to create methods
-      if !client.instance_token
-        get_associated_resources(client, links, associations)
-      end
+      get_associated_resources(client, links, associations)
 
       # Some resources are not linked together, so they have to be manually
       # added here.

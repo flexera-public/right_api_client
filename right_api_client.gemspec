@@ -3,7 +3,7 @@ require 'lib/right_api_client/client'
 
 Gem::Specification.new do |s|
 
-  s.name = 'right_api_client'
+  s.name = 'right_api_1.5_client'
   s.version = RightApi::Client::VERSION
   s.platform = Gem::Platform::RUBY
   s.authors = [ 'Ali Khajeh-Hosseini' ]

@@ -2,16 +2,16 @@
 
 == Installation
 - rake build
-- gem install right_api_client-0.20.0.gem
+- gem install right_api_1.5_client-1.0.0.gem
 
 == Manual Installation
 - right_api_client uses Ruby 1.9.2, the rest_client gem is also required:
   
   gem install rest-client
 
-- Download the lib/right_api_client/client.rb file and require it:
+- Clone the right_api_client git repo
   
-  require File.expand_path('lib/right_api_client')
+  require File.expand_path('lib/right_api_client/client')
 
 == Usage Instructions
 - Check the examples directory for code snippets on how to use the client.

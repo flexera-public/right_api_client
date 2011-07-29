@@ -59,7 +59,7 @@ params = {:keep_last => "1", :lineage => "my_lineage"}
 
 # Restore
 params = {:instance_href => "/api/clouds/907/instances/26B8QNKI4UOLD"}
-task = client.backups(:id => '02175dd2-ad9f-11e0-877a-12313b000806').show.restore(params)
+task = @client.backups(:id => '02175dd2-ad9f-11e0-877a-12313b000806').show.restore(params)
 
 
 
@@ -695,22 +695,178 @@ id = volume.show.href.split('/')[-1]
 
 
 #puts "\n\n --Instance Facing Calls --"
+
+# Volumes
 @instance_client.api_methods
+# Index
 @instance_client.volumes
 @instance_client.volumes.api_methods
+@instance_client.volumes.index
+@instance_client.volumes.index(:filter => ['resource_uid==vol-5aaedd35'])
+id = @instance_client.volumes.index(:filter => ['resource_uid==vol-5aaedd35']).first.show.href.split('/')[-1]
+
+
+#Show
+@instance_client.volumes(:id => '2QQBRFJUIUI3M')
+@instance_client.volumes(:id => '2QQBRFJUIUI3M').api_methods
+@instance_client.volumes(:id => '2QQBRFJUIUI3M').show
+@instance_client.volumes(:id => '2QQBRFJUIUI3M').show.api_methods
+
+#create
+datacenter_href = @yellow_client.clouds(:id => 907).show.datacenters.index.first.show.href
+params = {:volume => {:name => 'Client Volume Test', :datacenter_href => datacenter_href, :size => '5'} }
+volume = @instance_client.volumes.create(params)
+id = volume.show.href.split('/')[-1]
+
+# Destroy
+@instance_client.volumes(:id => id).destroy
+
+
+
+
+# Volume_snapshots
 @instance_client.volume_snapshots.api_methods
-@instance_client.volumes_attachments.api_methods
-@instance_client.volumes_types.api_methods
+# Index
+@instance_client.volume_snapshots
+@instance_client.volume_snapshots.api_methods
+@instance_client.volume_snapshots.index
+
+# Show
+id = @instance_client.volume_snapshots.index.first.show.href.split('/')[-1]
+@instance_client.volume_snapshots(:id => id)
+@instance_client.volume_snapshots(:id => id).api_methods
+@instance_client.volume_snapshots(:id => id).show
+@instance_client.volume_snapshots(:id => id).show.api_methods
+
+@instance_client.volumes(:id => 'AGC6G2PSSUVVD').show.volume_snapshots(:id => 'CMTFBMGLTRU5S')
+@instance_client.volumes(:id => 'AGC6G2PSSUVVD').show.volume_snapshots(:id => 'CMTFBMGLTRU5S').api_methods
+@instance_client.volumes(:id => 'AGC6G2PSSUVVD').show.volume_snapshots(:id => 'CMTFBMGLTRU5S').show
+@instance_client.volumes(:id => 'AGC6G2PSSUVVD').show.volume_snapshots(:id => 'CMTFBMGLTRU5S').show.api_methods
+
+
+# Create
+# Two ways
+
+id = @instance_client.volumes.index(:filter => ['resource_uid==vol-5aaedd35']).first.show.href.split('/')[-1]
+parent_volume_href = @instance_client.volumes.index(:filter => ['resource_uid==vol-5aaedd35']).first.show.href
+params = {:volume_snapshot => {:name => 'Client test volume snapshot', :parent_volume_href => parent_volume_href}}
+snap = @instance_client.volume_snapshots.create(params)
+
+snap = @instance_client.volumes(:id => id).show.volume_snapshots.create(params)
+id = snap.show.href.split('/')[-1]
+
+# Destroy
+# Two ways
+@instance_client.volume_snapshots(:id => id).destroy
+
+@instance_client.volumes(:id => id).show.volume_snapshots(:id => id).destroy
+
+
+
+
+
+# Volume_attachments
+# Index
+# Two ways
+@instance_client.volume_attachments
+@instance_client.volume_attachments.api_methods
+@instance_client.volume_attachments.index
+
+# Show
+# Three ways to do it
+@instance_client.volume_attachments(:id => '3EKL9FPQHH8UC')
+@instance_client.volume_attachments(:id => '3EKL9FPQHH8UC').api_methods
+@instance_client.volume_attachments(:id => '3EKL9FPQHH8UC').show
+@instance_client.volume_attachments(:id => '3EKL9FPQHH8UC').show.api_methods
+
+
+volume_id = @instance_client.volumes.index(:filter => ['resource_uid==vol-5aaedd35']).first.show.href.split('/')[-1]
+@instance_client.volumes(:id => volume_id).show.current_volume_attachment
+@instance_client.volumes(:id => volume_id).show.current_volume_attachment.api_methods
+@instance_client.volumes(:id => volume_id).show.current_volume_attachment.show
+@instance_client.volumes(:id => volume_id).show.current_volume_attachment.show.api_methods
+
+
+# Create
+instance_href = @moo.clouds(:id => 907).show.instances.index(:filter => ['resource_uid==i-999f75de']).first.show.href
+volume_href = @instance_client.volumes.index(:filter => ['resource_uid==vol-5aaedd35']).first.show.href
+params = {:volume_attachment => {:instance_href => instance_href, :volume_href => volume_href, :device => '/dev/sdk'}}
+
+@instance_client.volume_attachments.create(params)
+
+
+# Destroy
+id = @instance_client.volumes.index(:filter => ['resource_uid==vol-a64f3cc9']).first.show.current_volume_attachment.show.href.split('/')[-1]
+
+@instance_client.volume_attachments(:id => id).destroy
+
+@instance_client.volumes.index(:filter => ['resource_uid==vol-a64f3cc9']).first.show.current_volume_attachment.destroy
+
+
+
+
+# Volume Types
+
+# Index
+@instance_client.volume_types
+@instance_client.volume_types.api_methods
+@instance_client.volume_types.index
+id = @instance_client.volume_types.index.first.show.href.split('/')[-1]
+
+#Show
+@instance_client.volume_types(:id => id)
+@instance_client.volume_types(:id => id).api_methods
+@instance_client.volume_types(:id => id).show
+@instance_client.volume_types(:id => id).show.api_methods
+
+
+
+
+# Backups
 @instance_client.backups(:lineage => 'client_lineage').api_methods
+
+#puts "\n\n --Backups--"
+# puts "\n\n --Create A backup -- "
+params = {:backup => {:lineage => "my_lineage", :name => "my Backup", :volume_attachment_hrefs => ["/api/clouds/907/volume_attachments/NQCECIVBLPCO"]}}
+b = @instance_client.backups.create(params)
+id = b.show.href.split('/')[-1]
+
+# Index
+@instance_client.backups
+@instance_client.backups.api_methods
+@instance_client.backups.index(:lineage => "my_lineage")
+
+# Show
+@instance_client.backups(:id => id)
+@instance_client.backups(:id => id).api_methods
+@instance_client.backups(:id => id).show
+
+# Update
+params = {:backup => {:committed => "true"}}
+@instance_client.backups(:id => id).update(params)
+@instance_client.backups(:id => id).show.committed
+
+# cleanup
+# Note committed need to be true
+params = {:keep_last => "1", :lineage => "my_lineage"}
+@instance_client.backups.cleanup(params)
+
+# Destroy
+@instance_client.backups(:id => id).destroy
+
+# Restore
+# Your instance:
+params = {:instance_href => "/api/clouds/907/instances/1JCN2IO8CPCFI"}
+id = '32003f00-ba10-11e0-88a3-12313b063601'
+task = @instance_client.backups(:id => id).show.restore(params)
+
+id = task.show.href.split('/')[-1]
+
+# Tasks
 @instance_client.live_tasks(:id => id)
-
-#puts instance_client.get_instance.links
-#instance_client.clouds(:id => 716).api_methods
-#instance_client.clouds(:id => 716).volumes.first.api_methods
-#instance_client.clouds(:id => 716).volume_snapshots.first.api_methods
-#instance_client.clouds(:id => 716).volume_types.first.api_methods
-#instance_client.clouds(:id => 716).volume_attachments.first.api_methods
-
+@instance_client.live_tasks(:id => id).api_methods
+@instance_client.live_tasks(:id => id).show
+@instance_client.live_tasks(:id => id).show.summary
 
 
 

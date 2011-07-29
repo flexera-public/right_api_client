@@ -15,7 +15,7 @@ require 'resources'
 module RightApi
   class Client
 
-    VERSION = '0.20.0'
+    VERSION = '1.0.0'
     ROOT_RESOURCE = '/api/session'
     ROOT_INSTANCE_RESOURCE = '/api/session/instance'
 
