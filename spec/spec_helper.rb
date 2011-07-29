@@ -1,5 +1,6 @@
 
 require File.join(File.dirname(__FILE__), '../lib/right_api_client/client')
+require 'yaml'
 
 def example_args
   YAML.load_file(File.join(
