@@ -1,12 +1,3 @@
-require 'rest_client' # rest_client 1.6.1
-require 'json'
-require 'set'
-require 'cgi'
-
-require File.join(File.dirname(__FILE__), 'right_api_client')
-require File.join(File.dirname(__FILE__), 'resource')
-require File.join(File.dirname(__FILE__), 'resources')
-require File.join(File.dirname(__FILE__), 'helper')
 
 module RightApi
   class ResourceDetail

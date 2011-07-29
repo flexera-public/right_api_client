@@ -1,5 +1,5 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'lib/right_api_client'
+require 'lib/right_api_client/client'
 
 Gem::Specification.new do |s|
 

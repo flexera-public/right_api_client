@@ -1,11 +1,15 @@
 = RightScale API Client
 
 == Installation
+- rake build
+- gem install right_api_client-0.20.0.gem
+
+== Manual Installation
 - right_api_client uses Ruby 1.9.2, the rest_client gem is also required:
   
   gem install rest-client
 
-- Download the lib/right_api_client.rb file and require it:
+- Download the lib/right_api_client/client.rb file and require it:
   
   require File.expand_path('lib/right_api_client')
 
@@ -19,3 +23,6 @@
 
 You can find your account number by logging into RightScale > Settings > Account Settings,
 the account number is at the end of the browser address bar. 
+
+To access actions users need to do a .show before the client can see the action.
+(ie. client.server(:id => 12345).show.launch)

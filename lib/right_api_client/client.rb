@@ -1,12 +1,13 @@
+$LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'rest_client' # rest_client 1.6.1
 require 'json'
 require 'set'
 require 'cgi'
 
-require File.join(File.dirname(__FILE__), 'resource')
-require File.join(File.dirname(__FILE__), 'resources')
-require File.join(File.dirname(__FILE__), 'resource_detail')
-require File.join(File.dirname(__FILE__), 'helper')
+require 'helper'
+require 'resource'
+require 'resource_detail'
+require 'resources'
 
 
 # RightApiClient has the generic get/post/delete/put calls that are used
@@ -14,6 +15,7 @@ require File.join(File.dirname(__FILE__), 'helper')
 module RightApi
   class Client
 
+    VERSION = '0.20.0'
     ROOT_RESOURCE = '/api/session'
     ROOT_INSTANCE_RESOURCE = '/api/session/instance'
 
@@ -90,8 +92,6 @@ module RightApi
         get_associated_resources(self, session.index.links, nil)
       end
     end
-  
-  
   
     def to_s
       "#<RightApiClient>"
@@ -258,8 +258,6 @@ module RightApi
     def get_resource_type(content_type)
       content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
     end
-
-
   end
 end
 

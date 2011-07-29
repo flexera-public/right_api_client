@@ -1,5 +1,5 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'lib/right_api_client'
+require 'lib/right_api_client/client'
 
 task :build do
   system "gem build right_api_client.gemspec"

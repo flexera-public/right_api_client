@@ -1,13 +1,3 @@
-require 'rest_client' # rest_client 1.6.1
-require 'json'
-require 'set'
-require 'cgi'
-
-
-require File.join(File.dirname(__FILE__), 'right_api_client')
-require File.join(File.dirname(__FILE__), 'resource')
-require File.join(File.dirname(__FILE__), 'resource_detail')
-require File.join(File.dirname(__FILE__), 'helper')
 
 module RightApi
   # This class defines the different resource types and the methods that one can call on them
@@ -39,10 +29,8 @@ module RightApi
     # Since this is just a fillter class, only define instance methods and the method api_methods()
     # Resource_type should always be plural.
     def initialize(client, path, resource_type)
-      p if RESOURCE_TYPE_ACTIONS[:create].include?(resource_type)
-    
       if UNCONSISTENT_RESOURCE_TYPES.has_key?(make_singular(resource_type.dup))
-        resource_type = UNCONSISTENT_RESOURCE_TYPES[resource_type] + 's'
+        resource_type = UNCONSISTENT_RESOURCE_TYPES[make_singular(resource_type.dup)] + 's'
       end
       @resource_type = resource_type
       # Add create methods for the relevant root RightApi::Resources

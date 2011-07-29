@@ -4,7 +4,7 @@
 require 'bundler/setup' # only needed if you want to use Bundler
 require 'yaml' # only needed if you want to put your creds in .yml file
 
-require File.expand_path(File.dirname(__FILE__) + '/../lib/right_api_client')
+require File.expand_path(File.dirname(__FILE__) + '/../lib/right_api_client/client')
 
 # Read username, password and account_id from file, or you can just pass them
 # as arguments when creating a new client.
@@ -12,8 +12,8 @@ args = YAML.load_file(File.expand_path(File.dirname(__FILE__) + '/login.yml'))
 
 puts "Creating RightScale API Client and logging in..."
 # Account ID is available from the browser address bar on this page: dashboard > Settings > Account Settings
-client = RightApiClient.new(:email =>args[:email], :password => args[:password], :account_id => args[:account_id])
-puts client.session.message
+client = RightApi::Client.new(:email =>args[:email], :password => args[:password], :account_id => args[:account_id])
+puts client.session.show.message
 #puts 'Available methods:', client.api_methods
 ##Can also specify api_url and api_version, which is useful for testing, e.g.:
 #client = RightApiClient.new(:email => args[:email], :password => args[:password], :account_id => args[:account_id],
@@ -29,6 +29,40 @@ puts client.session.message
 #client.log(Logger.new(STDOUT))
 
 
+#puts "\n\n --Backups--"
+# puts "\n\n --Create A backup -- "
+params = {:backup => {:lineage => "my_lineage", :name => "my Backup", :volume_attachment_hrefs => ["/api/clouds/907/volume_attachments/BO7026O3JDKMB", "/api/clouds/907/volume_attachments/31AD6V5JJLN95"]}}
+b = @yellow_client.backups.create(params)
+
+# Index
+@yellow_client.backups
+@yellow_client.backups.api_methods
+@yellow_client.backups.index(:lineage => "my_lineage")
+@yellow_client.backups.index(:lineage => "my_lineage")
+
+# Show
+@yellow_client.backups(:id => 'e1a4006c-ad82-11e0-a428-12313b000806')
+@yellow_client.backups(:id => 'e1a4006c-ad82-11e0-a428-12313b000806').api_methods
+@yellow_client.backups(:id => 'e1a4006c-ad82-11e0-a428-12313b000806').show
+
+# Update
+params = {:backup => {:committed => "true"}}
+@yellow_client.backups(:id => '3a7be1ca-ad9a-11e0-947f-12313b000806').update(params)
+
+# cleanup
+# Note committed need to be true
+params = {:keep_last => "1", :lineage => "my_lineage"}
+@yellow_client.backups.cleanup(params)
+
+# Destroy
+@yellow_client.backups(:id => '3a7be1ca-ad9a-11e0-947f-12313b000806').destroy
+
+# Restore
+params = {:instance_href => "/api/clouds/907/instances/26B8QNKI4UOLD"}
+task = client.backups(:id => '02175dd2-ad9f-11e0-877a-12313b000806').show.restore(params)
+
+
+
 puts "\n\n--Clouds--"
 # Index, show
 # View the methods avaliable to the root resource clouds:
@@ -38,14 +72,13 @@ puts "\n\n--Clouds--"
 @yellow_client.clouds.index
 @yellow_client.clouds.index(:filter => ['name==Cloud'])
 # Get the cloud resource
+@yellow_client.clouds.index(:filter => ['name==Cloud']).first
 @yellow_client.clouds(:id => 907)
 # View the methods avaliable to this cloud
 @yellow_client.clouds(:id => 907).api_methods
 # Follow the show
 @yellow_client.clouds(:id => 907).show
 @yellow_client.clouds(:id => 907).show.api_methods
-# :links, :datacenters, :instance_types, :security_groups, :instances, :ssh_keys, :images, :volume_attachments, :volume_snapshots, :volumes, :description, :name, :href
-
 
 
 puts "\n\nDatacenters"
@@ -72,8 +105,6 @@ puts "\n\nDatacenters"
 @yellow_client.clouds(:id => 907).show.datacenters(:id => 'D7TV0QH56MGCS').show.resource_uid
 
 
-
-
 puts "\n\n--Deployments--"
 # Index, show, create, update, destroy
 # View the methods avaliable to the root resource Deployments
@@ -96,23 +127,23 @@ puts "\n\n--Deployments--"
 @yellow_client.deployments(:id => '66641').show.servers.index
 @yellow_client.deployments(:id => '66641').show.server_arrays.api_methods
 @yellow_client.deployments(:id => '66641').show.inputs.api_methods
-@yellow_client.deployments(:id => '66641').update
 @yellow_client.deployments(:id => '66641').show.description
 @yellow_client.deployments(:id => '66641').show.name
 @yellow_client.deployments(:id => '66641').show.href
-@yellow_client.deployments(:id => '66641').show.destroy
 # Create a deployment
 params = {:deployment => {:name => 'ClientDeployment', :description => 'This is a client test deployment.'}}
-deployment = @local_client.deployments.create(params)
+deployment = @yellow_client.deployments.create(params)
 id = deployment.show.href.split("/")[-1]
+@yellow_client.deployments(:id => id).show.name
 # Update a deployment
 params = {:deployment => {:name => 'MyNewClientDeploymentName', :description => 'This is my updated client test deployment.'}} 
 @yellow_client.deployments(:id => id).update(params)
+@yellow_client.deployments(:id => id).show.name
 # Destroy a deployment
 @yellow_client.deployments(:id => id).destroy
-
-
-
+# Servers:
+@yellow_client.deployments(:id => '66641').show.servers.api_methods
+@yellow_client.deployments(:id => '66641').show.servers.index
 
 puts "\n\n--Images--"
 # Index, show
@@ -121,24 +152,25 @@ puts "\n\n--Images--"
 ## Index
 @yellow_client.clouds(:id => 907).show.images.index
 @yellow_client.clouds(:id => 907).show.images.index(:filter => ['name==ubuntu'])
+@yellow_client.clouds(:id => 907).show.images.index(:filter => ['name==ubuntu']).first.show.href
 ## Show
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361')
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95')
 # View the methods avaliable to this datacenter
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').api_methods
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.api_methods
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').api_methods
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.api_methods
 # Follow the methods
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.links
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.cloud.api_methods
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.description
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.visibility
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.virtualization_type
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.os_platform
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.name
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.resource_uid
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.cpu_architecture
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.image_type
-@yellow_client.clouds(:id => 907).show.images(:id => '3UGOASH1RK361').show.href
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.links
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.cloud.api_methods
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.description
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.visibility
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.virtualization_type
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.os_platform
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.name
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.resource_uid
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.cpu_architecture
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.image_type
+@yellow_client.clouds(:id => 907).show.images(:id => 'BI77U68ME5J95').show.href
 
 
 
@@ -218,19 +250,18 @@ puts "\n\n--Instances--"
 task = @yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.run_executable("right_script_href=/api/right_scripts/371421" +"&inputs[][name]=TEST_NAME&inputs[][value]=text:VAL1")
 task.api_methods
 task.show.api_methods
+# To get updated info need to requery again:
+id = task.show.href.split('/')[-1]
+task = @yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.live_tasks(:id => id)
+task.show.summary
 #
 #puts "--MultiRunExecutable--"
 task = @yellow_client.clouds(:id => 907).show.instances.index(:filter => ['name==ns_server5']).multi_run_executable("right_script_href=/api/right_scripts/371421" +"&inputs[][name]=TEST_NAME&inputs[][value]=text:VAL1")
 task.api_methods
 task.show.api_methods
 
-# "-Tasks--"
-#Show
-task_id = task.show.href.split('/')[-1]
-same_task = @yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.live_tasks(:id => task_id)
-same_task.api_methods
-same_task.show.api_methods
-
+#puts "--Reboot--"
+@yellow_client.clouds(:id => 907).show.instances(:id => 'A1BQRR03KDV').show.reboot
 
 #puts "--Launch--"
 ## Multiple inputs are a bit tricky to define and have to be in this format:
@@ -238,22 +269,21 @@ inputs = "inputs[][name]=TEST_NAME&inputs[][value]=text:MyValue&inputs[][name]=r
 server = @yellow_client.clouds(:id => 907).show.instances(:id => '9O2GFF4A43CPT').show.launch(inputs)
 
 #puts "--Update--"
-params = {:instance => {:datacenter_href => @yellow_client.clouds(:id => 907).show.datacenters.index(:filter => ['name==us-west-1a']).first.show.href}}
+params = {:instance => {:datacenter_href => @yellow_client.clouds(:id => 907).show.datacenters.index(:filter => ['name==us-west-1b']).first.show.href}}
 @yellow_client.clouds(:id => 907).show.instances(:id => '9O2GFF4A43CPT').update(params)
 
 #puts "--MultiTerminate--"
-task = @yellow_client.clouds(:id => 716).show.instances.index(:filter => ['name==ns_server4']).multi_terminate
+task = @yellow_client.clouds(:id => 907).show.instances.multi_terminate(:filter => ['name==ns_server4'])
 task.api_methods
 task.show.api_methods
 
 # Terminate
-@yellow_client.clouds(:id => 907).show.instances(:id => '6TJPO0I5C716C').show.terminate
+@yellow_client.clouds(:id => 907).show.instances(:id => '9O2GFF4A43CPT').show.terminate
 #The instance.terminated_at value is available in the extended or full view, but you have to filter and search for your instance first.
 @yellow_client.clouds(:id => 716).show(:view => 'extended', :filter => ['state==inactive', 'resource_uid==7I0K1GBTJ2I2T']).terminated_at
 
 # reboot
 @yellow_client.clouds(:id => 907).show.instances(:id => '6TJPO0I5C716C').show.reboot
-
 
 
 
@@ -266,21 +296,16 @@ puts "\n\n--MonitoringMetics--"
 @yellow_client.clouds(:id => 907).show.instances(:id => 'ES29I0BO32AJ1').show.monitoring_metrics.api_methods
 @yellow_client.clouds(:id => 907).show.instances(:id => 'ES29I0BO32AJ1').show.monitoring_metrics.index
 ## Show
-@local_client.clouds(:id => 232).show.instances(:id => '5Q1V4V35A2C5K').show.monitoring_metrics.index.last.show.href
-# View the methods avaliable to this instance_types
-
-
-## Index
-#p client.clouds(:id => 716).instances(:id => '6FDOUES5Q7ECE').monitoring_metrics
-## Show
-#resource = client.clouds(:id => 716).instances(:id => '6FDOUES5Q7ECE').monitoring_metrics(:id => 'cpu-0:cpu_overview')
-#puts 'Available methods:', resource.api_methods
-
+@yellow_client.clouds(:id => 232).show.instances(:id => '5Q1V4V35A2C5K').show.monitoring_metrics.index.last.show.href
+# data
+@yellow_client.clouds(:id => 232).show.instances(:id => '5Q1V4V35A2C5K').show.monitoring_metrics(:id => 'dsfdsf').show.data
+@yellow_client.clouds(:id => 232).show.instances(:id => '5Q1V4V35A2C5K').show.monitoring_metrics(:id => 'dsfdsf').show.data.api_methods
+@yellow_client.clouds(:id => 232).show.instances(:id => '5Q1V4V35A2C5K').show.monitoring_metrics(:id => 'dsfdsf').show.data.href
 
 #"--MultiCloudImageSettings--"
 # Index, show
 # Index
-@local_client.multi_cloud_images(:id => 52426).show.settings
+@local_client.multi_cloud_images.index.first.show.settings
 @local_client.multi_cloud_images(:id => 52426).show.settings.api_methods
 @local_client.multi_cloud_images(:id => 52426).show.settings.index
 # Show
@@ -288,7 +313,6 @@ puts "\n\n--MonitoringMetics--"
 @local_client.multi_cloud_images(:id => 52426).show.settings(:id => 120991).api_methods
 @local_client.multi_cloud_images(:id => 52426).show.settings(:id => 120991).show
 @local_client.multi_cloud_images(:id => 52426).show.settings(:id => 120991).show.api_methods
-#:links, :image, :cloud, :instance_type, :multi_cloud_image, :href
 
 # --MultiCloudImages
 # Index, show
@@ -315,6 +339,7 @@ puts "\n\n--MonitoringMetics--"
 @local_client.clouds(:id => 907).show.security_groups(:id => 'CCCFLO89QS4QQ').api_methods
 @local_client.clouds(:id => 907).show.security_groups(:id => 'CCCFLO89QS4QQ').show
 @local_client.clouds(:id => 907).show.security_groups(:id => 'CCCFLO89QS4QQ').show.api_methods
+@local_client.clouds(:id => 907).show.security_groups(:id => 'CCCFLO89QS4QQ').show(:view => 'tiny').api_methods
 #:links, :cloud, :name, :resource_uid, :href
 
 
@@ -332,6 +357,7 @@ puts "\n\n--MonitoringMetics--"
 @yellow_client.server_arrays(:id => '13356')
 @yellow_client.server_arrays(:id => '13356').api_methods
 @yellow_client.server_arrays(:id => '13356').show
+@yellow_client.server_arrays(:id => '13356').show.api_methods
 
 @yellow_client.deployments(:id => '89065').show.server_arrays(:id => 13356)
 @yellow_client.deployments(:id => '89065').show.server_arrays(:id => 13356).api_methods
@@ -372,23 +398,23 @@ params = { :server_array => {
   }  
 }}
 
-new_server_array = client.server_arrays.create(params)
+new_server_array = @yellow_client.server_arrays.create(params)
 new_server_array.api_methods
 #
 # You can also create server_array from a specific deployment, where :deployment_href param isn't needed
-new_server_array = client.deployments(:id => 89065).server_arrays.create(params)
+new_server_array = @yellow_client.deployments(:id => 89065).show.server_arrays.create(params)
 new_server_array.api_methods
 
 id = new_server_array.show.href.split('/')[-1]
 #puts "--Launch--"
 ## Inputs are a bit tricky so they have to be set in a long string in the this format.
 inputs = "inputs[][name]=TEST_NAME&inputs[][value]=text:VAL1&inputs[][name]=rs_utils/timezone&inputs[][value]=text:GMT"
-@yellow_client.server_arrays.index(:filter => ['name==MyClientServerArray']).first.show.launch(inputs)
+@yellow_client.server_arrays(:id => id).show.launch(inputs)
 #
 #puts "--Update--"
 params = {
   :server_array => { 
-    :name => 'MyNewServerArrayName'
+    :name => 'MyUltraNewServerArrayName'
   }
 }
 @yellow_client.server_arrays(:id => id).update(params)
@@ -412,6 +438,17 @@ task.api_methods.show.api_methods
 @yellow_client.deployments(:id => 89065).show.server_arrays(:id => id).destroy
 
 
+
+# ServerTemplates
+#Index
+@local_client.server_templates
+@local_client.server_templates.api_methods
+@local_client.server_templates.index
+#Show
+@local_client.server_templates(:id => 2)
+@local_client.server_templates(:id => 2).api_methods
+@local_client.server_templates(:id => 2).show
+@local_client.server_templates(:id => 2).show.api_methods
 
 
 
@@ -443,7 +480,7 @@ deployment_href = @yellow_client.deployments(:id => 89065).show.href
 security_group_hrefs = [@yellow_client.clouds(:id => 907).show.security_groups.index(:filter => ['name==default']).first.show.href]
 datacenter_href = @yellow_client.clouds(:id => 907).show.datacenters.index.first.show.href
 
-params = { :server => {:name => 'Client Server Test', :deployment_href => deployment_href, :instance => {:server_template_href => server_template_href, :cloud_href => cloud_href, :security_group_hrefs => security_group_hrefs, :datacenter_href => datacenter_href}}}
+params = { :server => {:name => 'The Ultra Client Server Test', :deployment_href => deployment_href, :instance => {:server_template_href => server_template_href, :cloud_href => cloud_href, :security_group_hrefs => security_group_hrefs, :datacenter_href => datacenter_href}}}
 new_server = @yellow_client.servers.create(params)
 new_server.api_methods
 ## You can also create server from a specific deployment, where :deployment_href param isn't needed
@@ -454,7 +491,7 @@ id = new_server.show.href.split('/')[-1]
 #puts "--Launch--"
 ## Inputs are a bit tricky so they have to be set in a long string in the this format.
 inputs = "inputs[][name]=TEST_NAME&inputs[][value]=text:VAL1&inputs[][name]=rs_utils/timezone&inputs[][value]=text:GMT"
-@yellow_client.servers.index(:filter => ['name==Client Server Test']).first.show.launch(inputs)
+@yellow_client.servers.index(:filter => ['name==The Ultra Client Server Test']).first.show.launch(inputs)
 #
 #puts "--Update--"
 params = {:server => {:name => 'NewServerName'}}
@@ -464,20 +501,9 @@ params = {:server => {:name => 'NewServerName'}}
 @yellow_client.servers(:id => id).destroy
 @yellow_client.deployments(:id => 89065).show.servers(:id => id).destroy
 
+#Terminate
+@yellow_client.servers(:id => 967079).show.terminate
 
-
-
-# ServerTemplates
-#Index
-@local_client.server_templates
-@local_client.server_templates.api_methods
-@local_client.server_templates.index
-#Show
-@local_client.server_templates(:id => 2)
-@local_client.server_templates(:id => 2).api_methods
-@local_client.server_templates(:id => 2).show
-@local_client.server_templates(:id => 2).show.api_methods
-# :links, :multi_cloud_images, :revision, :description, :name, :href
 
 
 #"--SshKeys--"
@@ -508,33 +534,29 @@ id = resource.show.href.split('/')[-1]
 # by_resource
 @yellow_client.tags.by_resource(:resource_hrefs => ['/api/servers/967094', '/api/servers/967078'])
 @yellow_client.tags.by_resource(:resource_hrefs => ['/api/servers/967094']).first.api_methods
-@yellow_client.tags.by_resource(:resource_hrefs => ['/api/servers/967094']).first.show
 @yellow_client.tags.by_resource(:resource_hrefs => ['/api/servers/967094']).first.resource.api_methods
-#puts "the first server's (that has tag == ns_tag) methods ", 
+# by_tag
+@yellow_client.tags.by_tag(:resource_type => 'servers', :tags => ['ns_tag']).first
+@yellow_client.tags.by_tag(:resource_type => 'servers', :tags => ['ns_tag']).first.api_methods
 @yellow_client.tags.by_tag(:resource_type => 'servers', :tags => ['ns_tag']).first.resource.first.api_methods
-@yellow_client.tags.multi_add(:resource_hrefs => ['/api/servers/967078'], :tags => ['ns_other_tag'])
-@yellow_client.tags.multi_delete(:resource_hrefs => ['/api/servers/967094'], :tags => ['ns_other_tag'])
+#multi_add
+@yellow_client.tags.multi_add(:resource_hrefs => ['/api/servers/967078'], :tags => ['client_tag'])
+#multi_delete
+@yellow_client.tags.multi_delete(:resource_hrefs => ['/api/servers/967098'], :tags => ['client_tag'])
+
+
+# Volume_attachments
+
+# Volume_snapshots
+
+# Volume_types
+
+# Volumes
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 
 #puts "\n\n --Instance Facing Calls --"
@@ -560,52 +582,4 @@ id = resource.show.href.split('/')[-1]
 
 
 
-#puts "\n\n --Backups--"
-# Note: all these calls can also be done with logging in with an instance token
-
-@yellow_client.api_methods    # => Should have backups in there
-# Need a running instance and at least one attached volume
-
-# puts "\n\n --Create A backup -- "
-params = {:backup => {:lineage => "my_lineage", :name => "my Backup", :volume_attachment_hrefs => ["/api/clouds/907/volume_attachments/BO7026O3JDKMB", "/api/clouds/907/volume_attachments/31AD6V5JJLN95"]}}
-b = @yellow_client.backups.create(params)
-
-# Index
-@yellow_client.backups(:lineage => "my_lineage")
-@yellow_client.backups(:lineage => "my_lineage").api_methods
-@yellow_client.backups(:lineage => "my_lineage").index
-
-@yellow_client.backups.api_methods # => This should have create, cleanup
-
-
-# Show
-@yellow_client.backups(:lineage => "my_lineage").index.first.show.href   # => to get the id
-@yellow_client.backups(:id => 'e1a4006c-ad82-11e0-a428-12313b000806')
-@yellow_client.backups(:id => 'e1a4006c-ad82-11e0-a428-12313b000806').api_methods
-@yellow_client.backups(:id => 'e1a4006c-ad82-11e0-a428-12313b000806').show
-  # => That should have name, lineage, restore, volume_snapshots, created_at, completed, from_master, volume_snapshot_count, commited, links, href, description,   update, destroy, restore     as methods 
-
-# Feel free to follow some of these methods
-# Example:
-#  client.backups(:id => '5268c788-ad7e-11e0-bfab-12313b000806').volume_snapshots
-
-# Update
-params = {:backup => {:committed => "true"}}
-@yellow_client.backups(:id => '3a7be1ca-ad9a-11e0-947f-12313b000806').update(params)
-
-# cleanup
-# Note committed need to be true
-params = {:keep_last => "1", :lineage => "my_lineage"}
-@yellow_client.backups.cleanup(params)
-
-# Destroy
-@yellow_client.backups(:id => '3a7be1ca-ad9a-11e0-947f-12313b000806').destroy
-
-# Restore
-params = {:instance_href => "/api/clouds/907/instances/26B8QNKI4UOLD"}
-task = client.backups(:id => '02175dd2-ad9f-11e0-877a-12313b000806').show.restore(params)
-
-
-
-# Volumes, volume_snapshots, volume_types, volume_attachments
 

@@ -7,7 +7,7 @@ require File.join(File.dirname(__FILE__), 'spec_helper')
 
 # These tests cover the basic operations of the client, and can certainly
 # be extended in the future to improve test coverage.
-describe RightApiClient do
+describe RightApi::Client do
   before(:all) do
     @client = example_client
   end
@@ -22,7 +22,7 @@ describe RightApiClient do
   end
 
   it "should return a Resources class for collection of resources" do
-    @client.clouds.should be_kind_of(Resources)
+    @client.clouds.should be_kind_of(RightApi::Resources)
   end
   
   it "should return arrays for collection of resources" do
@@ -30,7 +30,7 @@ describe RightApiClient do
   end
 
   it "should return single object for a resource with specific id" do
-    @client.clouds.index.first.should be_kind_of(Resource)
+    @client.clouds.index.first.should be_kind_of(RightApi::Resource)
   end
 
   it "should have attributes for a resource" do
@@ -59,16 +59,16 @@ describe RightApiClient do
 
     it "creates a logged in client" do
 
-      client = RightApiClient.new(example_args)
+      client = RightApi::Client.new(example_args)
 
       client.headers[:cookies].should_not == nil
     end
 
     it "accepts a cookie argument" do
 
-      client1 = RightApiClient.new(
+      client1 = RightApi::Client.new(
         example_args.merge('cookies' => @client.cookies))
-      client2 = RightApiClient.new(
+      client2 = RightApi::Client.new(
         example_args)
 
       client1.cookies.should == @client.cookies
@@ -88,7 +88,7 @@ describe RightApiClient do
   
   describe "#tags" do
     it "should return a Resources object" do
-      @client.tags.should be_kind_of(Resources)
+      @client.tags.should be_kind_of(RightApi::Resources)
     end
     it "should have methods" do
       @client.tags.api_methods.should_not be_empty
@@ -101,7 +101,7 @@ describe RightApiClient do
     
   describe "#backups" do
     it "should return a dummy resource object" do
-      @client.backups.should be_kind_of(Resources)
+      @client.backups.should be_kind_of(RightApi::Resources)
     end
     it "should have methods" do
       @client.backups.api_methods.should_not be_empty

@@ -20,28 +20,63 @@ describe "#RightApiInstanceClient" do
 
   it "should have root and base resources" do
     @client.api_methods.should include(:get_instance)
-    @client.api_methods.should include(:clouds)
+    @client.api_methods.should include(:volumes)
+    @client.api_methods.should include(:volume_attachments)
+    @client.api_methods.should include(:volume_snapshots)
+    @client.api_methods.should include(:volume_types)
+    @client.api_methods.should include(:live_tasks)
+    @client.api_methods.should include(:backups)
     @client.api_methods.should_not be_empty
   end
   
   it "should be a resource object" do
-    @client.get_instance.should be_kind_of(RightApiClient::Resource)
+    @client.get_instance.should be_kind_of(RightApi::ResourceDetail)
   end
   
-  it "should return a dummy resource object" do
-    @client.clouds.should be_kind_of(RightApiClient::DummyResource)
+  
+  describe "#volumes" do
+    it "should return a resources object" do
+      @client.volumes.should be_kind_of(RightApi::Resources)
+    end
+    it "should have methods" do
+      @client.volumes.api_methods.should_not be_empty
+      @client.volumes.api_methods.should include(:index)
+      @client.volumes.api_methods.should include(:create)
+    end
+  end
+  describe "#volume_snapshots" do
+    it "should return a resources object" do
+      @client.volume_snapshots.should be_kind_of(RightApi::Resources)
+    end
+    it "should have methods" do
+      @client.volume_snapshots.api_methods.should_not be_empty
+      @client.volume_snapshots.api_methods.should include(:index)
+      @client.volume_snapshots.api_methods.should include(:create)
+    end
+  end
+  describe "#volume_attachments" do
+    it "should return a resources object" do
+      @client.volume_attachments.should be_kind_of(RightApi::Resources)
+    end
+    it "should have methods" do
+      @client.volume_attachments.api_methods.should_not be_empty
+      @client.volume_attachments.api_methods.should include(:index)
+      @client.volume_attachments.api_methods.should include(:create)
+    end
+  end
+  describe "#volume_types" do
+    it "should return a resources object" do
+      @client.volume_types.should be_kind_of(RightApi::Resources)
+    end
+    it "should have methods" do
+      @client.volume_types.api_methods.should_not be_empty
+      @client.volume_types.api_methods.should include(:index)
+    end
   end
   
-  it "should have methods" do
-    @client.clouds.api_methods.should_not be_empty
-    @client.clouds.api_methods.should include(:volumes)
-    @client.clouds.api_methods.should include(:volume_types)
-    @client.clouds.api_methods.should include(:volume_attachments)
-    @client.clouds.api_methods.should include(:volume_snapshots)
-  end
   describe "#backups" do
-    it "should return a dummy resource object" do
-      @client.backups.should be_kind_of(RightApiClient::DummyResource)
+    it "should return a resources object" do
+      @client.backups.should be_kind_of(RightApi::Resources)
     end
     it "should have methods" do
       @client.backups.api_methods.should_not be_empty
@@ -49,5 +84,4 @@ describe "#RightApiInstanceClient" do
       @client.backups.api_methods.should include(:cleanup)
     end
   end
-
 end

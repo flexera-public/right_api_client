@@ -1,13 +1,3 @@
-require 'rest_client' # rest_client 1.6.1
-require 'json'
-require 'set'
-require 'cgi'
-
-
-require File.join(File.dirname(__FILE__), 'right_api_client')
-require File.join(File.dirname(__FILE__), 'resources')
-require File.join(File.dirname(__FILE__), 'resource_detail')
-require File.join(File.dirname(__FILE__), 'helper')
 
 module RightApi
   # Represents a Resource. This is a fillter class for a single resource
@@ -32,7 +22,8 @@ module RightApi
           # You cannot do a show on a resource_tag, but that is basically what we want to do
           # So add in a special case here
           # The call returns a 200 so that we can parse the exact resource_type and not take it from the url
-          if resource_type == 'resource_tag'
+          # Same with inputs: there is no show method and therefore for each we want to do a show
+          if resource_type == 'resource_tag' || resource_type == 'input' 
             RightApi::ResourceDetail.new(client, resource_type, path, obj)
           else
             # we need to get the path for this specific resource
