@@ -1,5 +1,12 @@
 require File.join(File.dirname(__FILE__), 'spec_login')
 
+def backup_id
+  client.backups.index(:lineage => backup_lineage).first.show.href.split('/')[-1]
+end
+
+def backup_lineage
+  'client_lineage'
+end
 def client
   example_client
 end
@@ -30,7 +37,9 @@ def input_deployment_id
   return 79259
 end
 
+# Needs to have a volume attached to it
 def instance_id
+  'A1BQRR03KDV'
 end
 
 def instance_type_id
@@ -100,6 +109,10 @@ def volume_attachment_id
   client.clouds(:id => cloud_id).show.volume_attachments.index.first.show.href.split('/')[-1]
 end
 
+def instance_volume_attachment_id
+  client.clouds(:id => cloud_id).show.instances(:id => instance_id).show.volume_attachments.index.first.show.href.split('/')[-1]
+end
+
 def volume_snapshot_id
   client.clouds(:id => cloud_id).show.volume_snapshots.index.first.show.href.split('/')[-1]
 end
@@ -144,9 +157,10 @@ def get_ids(type)
   return [client, volume_type_id] if type == 'volume_types'
   return [client, cloud_id, volume_snapshot_id, volume_id, volume_volume_snapshot_id] if type == 'volume_snapshots'
   
-  return [client, cloud_id, volume_attachment_id] if type == 'volume_attachments'
+  return [client, cloud_id, volume_attachment_id, volume_id, instance_id, instance_volume_attachment_id] if type == 'volume_attachments'
   return [client, deployment_id] if type == 'deployments'
   return [client, server_id, deployment_id, deployment_server_id] if type == 'servers'
   return [client, resource_hrefs, tags] if type == 'tags'
+  return [client, backup_id, backup_lineage] if type == 'backups'
 end
 
