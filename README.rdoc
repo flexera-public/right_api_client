@@ -24,5 +24,93 @@
 You can find your account number by logging into RightScale > Settings > Account Settings,
 the account number is at the end of the browser address bar. 
 
-To access actions users need to do a .show before the client can see the action.
-(ie. client.server(:id => 12345).show.launch)
+
+-----------------------------------------------------------------------------------
+The Idea Behind The RightScale API Client for Ruby: 
+
+The client makes working with and getting to know the API much easier. It spiders the API dynamically to discover its resources on the fly. At every step, the user has the ability to query api_methods() that indicate the potential methods that can be called. 
+
+To start:
+ * create a client object:
+    client = RightApiClient.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
+    client.api_methods  will return all methods that you can call
+    
+To make an API call:
+Essentially, just following the RightScale API documentation:
+
+Examples:
+   - Index:     /api/clouds/:cloud_id/datacenters             =>  client.clouds(:id => :cloud_id).show.datacenters.index
+   - Show:      /api/clouds/:cloud_id/datacenters/:id         =>  client.clouds(:id => :cloud_id).show.datacenters(:id => :datacenter_id).show
+   - Create:    /api/deployments/:deployment_id/servers       =>  client.deployments(:id => :deployment_id).show.servers.create
+   - Update:    /api/deployments/:deployment_id/servers/:id   =>  client.deployments(:id => :deployment_id).show.servers(:id => :server_id).update
+   - Destroy:   /api/deployments/:deployment_id/servers/:id   =>  client.deployments(:id => :deployment_id).show.servers(:id => :server_id).destroy
+   - An action: /api/servers/:server_id/launch                =>  client.servers(:id => :server_id).show.launch
+
+As seen above, whenever you need to specify an id, you must call .show before specifying the next method (unless the id is at the very end).
+
+
+When to put the parameters? Pass in the parameters to the method that they belong to:
+ Lets say we want to filter on the index for deployments:
+   @client.deployments.index(:filter => ['name==my_deployment'])
+   The filter is the parameter for the index call and not the deployment call
+
+The API client returns three types of objects:    
+  Resources, Resource and ResourceDetail
+
+ * A Resources object will be returned when you are querying a collection of resources  (ie: client.deployments)
+ * A Resource will be returned when you specify an id and therefore a specific resource (ie: client.deployments(:id => :deployment_id))
+   - When the Content-type is type=collection then an array of Resource objects will be returned (ie: client.deployments.index)  
+   - When the Content-type is not a collection then a Resource object will be returned (ie: client.deployments(:id => deployment_id).show)
+ * A ResourceDetail will be returned when you do a .show on a Resource (ie: client.deployments(:id => deployment_id).show)
+ On all three types of objects you can query .api_methods 
+ 
+ Exceptions:
+ - inputs.index will return an array of ResourceDetail objects since you cannot do a .show on an input
+ - session.index will return a ResourceDetail object since you cannot do a .show on a session
+ - tags.by_resource, tags.by_tag will return an array of ResourceDetail objects since you cannot do a .show on a resource_tag
+ - monitoring_metrics(:id => :m_m_id).show.data will return a ResourceDetail object since you cannot do a .show on a monitoring_metric_data
+ 
+
+For a POST with HTTP response code: 201, 202 the client will actually return the Resource object that was created and not just the href
+
+The RightScale API client currently has the following special cases:
+ - You need to use:
+    *clouds(:id => :cloud_id).show.volumes(:id -> :volume_id).show.current_volume_attachment ,
+    instead of:
+   * clouds(:id => :cloud_id).show.volumes(:id -> :volume_id).show.volume_attachment   
+   to query the API Documented url:  /api/clouds/:cloud_id/volumes/:volume_id/volume_attachment
+
+ - Calling create on this URL is not supported in the current version of the API Client
+ 
+
+
+Instance-Facing-Calls:
+The client also supports instance-facing-calls which uses the instance_token to login.
+Unlike regular email-password login, instance-facing-calls are limited in the amount of allowable calls. Since in most of the cases, the calls are scoped to the instance's cloud (or the instance itself), the cloud_id and the instance_id will be automatically recorded by the client, so that the user does not need to specify it.
+
+Examples:
+instance_client.volume_attachments     links to /api/clouds/:cloud_id/volume_attachments
+instance_client.volumes_snapshots      links to /api/clouds/:cloud_id/volumes_snapshots
+instance_client.volumes_types          links to /api/clouds/:cloud_id/volumes_types
+instance_client.volumes                links to /api/clouds/:cloud_id/volumes
+
+instance_client.backups                links to /api/backups
+instance_client.live_tasks(:id)        links to /api/clouds/:cloud_id/instances/:instance_id/live/tasks/:id
+
+Note:
+ * For volume_attachments and volumes_snapshots you can also go through the volume (ie: instance_client.volumes(:id => volume_id).show.volume_attachments will map to:                         
+           /api/clouds/:cloud_id/volumes/:volume_id/volume_attachment)
+ * For volume_attachments there is a third url: /api/clouds/:cloud_id/instances/:instance_id/volume_attachments. To access this do:
+          instance_client.get_instance.volume_attachments
+
+Because the cloud_id and the instance_id are automatically added by the client, scripts that work for regular email-password login will have to be modified for instance-facing-calls. The main reason behind this design choice was the inability for instance-facing-calls to access the resource clouds, instances (ie: they cannot do a .show on clouds: instance_client.clouds(:id=> :cloud_id).show)
+
+When you query api_methods(), it will all the methods that one sees with regular email-password login. Due to the limiting scope of the instance-token only a subset of these methods can be called. (See API documentation for valid methods).
+If you call a invalid method you will get: 403, Permission denied
+
+
+
+
+Enough talk, get started:
+ * look at the Usage.rb file for a stunning number of examples
+ * When in doubt query api_methods

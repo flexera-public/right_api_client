@@ -15,18 +15,16 @@ module RightApi
 
 
     # Will create a (or an array of) new Resource object(s)
+    # All parameters are treated as read only
     def self.process(client, resource_type, path, data={})
       if data.kind_of?(Array)  # This is needed for the index call to return an array of all the resources
         data.map { |obj|
-          # Resource_tag is returned after querrying tags.by_resource or tags.by_tags.
-          # You cannot do a show on a resource_tag, but that is basically what we want to do
-          # So add in a special case here
-          # The call returns a 200 so that we can parse the exact resource_type and not take it from the url
-          # Same with inputs: there is no show method and therefore for each we want to do a show
-          if resource_type == 'resource_tag' || resource_type == 'input' 
+          # Some special cases:
+            # Same with inputs: there is no show method but we want to get at the data somehow
+          if resource_type == 'input' 
             RightApi::ResourceDetail.new(client, resource_type, path, obj)
           else
-            # we need to get the path for this specific resource
+            # We need to get the path for this specific resource
             obj_path = client.get_href_from_links(obj["links"])
             RightApi::Resource.new(client, resource_type, obj_path, obj)
           end
@@ -44,9 +42,10 @@ module RightApi
     end
 
     # Hash is only used for index calls so we can parse out the name and resource_uid for the inspect call
+    # All parameters are treated as read only
     def initialize(client, resource_type, href, hash={})
-      if UNCONSISTENT_RESOURCE_TYPES.has_key?(resource_type)
-        resource_type = UNCONSISTENT_RESOURCE_TYPES[resource_type]
+      if INCONSISTENT_RESOURCE_TYPES.has_key?(resource_type)
+        resource_type = INCONSISTENT_RESOURCE_TYPES[resource_type]
       end 
       # For the inspect function:
       @resource_type = resource_type
@@ -72,7 +71,6 @@ module RightApi
           RightApi::ResourceDetail.new(client, *client.do_get(href, *args)) 
         end
       end
-
     end
   end
 end

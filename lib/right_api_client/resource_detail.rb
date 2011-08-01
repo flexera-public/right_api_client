@@ -1,5 +1,6 @@
 
 module RightApi
+  # Takes the information returned from the API and converts it into instance methods
   class ResourceDetail
     include RightApiHelper
     attr_reader :client, :attributes, :associations, :actions, :raw, :resource_type
@@ -11,6 +12,7 @@ module RightApi
       "#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
     end
   
+    # ResourceDetail will MODIFY hash
     def initialize(client, resource_type, href, hash)
       @client = client
       @resource_type = resource_type
@@ -19,8 +21,10 @@ module RightApi
     
       links = hash.delete('links') || []
       raw_actions = hash.delete('actions') || []
-
-      self_hash = get_href_from_links(links)
+      
+      # We have to delete the self href from the links because later we will 
+      # go through these links and add them in as methods
+      self_hash = get_and_delete_href_from_links(links)
       if self_hash != nil
         hash['href'] = self_hash
       end
@@ -38,8 +42,8 @@ module RightApi
         actions << action_name.to_sym
 
         define_instance_method(action_name.to_sym) do |*args|
-          href = hash['href'] + "/" + action['rel']
-          client.do_post(href, *args)
+          action_href = hash['href'] + "/" + action['rel']
+          client.do_post(action_href, *args)
         end
       end
 
@@ -59,6 +63,7 @@ module RightApi
         end
       end
     
+      # Add the rest as instance methods
       hash.each do |k, v|
         # If a parent resource is requested with a view then it might return
         # extra data that can be used to build child resources here, without
@@ -78,7 +83,6 @@ module RightApi
                 # future we might like to extract resource_type from child_href
                 # and not hard-code it.
                 if child_href.index('instance')
-                  # No special case, no data, path=child_href
                   define_instance_method(k) { RightApi::Resource.process(client, 'instance', child_href, v) }
                 end
               end

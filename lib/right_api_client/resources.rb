@@ -9,7 +9,7 @@ module RightApi
     # These are the actions that you can call on this resource class
     RESOURCE_TYPE_ACTIONS = {
       :create => ['deployments', 'server_arrays', 'servers', 'ssh_keys', 'volumes', 'volume_snapshots', 'volume_attachments', 'backups'],
-      :no_index => ['tags', 'tasks']    # Easier to specify the RightApi::Resources that don't need an index call
+      :no_index => ['tags', 'tasks', 'monitoring_metric_data']    # Easier to specify the RightApi::Resources that don't need an index call
     }
   
     # Some RightApi::Resources have methods that operate on the resource type itself 
@@ -28,9 +28,11 @@ module RightApi
   
     # Since this is just a fillter class, only define instance methods and the method api_methods()
     # Resource_type should always be plural.
+    # All parameters are treated as read only
     def initialize(client, path, resource_type)
-      if UNCONSISTENT_RESOURCE_TYPES.has_key?(make_singular(resource_type.dup))
-        resource_type = UNCONSISTENT_RESOURCE_TYPES[make_singular(resource_type.dup)] + 's'
+      
+      if INCONSISTENT_RESOURCE_TYPES.has_key?(get_singular(resource_type))
+        resource_type = INCONSISTENT_RESOURCE_TYPES[get_singular(resource_type)] + 's'
       end
       @resource_type = resource_type
       # Add create methods for the relevant root RightApi::Resources
@@ -54,6 +56,7 @@ module RightApi
     
       # Adding in special cases
       RESOURCE_TYPE_SPECIAL_ACTIONS[resource_type].each do |meth, action|
+        # Insert_in_path will NOT modify path
         action_path = insert_in_path(path, meth)
         self.define_instance_method(meth) do |*args|
           client.send action, action_path, *args
