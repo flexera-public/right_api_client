@@ -49,6 +49,11 @@ module RightApiHelper
           if has_id(*args) || is_singular?(rel)
             # User wants a single resource. Either doing a show, update, delete...
             # get the resource_type
+            
+            # Special case: calling .data you don't want a resources object back
+            # but rather all its details since you cannot do a show
+            return RightApi::ResourceDetail.new(client, *client.do_get(hrefs.first, *args)) if rel == :data
+            
             if is_singular?(rel)
               # Then the href will be: /resource_type/:id
               resource_type = get_singular(hrefs.first.split('/')[-2])
@@ -60,15 +65,9 @@ module RightApiHelper
             RightApi::Resource.process(client, resource_type, path)
           else
             # Returns the class of this resource
-            # Special case: calling .data you don't want a resources object back
-            # but rather all its details since you cannot do a show
-            if rel == 'data'
-              RightApi::ResourceDetail.new(client, *client.do_get(hrefs.first, *args))
-            else
-              resource_type = hrefs.first.split('/')[-1] 
-              path = add_id_and_params_to_path(hrefs.first, *args)
-              RightApi::Resources.new(client, path, resource_type)
-            end
+            resource_type = hrefs.first.split('/')[-1] 
+            path = add_id_and_params_to_path(hrefs.first, *args)
+            RightApi::Resources.new(client, path, resource_type)
           end
         else
           # There were multiple links with the same relation name
@@ -88,13 +87,9 @@ module RightApiHelper
           else
             hrefs.each do |href|
               # Returns the class of this resource
-              if rel == 'data'
-                resources << RightApi::ResourceDetail.new(client, *client.do_get(href, *args)) 
-              else
-                resource_type = href.split('/')[-1]              
-                path = add_id_and_params_to_path(href, *args)
-                resources << RightApi::Resources.new(client, path, resource_type)
-              end
+              resource_type = href.split('/')[-1]              
+              path = add_id_and_params_to_path(href, *args)
+              resources << RightApi::Resources.new(client, path, resource_type)
             end
           end
           # return the array of resource objects

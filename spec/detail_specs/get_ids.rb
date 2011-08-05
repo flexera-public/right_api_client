@@ -1,12 +1,18 @@
+# Note: Before running the detailed specs, these ids need to be checked to make sure they are valid
+#  If time: create mocked data similar to API.
+#  This was just a sanity check to make sure that most calls worked
+
 require File.join(File.dirname(__FILE__), 'spec_login')
 
 def backup_id
   client.backups.index(:lineage => backup_lineage).first.show.href.split('/')[-1]
 end
 
+# Needs to exist
 def backup_lineage
   'client_lineage'
 end
+
 def client
   example_client
 end
@@ -27,17 +33,17 @@ def image_id
   client.clouds(:id => cloud_id).show.images.index.first.show.href.split('/')[-1]
 end
 
-# An instance with inputs
+# Needs to be an instance with inputs
 def input_instance_id
   client.clouds(:id => cloud_id).show.instances.index[1].show.href.split('/')[-1]
 end
 
-# A deployment with inputs
+# Needs to be a deployment with inputs
 def input_deployment_id
   return 79259
 end
 
-# Needs to have a volume attached to it
+# This instance needs to have a volume attached to it
 def instance_id
   'A1BQRR03KDV'
 end
@@ -49,7 +55,6 @@ end
 def monitoring_metric_instance_id
 end
 
-# MultiCloudImages
 def multi_cloud_image_setting_id
   client.multi_cloud_images(:id => multi_cloud_image_id).show.settings.index.first.show.href.split('/')[-1]
 end
@@ -68,21 +73,20 @@ def mci_server_template_mci_id
 end
 
 
-# SecurityGroups
 def security_group_id
   client.clouds(:id => cloud_id).show.security_groups.index.first.show.href.split('/')[-1]
 end
 
 
-
 def server_array_id
+  client.server_arrays.index.first.show.href.split('/')[-1]
 end
 
 def server_template_id
   client.server_templates.index.first.show.href.split('/')[-1]
 end
 
-# Server assumed to be terminated
+# This server should be terminated
 def server_id
   client.servers.index.first.show.href.split('/')[-1]
 end
@@ -125,10 +129,8 @@ def volume_type_id
   client.clouds(:id => 716).show.volume_types.index.first.show.href.split('/')[-1]
 end
 
-# Needs to be attached and have a snapshot
+# The Volume needs to be attached and have a snapshot
 def volume_id
-  #'2QQBRFJUIUI3M'
-  #'AGC6G2PSSUVVD'
   '2QQBRFJUIUI3M'
 end
 
@@ -162,5 +164,7 @@ def get_ids(type)
   return [client, server_id, deployment_id, deployment_server_id] if type == 'servers'
   return [client, resource_hrefs, tags] if type == 'tags'
   return [client, backup_id, backup_lineage] if type == 'backups'
+  return [client, server_array_id] if type == 'server_arrays'
+  return [client, cloud_id, instance_id] if type == 'instances'
 end
 
