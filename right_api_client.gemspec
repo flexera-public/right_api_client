@@ -18,7 +18,7 @@ RightScale API HTTP client. Spiders the API to discover its resources on the fly
   #s.files = `git ls-files`.split("\n")
   s.files = Dir[
     'Rakefile',
-    'lib/*.rb', 'spec/*.rb', '*.gemspec', '*.txt', '*.rdoc', '*.md'
+    'lib/**/*.rb', 'spec/*.rb', '*.gemspec', '*.txt', '*.rdoc', '*.md'
   ]
 
   s.add_runtime_dependency 'json'

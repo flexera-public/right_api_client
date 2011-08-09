@@ -139,6 +139,6 @@ describe "#HelloSpecWorld" do
   end
 
   it "should reset" do
-    cleanup(@client, @volume)
+    cleanup(@client, @volname)
   end
 end
