@@ -1,5 +1,6 @@
 require File.join(File.dirname(__FILE__), 'spec_helper')
 require 'irb'
+require 'date'
 require '/var/spool/cloud/user-data'
 
 def my_volumes(client)
@@ -177,7 +178,7 @@ describe "#HelloSpecWorld" do
 
   it "should restore" do
     cleanup(@client, @volname)
-    backup = @client.backups.index(:lineage => @volname, :filter => [ "latest_before==2011/08/05 00:00:00 +0000", "committed==true", "completed==true"] )
+    backup = @client.backups.index(:lineage => @volname, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
     backup.first.should_not be_nil
     backup.first.show.restore(:instance_href => @client.get_instance.href)
   end
