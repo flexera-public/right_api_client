@@ -23,15 +23,15 @@ describe "RightApi::Client clouds" do
   
   it "should return an array of Resources for @resources.index" do
      @resources.index.should be_kind_of(Array)
-     @resources.index.first.should be_kind_of(RightApi::Resource)
+     @resources.index.first.should be_kind_of(RightApi::ResourceDetail)
      @resources.index.first.inspect.should include("resource_type=\"cloud\"")
   end
   
   it "should return less for the correct filter" do
-     @resources.index(:filter => ['name==Some really long weird name']).should be_kind_of(Array)
-     non_filtered = @resources.index.length
-     filtered = @resources.index(:filter => ['name==Some really long weird name']).length
-     non_filtered.should > filtered
+     filtered = @resources.index(:filter => ['name==Some really long weird name'])
+     filtered.should be_kind_of(Array)
+     non_filtered = @resources.index
+     non_filtered.length.should > filtered.length
   end
   
   it "should return a Resource object for @resource, with resource_type = cloud" do
@@ -51,7 +51,7 @@ describe "RightApi::Client clouds" do
   
   it "should return the correct methods for @resource.show.api_methods" do
     @resource_detail.api_methods.should_not be_empty
-    @resource_detail.api_methods.sort.should == [:name, :description, :links, :href, :datacenters, :instance_types, :security_groups, :instances, :ssh_keys, :images, :volume_attachments, :volume_snapshots, :volumes].sort
+    @resource_detail.api_methods.sort.should == [:show, :name, :description, :links, :href, :datacenters, :instance_types, :security_groups, :instances, :ssh_keys, :images, :volume_attachments, :volume_snapshots, :volumes].sort
     
     # For cloud_id = 907 there are no volume_types
     #@resource.show.api_methods.should include(:volume_types)

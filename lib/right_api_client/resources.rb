@@ -16,9 +16,9 @@ module RightApi
       # and not on a particular one (ie: without specifing an id). Place these here:
     RESOURCE_TYPE_SPECIAL_ACTIONS = {
       'instances' => {:multi_terminate => 'do_post', :multi_run_executable => 'do_post'},
-      'inputs' => {:multi_update => 'do_put'},
-      'tags' => {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'},
-      'backups' => {:cleanup => 'do_post'} 
+      'inputs'    => {:multi_update    => 'do_put'},
+      'tags'      => {:by_tag          => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'},
+      'backups'   => {:cleanup         => 'do_post'}
     }
   
     def inspect

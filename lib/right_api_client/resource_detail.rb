@@ -4,7 +4,15 @@ module RightApi
   class ResourceDetail
     include RightApiHelper
     attr_reader :client, :attributes, :associations, :actions, :raw, :resource_type
-  
+
+    # The API does not provide information about the basic actions that can be
+    # performed on a resource so define them here:
+    RESOURCE_ACTIONS = {
+      :destroy => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment', 'backup'],
+      :update => ['deployment', 'instance', 'server_array', 'server', 'backup'],
+      :no_show => ['input', 'session', 'resource_tag']  # Once again, easier to define those that don't have a show call associated with them
+    }
+
     def inspect
       "#<#{self.class.name} " +
       "resource_type=\"#{@resource_type}\"" +
@@ -92,6 +100,27 @@ module RightApi
           # Add it to the attributes set and create a method for it
           attributes << k.to_sym
           define_instance_method(k) { return v }
+        end
+      end
+
+      # Add destroy method to relevant resources
+      if RESOURCE_ACTIONS[:destroy].include?(resource_type)
+        define_instance_method('destroy') do
+          client.do_delete(href)
+        end
+      end
+
+      # Add update method to relevant resources
+      if RESOURCE_ACTIONS[:update].include?(resource_type)
+        define_instance_method('update') do |*args|
+          client.do_put(href, *args)
+        end
+      end
+
+      # Add show method to relevant resources
+      if !RESOURCE_ACTIONS[:no_show].include?(resource_type)
+        define_instance_method('show') do |*args|
+          self
         end
       end
     end

@@ -151,36 +151,18 @@ module RightApiHelper
   
   # Does not modify links
   def get_href_from_links(links)
-    self_index = links.any? && links.each_with_index do |link, idx|
-      if link['rel'] == 'self'
-        break idx
-      end
-
-      if idx == links.size-1
-        break nil
-      end
-    end
-
-    if self_index
-      return links[self_index]['href']
+    if links
+      self_link = links.detect{|link| link["rel"] == "self"}
+      return self_link["href"] if self_link
     end
     return nil
   end
   
   # This will modify links
   def get_and_delete_href_from_links(links)
-    self_index = links.any? && links.each_with_index do |link, idx|
-      if link['rel'] == 'self'
-        break idx
-      end
-
-      if idx == links.size-1
-        break nil
-      end
-    end
-
-    if self_index
-      return links.delete_at(self_index)['href']
+    if links
+      self_link = links.detect{|link| link["rel"] == "self"}
+      return links.delete(self_link)["href"] if self_link
     end
     return nil
   end

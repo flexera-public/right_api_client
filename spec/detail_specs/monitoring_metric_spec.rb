@@ -22,7 +22,7 @@ describe "RightApi::Client monitoring_metric" do
   
   it "should return an array of Resources for @resources.index" do
      @resources.index.should be_kind_of(Array)
-     @resources.index.first.should be_kind_of(RightApi::Resource)
+     @resources.index.first.should be_kind_of(RightApi::ResourceDetail)
      @resources.index.first.inspect.should include("resource_type=\"monitoring_metric\"") 
   end
   

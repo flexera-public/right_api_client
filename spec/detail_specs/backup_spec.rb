@@ -23,7 +23,7 @@ describe "RightApi::Client backups" do
   
   it "should return an array of Resources for @resources.index" do
      @resources.index(:lineage => @backup_lineage).should be_kind_of(Array)
-     @resources.index(:lineage => @backup_lineage).first.should be_kind_of(RightApi::Resource)
+     @resources.index(:lineage => @backup_lineage).first.should be_kind_of(RightApi::ResourceDetail)
      @resources.index(:lineage => @backup_lineage).first.inspect.should include("resource_type=\"backup\"")
   end
   

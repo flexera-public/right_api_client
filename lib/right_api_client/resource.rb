@@ -18,17 +18,11 @@ module RightApi
     # All parameters are treated as read only
     def self.process(client, resource_type, path, data={})
       if data.kind_of?(Array)  # This is needed for the index call to return an array of all the resources
-        data.map { |obj|
-          # Some special cases:
-            # Same with inputs: there is no show method but we want to get at the data somehow
-          if resource_type == 'input' 
-            RightApi::ResourceDetail.new(client, resource_type, path, obj)
-          else
-            # We need to get the path for this specific resource
-            obj_path = client.get_href_from_links(obj["links"])
-            RightApi::Resource.new(client, resource_type, obj_path, obj)
-          end
-        }
+        data.collect do |obj|
+          #ideally all objects should have a links attribute that will have a link called 'self' which is the href. For exceptions like inputs, use the path itself.
+          obj_href = client.get_href_from_links(obj["links"]) || path
+          ResourceDetail.new(client, resource_type, obj_href, obj)
+        end
       else
         RightApi::Resource.new(client, resource_type, path, data)
       end

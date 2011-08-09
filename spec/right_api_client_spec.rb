@@ -30,7 +30,7 @@ describe RightApi::Client do
   end
 
   it "should return single object for a resource with specific id" do
-    @client.clouds.index.first.should be_kind_of(RightApi::Resource)
+    @client.clouds.index.first.should be_kind_of(RightApi::ResourceDetail)
   end
 
   it "should have attributes for a resource" do
