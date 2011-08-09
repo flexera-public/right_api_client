@@ -1,5 +1,6 @@
 require File.join(File.dirname(__FILE__), 'spec_helper')
 require 'irb'
+require '/var/spool/cloud/user-data'
 
 def my_volumes(client)
   instance = client.get_instance
@@ -15,30 +16,55 @@ end
 
 def cleanup(client, volname)
   myattachments = my_volumes(client) 
+  delete_these = []
 
   myattachments.each do |attachment|
-    begin
-      attachment.destroy
-    rescue => e
-      puts "whoops #{e}"
-    end
+    delete_these << attachment.show.volume
+    attachment.destroy
+  end
+  delete_these.each do |volume|
+    volume.destroy
   end
 
-  # cleanup previous volumes
-  #can_find = client.volumes.index(:filter => ["name==#{volname}"]).index
-  can_find = client.volumes.index(:filter => ["name==#{volname}"])
-  can_find.each do |found|
-    begin
-    found.destroy
-    rescue => e
-      puts "whoops #{e}"
-    end
+end
+
+def generate_physical_device_names(count)
+  x = IO.read("/proc/partitions")
+
+  if x =~ / vda/
+    devstr = "vd"
+    # we're in CDC/kvm?
+  elsif x =~ / sda/
+    devstr = "sd"
+    # we're in euca/kvm
+  elsif x =~ / xvda/
+    devstr = "xvd"
+    # we're in xen
   end
+
+  lines = x.split("\n")
+  lines.last =~ /#{devstr}([a-z]+)[0-9]*$/
+  last_dev_letter = $1
+
+  new_dev_list = []
+  devrange = (last_dev_letter .. 'z').to_a
+
+  count.to_i.times do |device_gen|
+    new_dev_list << "/dev/#{devstr}#{devrange[device_gen+1]}"
+  end
+
+  new_dev_list
+end
+
+def is_cdc?
+  return true if IO.read('/etc/rightscale.d/cloud').chomp =~ /cloud\.com|vmops/
+  return false
 end
 
 describe "#HelloSpecWorld" do
   before(:all) do
-    @client = example_instance_client
+    account_id, token = ENV['RS_API_TOKEN'].split(/:/)
+    @client = RightApi::Client.new(:instance_token => token, :account_id => account_id)
     @client.log(STDOUT)
     @volname = "spec_test_five_billion"
     @cloud_id = 1723
@@ -54,13 +80,19 @@ describe "#HelloSpecWorld" do
     datacenter_link = instance.links.detect { |i| i["rel"] == "datacenter" }
     datacenter_href = datacenter_link["href"]
 
-    # get the volume_type (CDC only)
-    volume_type = @client.volume_types.index.first
-    
     # create the volume
-    params = {:volume => {:datacenter_href => datacenter_href, :name => @volname, :volume_type_href => volume_type.show.href }}
+    params = {:volume => {:datacenter_href => datacenter_href, :name => @volname, :size => '1'}}
+
+    # get the volume_type (CDC only)
+    params[:volume_type_href] = @client.volume_types.index.first.show.href if is_cdc?
+
     new_vol = @client.volumes.create(params)
     new_vol.show.name.should == @volname
+
+    puts 'waiting for volume to create'
+    while (new_vol.show.status != 'available')
+      sleep 2
+    end
     
     # any volumes already attached?
     attached_vols = @client.get_instance.volume_attachments
@@ -68,13 +100,16 @@ describe "#HelloSpecWorld" do
     # TODO: how do you tell if it's the root volume
 
     # attach the new volume
-    params = {:volume_attachment => {:volume_href => new_vol.show.href, :device => '/dev/sdk', :instance_href => instance.href} }
+    device_name = generate_physical_device_names(1).first
+    params = {:volume_attachment => {:volume_href => new_vol.show.href, :device => device_name, :instance_href => instance.href} }
     new_attachment = @client.volume_attachments.create(params)
 
     while (new_vol.show.status != "in-use") do
       puts "waiting for volume to attach.. got #{new_vol.show.status}"
       sleep 2
     end
+
+    new_attachment.show.device.should == device_name
 
     attached_vols = my_volumes(@client)
     attached_vols.size.should == 2
@@ -97,19 +132,25 @@ describe "#HelloSpecWorld" do
     datacenter_link = instance.links.detect { |i| i["rel"] == "datacenter" }
     datacenter_href = datacenter_link["href"]
 
-    # get the volume_type (CDC only)
-    volume_type = @client.volume_types.index.first
-    
     # create the volume
-    params = {:volume => {:datacenter_href => datacenter_href, :name => @volname, :volume_type_href => volume_type.show.href }}
+    params = {:volume => {:datacenter_href => datacenter_href, :name => @volname, :size => '1'}}
+
+    # get the volume_type (CDC only)
+    params[:volume_type_href] = @client.volume_types.index.first.show.href if is_cdc?
+
     new_vol = @client.volumes.create(params)
     new_vol.show.name.should == @volname
+
+    puts 'waiting for volume to create'
+    while (new_vol.show.status != 'available')
+      sleep 2
+    end
     
     # any volumes already attached?
     attached_vols = @client.get_instance.volume_attachments
 
     # attach the new volume
-    params = {:volume_attachment => {:volume_href => new_vol.show.href, :device => '/dev/sdk', :instance_href => instance.href} }
+    params = {:volume_attachment => {:volume_href => new_vol.show.href, :device => generate_physical_device_names(1).first, :instance_href => instance.href} }
     new_attachment = @client.volume_attachments.create(params)
 
     while (new_vol.show.status != "in-use") do
@@ -119,13 +160,6 @@ describe "#HelloSpecWorld" do
 
     params = {:backup => {:lineage => @volname, :name => @volname, :volume_attachment_hrefs => [new_attachment.show.href]}}
     new_backup = @client.backups.create(params)
-  end
-
-  it "short backup" do
-    # backup
-    params = {:backup => {:lineage => @volname, :name => @volname, :volume_attachment_hrefs => my_volumes(@client).map { |v| v.show.href }}}
-    new_backup = @client.backups.create(params)
-    # update backup
     new_backup.update(:backup => {:committed => "true"})
     # clean
     @client.backups.cleanup(:keep_last => 1, :lineage => @volname)
@@ -134,7 +168,7 @@ describe "#HelloSpecWorld" do
   it "should restore" do
     cleanup(@client, @volname)
     backup = @client.backups.index(:lineage => @volname, :filter => [ "latest_before==2011/08/05 00:00:00 +0000", "committed==true", "completed==true"] )
-    debugger
+    backup.first.should_not be_nil
     backup.first.show.restore(:instance_href => @client.get_instance.href)
   end
 
