@@ -81,10 +81,14 @@ describe "#HelloSpecWorld" do
     datacenter_href = datacenter_link["href"]
 
     # create the volume
-    params = {:volume => {:datacenter_href => datacenter_href, :name => @volname, :size => '1'}}
+    params = {:volume => {:datacenter_href => datacenter_href, :name => @volname}}
 
-    # get the volume_type (CDC only)
-    params[:volume_type_href] = @client.volume_types.index.first.show.href if is_cdc?
+    if is_cdc?
+      # get the volume_type (CDC only)
+      params[:volume][:volume_type_href] = @client.volume_types.index.first.show.href
+    else
+      params[:volume][:size] = '1'
+    end
 
     new_vol = @client.volumes.create(params)
     new_vol.show.name.should == @volname
@@ -133,9 +137,15 @@ describe "#HelloSpecWorld" do
     datacenter_href = datacenter_link["href"]
 
     # create the volume
-    params = {:volume => {:datacenter_href => datacenter_href, :name => @volname, :size => '1'}}
+    params = {:volume => {:datacenter_href => datacenter_href, :name => @volname}}
 
-    # get the volume_type (CDC only)
+    if is_cdc?
+      # get the volume_type (CDC only)
+      params[:volume][:volume_type_href] = @client.volume_types.index.first.show.href
+    else
+      params[:volume][:size] = '1'
+    end
+
     params[:volume_type_href] = @client.volume_types.index.first.show.href if is_cdc?
 
     new_vol = @client.volumes.create(params)
