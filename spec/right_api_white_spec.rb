@@ -2,11 +2,13 @@ require File.join(File.dirname(__FILE__), 'spec_helper')
 require 'irb'
 require 'date'
 require 'right_api_client/instance_facing'
+
 require '/var/spool/cloud/user-data'
+
 describe "Instance Facing Api" do
   before(:all) do
     account_id, token = ENV['RS_API_TOKEN'].split(/:/)
-    @client = RightApi::Client.new(:instance_token => token, :account_id => account_id)
+    @client = RightApi::Client.new(:instance_token => token, :account_id => account_id, :api_url => "https://#{ENV['RS_SERVER']}")
     @client.log(STDOUT)
     @instance = RightApi::InstanceFacing.new(:instance_token => token, :account_id => account_id)
     @volname = "spec_test_five_billion"
