@@ -8,7 +8,7 @@ module RightApi
 
     def initialize(params)
        @client = RightApi::Client.new(params)
-       @client.log(STDOUT)
+       @logger = @client.log(STDOUT)
     end
 
     # returns device list
@@ -59,7 +59,6 @@ module RightApi
 
     # Returns latest backup as RightApiClient::Resource
     def find_latest_backup(lineage)
-      # TODO: do some date and time stuff
       backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
       raise "FATAL: no backups found" if backup.empty?
       backup.first.show
@@ -135,12 +134,10 @@ module RightApi
     # Returns list of volume attachments for THIS instance
     def volume_attachments
       instance = @client.get_instance
-      va = @client.volume_attachments.index
-      # This could also work to filter on instance_href: @client.volume_attachments.index(:filter => ["instance_href==#{@client.get_instance.href}"])
+      va = @client.volume_attachments.index(:filter => ["instance_href==#{href}"])
       myattachments = [] 
       va.each do |a|
-        link = a.show.links.detect { |l| l['rel'] == 'instance' }
-        myattachments << a if link['href'] == instance.href && !a.show.device.include?('unknown')
+        myattachments << a unless a.show.device.include?('unknown')
       end
       myattachments
     end
