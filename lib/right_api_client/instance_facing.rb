@@ -6,10 +6,7 @@ require 'right_api_client/client'
 module RightApi
   class InstanceFacing
 
-    include RightScale::Common
-
     def initialize(params)
-      # TODO: client params:  :instance_token, :account_id
        @client = RightApi::Client.new(params)
        @client.log(STDOUT)
     end
@@ -42,11 +39,40 @@ module RightApi
       new_dev_list
     end
 
+    # Requires options[:lineage]
+    def backup(options)
+      backup_hrefs = volume_attachments.map { |m| m.show.href }
+      params = { :backup => { :lineage => options[:lineage], 
+                               :name => options[:name], 
+                               :volume_attachment_hrefs => backup_hrefs}}
+      new_backup = @client.backups.create(params)
+      # TODO: backups need to be a separate call .. for tight chef integration 
+      new_backup.update(:backup => {:committed => "true"})
+      @client.backups.cleanup(:lineage => options[:lineage],
+                              :keep_last => options[:max_snapshots],
+                              :dailies => options[:keep_dailies],
+                              :weeklies => options[:keep_weeklies],
+                              :monthlies => options[:keep_monthlies],
+                              :yearlies => options[:keep_yearlies]
+                             )
+    end 
+
     # Returns latest backup as RightApiClient::Resource
-    def find_latest_backup
+    def find_latest_backup(lineage)
       # TODO: do some date and time stuff
-      backup = @client.backups.index(:lineage => @volname, :filter => [ "latest_before==2011/08/05 00:00:00 +0000", "committed==true", "completed==true"] )
+      backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
+      raise "FATAL: no backups found" if backup.empty?
       backup.first.show
+    end
+
+    def href
+      @client.get_instance.href
+    end
+
+    # Returns true if Instance is running on Cloud.com
+    def is_cdc?
+      return true if IO.read('/etc/rightscale.d/cloud').chomp =~ /cloud\.com|vmops/
+      return false
     end
 
     # Create and attach blank volumes
@@ -62,32 +88,36 @@ module RightApi
         instance = @client.get_instance
         datacenter_link = instance.links.detect { |i| i["rel"] == "datacenter" }
         datacenter_href = datacenter_link["href"]
-
-        # get the volume_type (CDC only)
-        #volume_type = @client.volume_types.index.first
-        
         # create the volume
-        params = {:volume => {:datacenter_href => datacenter_href, :name => volname, :size => volume_size}} # CDC ONLY UGH, :volume_type_href => volume_type.show.href }}
+        params = {:volume => {:datacenter_href => datacenter_href, :name => volname}}
+        # get the volume_type (CDC only)
+        if is_cdc?
+          params[:volume][:volume_type_href] = @client.volume_types.index.first.show.href
+        # euca requires size
+        else
+          params[:volume][:size] = '1'
+        end
+
         new_vol = @client.volumes.create(params)
-        log_info "waiting for volume to create"
+        puts "waiting for volume to create"
         while (new_vol.show.status != "available")
           sleep 2
-          log_info "status was #{new_vol.show.status}"
+          puts "status was #{new_vol.show.status}"
         end
         
         # attach the new volume
         params = {:volume_attachment => {:volume_href => new_vol.show.href, :instance_href => instance.href, :device => physical_device_names[index] } }
         new_attachment = @client.volume_attachments.create(params)
 
-        log_info "waiting for volume to attach.."
+        puts "waiting for volume to attach.."
         while (new_vol.show.status != "in-use") do
           sleep 2
         end
         attached_volumes << new_attachment
       end
       av = attached_volumes.map { |m| m.show.device }
-      av = sanitize_device_list(av)
-      log_info("attached #{av.join(',')}")
+      #av = sanitize_device_list(av)
+      puts("attached #{av.join(',')}")
       av
     end
 
@@ -119,7 +149,7 @@ module RightApi
     def reset
       delete_these = []
       # Detach
-      myattachments = my_volume_attachments 
+      myattachments = volume_attachments 
       myattachments.each do |attachment|
         delete_these << attachment.show.volume
         attachment.destroy
