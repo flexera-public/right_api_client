@@ -30,7 +30,7 @@ module RightApi
       last_dev_letter = $1
 
       new_dev_list = []
-      devrange = (last_dev_letter .. 'z').to_a
+      devrange = (last_dev_letter .. 'zzz').to_a
 
       count.to_i.times do |device_gen|
         new_dev_list << "/dev/#{devstr}#{devrange[device_gen+1]}"
