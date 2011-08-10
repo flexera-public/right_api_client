@@ -8,12 +8,9 @@ require '/var/spool/cloud/user-data'
 describe "Instance Facing Api" do
   before(:all) do
     account_id, token = ENV['RS_API_TOKEN'].split(/:/)
-    @client = RightApi::Client.new(:instance_token => token, :account_id => account_id, :api_url => "https://#{ENV['RS_SERVER']}")
-    @client.log(STDOUT)
-    @instance = RightApi::InstanceFacing.new(:instance_token => token, :account_id => account_id)
+    @instance = RightApi::InstanceFacing.new(:instance_token => token, :account_id => account_id, :api_url => "https://#{ENV['RS_SERVER']}")
     @volname = "spec_test_five_billion"
     @lineage = "spec_test_five_billion_and#{rand(1000000)}"
-    @client.headers[:cookies].should_not be_nil
     @backup_options = { :lineage => @lineage,
                         :name => @volname,
                         :max_snapshots => 1,
