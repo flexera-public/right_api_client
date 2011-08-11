@@ -17,7 +17,7 @@
 - Check the examples directory for code snippets on how to use the client.
 - New users can start with the following 2 lines of code and navigate their way around the API by following the available methods:
 
-  client = RightApiClient.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
+  client = RightApi::Client.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
  
   puts 'Available methods:', client.api_methods
 
@@ -32,7 +32,7 @@ The client makes working with and getting to know the API much easier. It spider
 
 To start:
  * create a client object:
-    client = RightApiClient.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
+    client = RightApi::Client.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
     client.api_methods  will return all methods that you can call
     
 To make an API call:
@@ -75,7 +75,7 @@ For a POST with HTTP response code: 201, 202 the client will actually return the
 
 The RightScale API client currently has the following special cases:
  - You need to use:
-    *clouds(:id => :cloud_id).show.volumes(:id -> :volume_id).show.current_volume_attachment ,
+    * clouds(:id => :cloud_id).show.volumes(:id -> :volume_id).show.current_volume_attachment ,
     instead of:
    * clouds(:id => :cloud_id).show.volumes(:id -> :volume_id).show.volume_attachment   
    to query the API Documented url:  /api/clouds/:cloud_id/volumes/:volume_id/volume_attachment
@@ -112,5 +112,5 @@ If you call a invalid method you will get: 403, Permission denied
 
 
 Enough talk, get started:
- * look at the Usage.rb file for a stunning number of examples
+ * look at the examples/usage.rb file for a stunning number of examples
  * When in doubt query api_methods
