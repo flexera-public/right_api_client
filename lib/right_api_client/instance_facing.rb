@@ -11,18 +11,26 @@ module RightApi
        @logger = @client.log(STDOUT)
     end
 
+    # Using volume name which is set to the same as the lineage name we will lookup the attached device names on this instance.
+    # Returns: array of device names (ie: ["/dev/xvdb"])
+    # ~ <lineage> String: the lineage
+    def attached_devices_for_lineage(lineage)
+      this_line = volume_attachments.select { |s| s.volume.show.name == lineage } 
+      this_line.map { |m| m.show.device }
+    end
+
     # returns device list
     def generate_physical_device_names(count)
       x=IO.read("/proc/partitions")
       if x =~ / vda/
-        devstr = "vd"
         # we're in CDC/kvm?
+        devstr = "vd"
       elsif x =~ / sda/
-        devstr = "sd"
         # we're in euca/kvm
+        devstr = "sd"
       elsif x =~ / xvda/
-        devstr = "xvd"
         # we're in xen
+        devstr = "xvd"
       end
 
       lines = x.split("\n")
@@ -58,8 +66,9 @@ module RightApi
     end 
 
     # Returns latest backup as RightApiClient::Resource
-    def find_latest_backup(lineage)
-      backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
+    # args[:lineage] = String
+    def find_latest_backup(args)
+      backup = @client.backups.index(:lineage => args[:lineage], :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
       raise "FATAL: no backups found" if backup.empty?
       backup.first.show
     end
