@@ -53,8 +53,6 @@
 # Note:
 #  * In general, when a new API resource is added you need to indicate in the Client whether index, show, create, update and delete methods are allowed for that resource
 
-
-
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'rest_client' # rest_client 1.6.1
 require 'json'
@@ -183,7 +181,7 @@ module RightApi
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
-      response = @client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
+      response = @client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, block|
         case response.code
         when 302
           response
@@ -207,7 +205,7 @@ module RightApi
 
       begin
         # Return content type so the resulting resource object knows what kind of resource it is.
-        resource_type, body = @client[path].get(headers) do |response, request, result, &block|
+        resource_type, body = @client[path].get(headers) do |response, request, result, block|
           case response.code
           when 200
             # Get the resource_type from the content_type, the resource_type will
@@ -239,7 +237,7 @@ module RightApi
     # Generic post
     def do_post(path, params={})
       begin
-        @client[path].post(params, headers) do |response, request, result, &block|
+        @client[path].post(params, headers) do |response, request, result, block|
           case response.code
           when 201, 202
             # Create and return the resource
@@ -281,7 +279,7 @@ module RightApi
     # Generic delete
     def do_delete(path)
       begin
-        @client[path].delete(headers) do |response, request, result, &block|
+        @client[path].delete(headers) do |response, request, result, block|
           case response.code
           when 200, 204
           else
@@ -301,7 +299,7 @@ module RightApi
     # Generic put
     def do_put(path, params={})
       begin
-        @client[path].put(params, headers) do |response, request, result, &block|
+        @client[path].put(params, headers) do |response, request, result, block|
           case response.code
           when 204
           else
