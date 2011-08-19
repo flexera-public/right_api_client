@@ -66,9 +66,16 @@ module RightApi
     end 
 
     # Returns latest backup as RightApiClient::Resource
-    # args[:lineage] = String
-    def find_latest_backup(args)
-      backup = @client.backups.index(:lineage => args[:lineage], :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
+    # ~ <lineage> String: the lineage
+    # TODO - better filters specific to clouds
+    def find_latest_backup(lineage)
+      if is_cdc?
+        backup = @client.backups.index(:lineage => lineage, :filter => [ "committed==true"] )
+      elsif is_euca?
+        backup = @client.backups.index(:lineage => lineage, :filter => [ "committed==true"] )
+      else
+        backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
+      end
       raise "FATAL: no backups found" if backup.empty?
       backup.first.show
     end
@@ -80,6 +87,12 @@ module RightApi
     # Returns true if Instance is running on Cloud.com
     def is_cdc?
       return true if IO.read('/etc/rightscale.d/cloud').chomp =~ /cloud\.com|vmops/
+      return false
+    end
+
+    # Returns true if Instance is running on Eucalyptus
+    def is_euca?
+      return true if IO.read('/etc/rightscale.d/cloud').chomp =~ /eucalyptus/
       return false
     end
 
