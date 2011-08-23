@@ -5,6 +5,7 @@
 require 'right_api_client/client'
 module RightApi
   class InstanceFacing
+    attr_accessor :client
 
     def initialize(params)
        @client = RightApi::Client.new(params)
@@ -86,7 +87,7 @@ module RightApi
 
     # Returns true if Instance is running on Cloud.com
     def is_cdc?
-      return true if IO.read('/etc/rightscale.d/cloud').chomp =~ /cloud\.com|vmops/
+      return true if IO.read('/etc/rightscale.d/cloud').chomp =~ /cloud\.com|vmops|cloudstack/
       return false
     end
 
