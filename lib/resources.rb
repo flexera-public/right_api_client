@@ -2,8 +2,8 @@
 module RightApi
   # This class defines the different resource types and the methods that one can call on them
   # This class dynamically adds methods and properties to instances depending on what type of resource they are.
-    # This is a filler class so that we don't always have to do an index before anything else
-    # This class gets instantiated when the user calls (for example) client.clouds ... (ie. when you want the generic class: no id present) 
+  # This is a filler class so that we don't always have to do an index before anything else
+  # This class gets instantiated when the user calls (for example) client.clouds ... (ie. when you want the generic class: no id present)
   class Resources
     include RightApiHelper
     # These are the actions that you can call on this resource class
@@ -26,7 +26,7 @@ module RightApi
       "resource_type=\"#{@resource_type}\">"
     end
   
-    # Since this is just a fillter class, only define instance methods and the method api_methods()
+    # Since this is just a filler class, only define instance methods and the method api_methods()
     # Resource_type should always be plural.
     # All parameters are treated as read only
     def initialize(client, path, resource_type)

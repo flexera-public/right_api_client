@@ -2,7 +2,8 @@
 # Mixes in instance facing api backups functionality
 #
 
-require 'right_api_client/client'
+$LOAD_PATH.unshift(File.dirname(__FILE__))
+require 'client'
 module RightApi
   class InstanceFacing
     attr_accessor :client

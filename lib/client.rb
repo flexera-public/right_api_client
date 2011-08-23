@@ -53,12 +53,13 @@
 # Note:
 #  * In general, when a new API resource is added you need to indicate in the Client whether index, show, create, update and delete methods are allowed for that resource
 
-$LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'rest_client' # rest_client 1.6.1
 require 'json'
 require 'set'
 require 'cgi'
 
+$LOAD_PATH.unshift(File.dirname(__FILE__))
+require 'version'
 require 'helper'
 require 'resource'
 require 'resource_detail'
@@ -70,7 +71,6 @@ require 'resources'
 module RightApi
   class Client
 
-    VERSION = '1.0.0'
     ROOT_RESOURCE = '/api/session'
     ROOT_INSTANCE_RESOURCE = '/api/session/instance'
 
@@ -85,14 +85,14 @@ module RightApi
     def initialize(args)
 
       # Default params
-      @api_url, @api_version = 'https://my.rightscale.com', '1.5'
+      @api_url, @api_version = 'https://my.rightscale.com', API_VERSION
       
       # Initializing all instance variables from hash
       args.each { |key,value|
         instance_variable_set("@#{key}", value) if value && AUTH_PARAMS.include?(key.to_s)
       } if args.is_a? Hash
 
-      raise 'This API Client is only compatible with RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
+      raise 'This API client is only compatible with RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
       @client = RestClient::Resource.new(@api_url)
 
       # There are three options for login: credentials, instance token, or if the user already has the cookies they can just use those
@@ -181,12 +181,12 @@ module RightApi
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
-      response = @client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, block|
+      response = @client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result|
         case response.code
         when 302
           response
         else
-          response.return!(request, result, &block)
+          response.return!(request, result)
         end
       end
       response.cookies
@@ -205,7 +205,7 @@ module RightApi
 
       begin
         # Return content type so the resulting resource object knows what kind of resource it is.
-        resource_type, body = @client[path].get(headers) do |response, request, result, block|
+        resource_type, body = @client[path].get(headers) do |response, request, result|
           case response.code
           when 200
             # Get the resource_type from the content_type, the resource_type will
@@ -237,7 +237,7 @@ module RightApi
     # Generic post
     def do_post(path, params={})
       begin
-        @client[path].post(params, headers) do |response, request, result, block|
+        @client[path].post(params, headers) do |response, request, result|
           case response.code
           when 201, 202
             # Create and return the resource
@@ -260,7 +260,7 @@ module RightApi
                 RightApi::ResourceDetail.new(self, resource_type, path, obj)
               }
             else          
-              response.return!(request, result, &block)
+              response.return!(request, result)
             end
           else
             raise "Unexpected response #{response.code.to_s}, #{response.body}"
@@ -279,7 +279,7 @@ module RightApi
     # Generic delete
     def do_delete(path)
       begin
-        @client[path].delete(headers) do |response, request, result, block|
+        @client[path].delete(headers) do |response|
           case response.code
           when 200, 204
           else
@@ -299,7 +299,7 @@ module RightApi
     # Generic put
     def do_put(path, params={})
       begin
-        @client[path].put(params, headers) do |response, request, result, block|
+        @client[path].put(params, headers) do |response|
           case response.code
           when 204
           else

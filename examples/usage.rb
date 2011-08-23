@@ -4,7 +4,7 @@
 require 'bundler/setup' # only needed if you want to use Bundler
 require 'yaml' # only needed if you want to put your creds in .yml file
 
-require File.expand_path(File.dirname(__FILE__) + '/../lib/right_api_client/client')
+require File.expand_path(File.dirname(__FILE__) + '/../lib/client')
 
 # Read username, password and account_id from file, or you can just pass them
 # as arguments when creating a new client.

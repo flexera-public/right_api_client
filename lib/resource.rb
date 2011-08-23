@@ -1,7 +1,7 @@
 
 module RightApi
-  # Represents a Resource. This is a fillter class for a single resource
-    # This class once again dynamically adds methods and properties to instances depending on what type of resource they are.
+  # Represents a Resource. This is a filler class for a single resource
+  # This class once again dynamically adds methods and properties to instances depending on what type of resource they are.
   class Resource
     include RightApiHelper
 

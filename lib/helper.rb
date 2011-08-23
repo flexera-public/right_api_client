@@ -1,7 +1,6 @@
 #
-# Methods shared by the RightApiClient, Resource and resource arrays.
+# Methods shared by the Client, Resource and Resources.
 #
-
 
 module RightApiHelper
 
