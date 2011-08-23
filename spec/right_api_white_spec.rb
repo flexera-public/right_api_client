@@ -9,8 +9,24 @@ describe "Instance Facing Api" do
   before(:all) do
     account_id, token = ENV['RS_API_TOKEN'].split(/:/)
     @instance = RightApi::InstanceFacing.new(:instance_token => token, :account_id => account_id, :api_url => "https://#{ENV['RS_SERVER']}")
-    @volname = "spec_test_five_billion"
-    @lineage = "spec_test_five_billion_and#{rand(1000000)}"
+  end
+
+  it "returns correct device naming" do
+    @instance.reset
+
+    @volname = "spec_test_correct_device_naming"
+
+    @instance.create_and_attach_volumes(@volname, 1, "1")
+    api_name = @instance.volume_attachments.first.show.device
+    api_name.gsub!(/^\/dev\//,"")
+    IO.read("/proc/partitions").should include(api_name)
+  end
+
+  it "will backup" do
+    @instance.reset
+
+    @volname = "spec_test_will_backup"
+    @lineage = "#{@volname}_#{rand(1000000)}"
     @backup_options = { :lineage => @lineage,
                         :name => @volname,
                         :max_snapshots => 1,
@@ -18,34 +34,29 @@ describe "Instance Facing Api" do
                         :keep_weeklies => 1,
                         :keep_monthlies => 1,
                         :keep_yearlies => 1 }
-  end
 
-  it "returns correct device naming" do
-    @instance.reset
-    @instance.create_and_attach_volumes(@volname, 1, "1")
-    api_name = @instance.volume_attachments.first.show.device
-    api_name.gsub!(/^\/dev\//,"")
-    IO.read("/proc/partitions").should include(api_name)
-  end
-
-  it "will create from scratch" do
-    @instance.reset
-    prev_size = @instance.volume_attachments.size
-    @instance.create_and_attach_volumes(@volname, 2, "1")
-    currently_attached = @instance.volume_attachments.size
-    currently_attached.should  == (prev_size + 2)
-  end
-
-  it "will backup" do
-    @instance.reset
     @instance.create_and_attach_volumes(@volname, 2, "1")
     @instance.backup(@backup_options)
   end
+
 
   it "will restore" do
+    @instance.reset
+
+    @volname = "spec_test_will_restore"
+    @lineage = "#{@volname}_#{rand(1000000)}"
+    @backup_options = { :lineage => @lineage,
+                        :name => @volname,
+                        :max_snapshots => 1,
+                        :keep_dailies => 1,
+                        :keep_weeklies => 1,
+                        :keep_monthlies => 1,
+                        :keep_yearlies => 1 }
+
+
     @instance.create_and_attach_volumes(@volname, 2, "1")
     @instance.backup(@backup_options)
-    @instance.reset
+
     backup = @instance.find_latest_backup(@lineage)
     backup.restore(:instance_href => @instance.href)
   end
