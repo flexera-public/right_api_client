@@ -1,9 +1,12 @@
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'lib/right_api_client/client'
+
+$:.unshift('.') # for Ruby 1.9.x
+
+require File.expand_path('../lib/right_api_client/version', __FILE__)
+
 
 Gem::Specification.new do |s|
 
-  s.name = 'right_api_1.5_client'
+  s.name = 'right_api_client'
   s.version = RightApi::Client::VERSION
   s.platform = Gem::Platform::RUBY
   s.authors = [ 'Ali Khajeh-Hosseini' ]
