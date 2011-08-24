@@ -26,7 +26,7 @@ describe "Instance Facing Api" do
     @instance.reset
 
     @volname = "spec_test_will_backup"
-    @lineage = "#{@volname}_#{rand(1000000)}"
+    @lineage = "#{@volname}_test_lineage"
     @backup_options = { :lineage => @lineage,
                         :name => @volname,
                         :max_snapshots => 1,
@@ -44,7 +44,7 @@ describe "Instance Facing Api" do
     @instance.reset
 
     @volname = "spec_test_will_restore"
-    @lineage = "#{@volname}_#{rand(1000000)}"
+    @lineage = "#{@volname}_test_lineage"
     @backup_options = { :lineage => @lineage,
                         :name => @volname,
                         :max_snapshots => 1,
@@ -56,7 +56,7 @@ describe "Instance Facing Api" do
 
     @instance.create_and_attach_volumes(@volname, 2, "1")
     @instance.backup(@backup_options)
-
+    sleep(60) # sleeping to allow backups to become avail
     backup = @instance.find_latest_backup(@lineage)
     backup.restore(:instance_href => @instance.href)
   end
