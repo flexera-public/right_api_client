@@ -59,7 +59,7 @@ require 'json'
 require 'set'
 require 'cgi'
 
-require 'right_api_client/version'
+require 'right_api_client/version' unless defined?(RightApi::Client::VERSION)
 require 'right_api_client/helper'
 require 'right_api_client/resource'
 require 'right_api_client/resource_detail'
