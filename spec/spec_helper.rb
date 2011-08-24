@@ -1,10 +1,10 @@
+require File.join(File.dirname(__FILE__), '../lib/client')
 
-require File.join(File.dirname(__FILE__), '../lib/right_api_client/client')
 require 'yaml'
 
 def example_args
   YAML.load_file(File.join(
-    File.dirname(__FILE__), '../examples/yellow_login.yml'))
+    File.dirname(__FILE__), '../examples/login.yml'))
 end
 
 def example_instance_args
