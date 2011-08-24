@@ -2,7 +2,7 @@
 # To Run:
 # Make sure you have a valid examples/instance_login.yml (see login.yml.example for details)
 # > cd spec
-# > bundle exec spec right_api_instance_client_spec.rb 
+# > bundle exec spec right_api_instance_client_spec.rb
 
 
 require File.join(File.dirname(__FILE__), 'spec_helper')
@@ -28,12 +28,12 @@ describe "#RightApiInstanceClient" do
     @client.api_methods.should include(:backups)
     @client.api_methods.should_not be_empty
   end
-  
+
   it "should be a resource object" do
     @client.get_instance.should be_kind_of(RightApi::ResourceDetail)
   end
-  
-  
+
+
   describe "#volumes" do
     it "should return a resources object" do
       @client.volumes.should be_kind_of(RightApi::Resources)
@@ -73,7 +73,7 @@ describe "#RightApiInstanceClient" do
       @client.volume_types.api_methods.should include(:index)
     end
   end
-  
+
   describe "#backups" do
     it "should return a resources object" do
       @client.backups.should be_kind_of(RightApi::Resources)

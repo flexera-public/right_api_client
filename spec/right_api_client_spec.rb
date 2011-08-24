@@ -1,7 +1,7 @@
 # To Run:
 # Make sure you have a valid examples/login.yml (see login.yml.example for details)
 # > cd spec
-# > bundle exec spec right_api_client_spec.rb 
+# > bundle exec spec right_api_client_spec.rb
 
 require File.join(File.dirname(__FILE__), 'spec_helper')
 
@@ -24,7 +24,7 @@ describe RightApi::Client do
   it "should return a Resources class for collection of resources" do
     @client.clouds.should be_kind_of(RightApi::Resources)
   end
-  
+
   it "should return arrays for collection of resources" do
     @client.clouds.index.should be_kind_of(Array)
   end
@@ -40,7 +40,7 @@ describe RightApi::Client do
   it "should have associations for a resource" do
     @client.clouds.index.first.show.associations.should_not be_empty
   end
-  
+
   it "should have actions for a resource" do
     actions = @client.servers.index.first.show.actions.to_a
     (actions.include?(:launch) || actions.include?(:terminate)).should == true
@@ -85,7 +85,7 @@ describe RightApi::Client do
       @client.cookies.keys.sort.should == %w[ _session_id domain rs_gbl ]
     end
   end
-  
+
   describe "#tags" do
     it "should return a Resources object" do
       @client.tags.should be_kind_of(RightApi::Resources)
@@ -98,7 +98,7 @@ describe RightApi::Client do
       @client.tags.api_methods.should include(:multi_delete)
     end
   end
-    
+
   describe "#backups" do
     it "should return a dummy resource object" do
       @client.backups.should be_kind_of(RightApi::Resources)

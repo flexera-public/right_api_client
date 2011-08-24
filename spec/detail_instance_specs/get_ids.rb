@@ -54,14 +54,14 @@ end
 
 
 def get_ids(type)
-  
+
   # return the correct things:
   return [client, volume_id] if type == 'volumes'
   return [client, volume_type_id] if type == 'volume_types'
   return [client, volume_snapshot_id, volume_id, volume_volume_snapshot_id] if type == 'volume_snapshots'
-  
+
   return [client, volume_attachment_id, volume_id, instance_volume_attachment_id] if type == 'volume_attachments'
-  
+
   return [client, backup_id, backup_lineage] if type == 'backups'
   return client if type == 'get_instance'
 end

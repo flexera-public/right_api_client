@@ -27,7 +27,7 @@ module RightApi
         RightApi::Resource.new(client, resource_type, path, data)
       end
     end
-      
+
     def inspect
       "#<#{self.class.name} " +
       "resource_type=\"#{@resource_type}\"" +
@@ -40,11 +40,11 @@ module RightApi
     def initialize(client, resource_type, href, hash={})
       if INCONSISTENT_RESOURCE_TYPES.has_key?(resource_type)
         resource_type = INCONSISTENT_RESOURCE_TYPES[resource_type]
-      end 
+      end
       # For the inspect function:
       @resource_type = resource_type
       @hash = hash
-    
+
       # Add destroy method to relevant resources
       if RESOURCE_ACTIONS[:destroy].include?(resource_type)
         define_instance_method('destroy') do
@@ -58,11 +58,11 @@ module RightApi
           client.do_put(href, *args)
         end
       end
-    
+
       # Add show method to relevant resources
       if !RESOURCE_ACTIONS[:no_show].include?(resource_type)
         define_instance_method('show') do |*args|
-          RightApi::ResourceDetail.new(client, *client.do_get(href, *args)) 
+          RightApi::ResourceDetail.new(client, *client.do_get(href, *args))
         end
       end
     end

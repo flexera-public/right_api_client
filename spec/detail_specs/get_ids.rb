@@ -100,7 +100,7 @@ def ssh_key_id
 end
 
 # Need to be servers
-def resource_hrefs 
+def resource_hrefs
   ['/api/servers/967094', '/api/servers/967078']
 end
 
@@ -143,7 +143,7 @@ end
 
 
 def get_ids(type)
-  
+
   # return the correct things:
   return [client, cloud_id] if type == 'clouds'
   return [client, cloud_id, datacenter_id] if type == 'datacenters'
@@ -158,7 +158,7 @@ def get_ids(type)
   return [client, cloud_id, volume_id] if type == 'volumes'
   return [client, volume_type_id] if type == 'volume_types'
   return [client, cloud_id, volume_snapshot_id, volume_id, volume_volume_snapshot_id] if type == 'volume_snapshots'
-  
+
   return [client, cloud_id, volume_attachment_id, volume_id, instance_id, instance_volume_attachment_id] if type == 'volume_attachments'
   return [client, deployment_id] if type == 'deployments'
   return [client, server_id, deployment_id, deployment_server_id] if type == 'servers'

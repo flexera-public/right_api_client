@@ -16,7 +16,7 @@ module RightApi
     # Returns: array of device names (ie: ["/dev/xvdb"])
     # ~ <lineage> String: the lineage
     def attached_devices_for_lineage(lineage)
-      this_line = volume_attachments.select { |s| s.volume.show.name == lineage } 
+      this_line = volume_attachments.select { |s| s.volume.show.name == lineage }
       this_line.map { |m| m.show.device }
     end
 
@@ -51,11 +51,11 @@ module RightApi
     # Requires options[:lineage]
     def backup(options)
       backup_hrefs = volume_attachments.map { |m| m.show.href }
-      params = { :backup => { :lineage => options[:lineage], 
-                               :name => options[:name], 
+      params = { :backup => { :lineage => options[:lineage],
+                               :name => options[:name],
                                :volume_attachment_hrefs => backup_hrefs}}
       new_backup = @client.backups.create(params)
-      # TODO: backups need to be a separate call .. for tight chef integration 
+      # TODO: backups need to be a separate call .. for tight chef integration
       new_backup.update(:backup => {:committed => "true"})
       @client.backups.cleanup(:lineage => options[:lineage],
                               :keep_last => options[:max_snapshots],
@@ -64,7 +64,7 @@ module RightApi
                               :monthlies => options[:keep_monthlies],
                               :yearlies => options[:keep_yearlies]
                              )
-    end 
+    end
 
     # Returns latest backup as RightApiClient::Resource
     # ~ <lineage> String: the lineage
@@ -94,7 +94,7 @@ module RightApi
     # Create and attach blank volumes
     # ~ volname - String to use for volume name
     # ~ numvols - Integer number of volumes to create
-    # ~ volume_size - Integer size of each volume 
+    # ~ volume_size - Integer size of each volume
     # Returns array of device names that were attached
     def create_and_attach_volumes(volname, numvols, volume_size)
       physical_device_names = generate_physical_device_names(numvols)
@@ -120,7 +120,7 @@ module RightApi
           puts "waiting for volume to create - status is #{new_vol.show.status}"
           sleep 2
         end
-        
+
         # attach the new volume
         params = {:volume_attachment => {:volume_href => new_vol.show.href, :instance_href => instance.href, :device => physical_device_names[index] } }
         new_attachment = @client.volume_attachments.create(params)
@@ -148,12 +148,12 @@ module RightApi
         end
       end
     end
-    
+
     # Returns list of volume attachments for THIS instance
     def volume_attachments
       instance = @client.get_instance
       va = @client.volume_attachments.index(:filter => ["instance_href==#{href}"])
-      myattachments = [] 
+      myattachments = []
       va.each do |a|
         myattachments << a unless a.show.device.include?('unknown')
       end
@@ -164,7 +164,7 @@ module RightApi
     def reset
       delete_these = []
       # Detach
-      myattachments = volume_attachments 
+      myattachments = volume_attachments
       myattachments.each do |attachment|
         delete_these << attachment.show.volume
         attachment.destroy

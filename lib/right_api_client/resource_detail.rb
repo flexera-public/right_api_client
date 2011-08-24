@@ -19,24 +19,24 @@ module RightApi
       "#{', name='+name.inspect if self.respond_to?(:name)}" +
       "#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
     end
-  
+
     # ResourceDetail will MODIFY hash
     def initialize(client, resource_type, href, hash)
       @client = client
       @resource_type = resource_type
       @raw = hash.dup
       @attributes, @associations, @actions = Set.new, Set.new, Set.new
-    
+
       links = hash.delete('links') || []
       raw_actions = hash.delete('actions') || []
-      
-      # We have to delete the self href from the links because later we will 
+
+      # We have to delete the self href from the links because later we will
       # go through these links and add them in as methods
       self_hash = get_and_delete_href_from_links(links)
       if self_hash != nil
         hash['href'] = self_hash
       end
-    
+
       # Add links to attributes set and create a method that returns the links
       attributes << :links
       define_instance_method(:links) { return links }
@@ -70,7 +70,7 @@ module RightApi
           end
         end
       end
-    
+
       # Add the rest as instance methods
       hash.each do |k, v|
         # If a parent resource is requested with a view then it might return
