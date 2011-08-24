@@ -70,13 +70,7 @@ module RightApi
     # ~ <lineage> String: the lineage
     # TODO - better filters specific to clouds
     def find_latest_backup(lineage)
-      if is_cdc?
-        backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true"] )
-      elsif is_euca?
-        backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true"] )
-      else
-        backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
-      end
+      backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
       raise "FATAL: no backups found" if backup.empty?
       backup.first.show
     end
