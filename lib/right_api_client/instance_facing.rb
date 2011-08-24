@@ -71,13 +71,7 @@ module RightApi
     # ~ <lineage> String: the lineage
     # TODO - better filters specific to clouds
     def find_latest_backup(lineage)
-      if is_cdc?
-        backup = @client.backups.index(:lineage => lineage, :filter => [ "committed==true"] )
-      elsif is_euca?
-        backup = @client.backups.index(:lineage => lineage, :filter => [ "committed==true"] )
-      else
-        backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
-      end
+      backup = @client.backups.index(:lineage => lineage, :filter => [ "latest_before==#{Time.now.utc.strftime('%Y/%m/%d %H:%M:%S %z')}", "committed==true", "completed==true"] )
       raise "FATAL: no backups found" if backup.empty?
       backup.first.show
     end
@@ -122,18 +116,19 @@ module RightApi
         end
 
         new_vol = @client.volumes.create(params)
-        puts "waiting for volume to create"
+        puts "waiting for volume to create - initial current status = #{new_vol.show.status}"
         while (new_vol.show.status != "available")
+          puts "waiting for volume to create - status is #{new_vol.show.status}"
           sleep 2
-          puts "status was #{new_vol.show.status}"
         end
         
         # attach the new volume
         params = {:volume_attachment => {:volume_href => new_vol.show.href, :instance_href => instance.href, :device => physical_device_names[index] } }
         new_attachment = @client.volume_attachments.create(params)
 
-        puts "waiting for volume to attach.."
+        puts "waiting for volume to attach - initial current status = #{new_vol.show.status}"
         while (new_vol.show.status != "in-use") do
+          puts "waiting for volume to attach - status is #{new_vol.show.status}"
           sleep 2
         end
         attached_volumes << new_attachment

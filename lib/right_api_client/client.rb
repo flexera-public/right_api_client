@@ -53,18 +53,16 @@
 # Note:
 #  * In general, when a new API resource is added you need to indicate in the Client whether index, show, create, update and delete methods are allowed for that resource
 
-require 'rest_client' # rest_client 1.6.1
+require 'rest_client'
 require 'json'
 require 'set'
 require 'cgi'
 
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'version'
-require 'helper'
-require 'resource'
-require 'resource_detail'
-require 'resources'
-
+require 'right_api_client/version' unless defined?(RightApi::Client::VERSION)
+require 'right_api_client/helper'
+require 'right_api_client/resource'
+require 'right_api_client/resource_detail'
+require 'right_api_client/resources'
 
 # RightApiClient has the generic get/post/delete/put calls that are used
 # by resources

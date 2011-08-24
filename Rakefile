@@ -1,5 +1,5 @@
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'lib/version'
+$:.unshift('lib')
+require 'right_api_client'
 require 'rake'
 require 'spec/rake/spectask'
 

@@ -1,5 +1,4 @@
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'lib/version'
+require File.expand_path('../lib/right_api_client/version', __FILE__)
 
 Gem::Specification.new do |s|
 
