@@ -2,7 +2,8 @@
 # Add this to your bash profile to make it simpler:
 #   alias client='bundle exec ruby login_to_client_irb.rb'
 
-require './lib/client'
+$:.unshift('lib')
+require 'right_api_client'
 require 'yaml'
 require 'irb'
 

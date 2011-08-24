@@ -1,5 +1,6 @@
-require File.join(File.dirname(__FILE__), '../lib/client')
+$:.unshift('../lib')
 
+require 'right_api_client'
 require 'yaml'
 
 def example_args

@@ -1,7 +1,5 @@
 require File.expand_path('../../spec_helper', __FILE__)
 
-# These tests cover the basic operations of the client, and can certainly
-# be extended in the future to improve test coverage.
 describe "#RightApiInstanceClient" do
   before(:all) do
     @client = example_instance_client
