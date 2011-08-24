@@ -1,7 +1,5 @@
-
 $:.unshift('lib')
-
-require 'right_api_client/client'
+require 'right_api_client'
 
 task :build do
   system "gem build right_api_client.gemspec"

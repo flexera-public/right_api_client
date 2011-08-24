@@ -53,8 +53,7 @@
 # Note:
 #  * In general, when a new API resource is added you need to indicate in the Client whether index, show, create, update and delete methods are allowed for that resource
 
-#$LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'rest_client' # rest_client 1.6.1
+require 'rest_client'
 require 'json'
 require 'set'
 require 'cgi'
