@@ -1,17 +1,8 @@
-
 module RightApi
   # Takes the information returned from the API and converts it into instance methods
   class ResourceDetail
-    include RightApiHelper
+    include Helper
     attr_reader :client, :attributes, :associations, :actions, :raw, :resource_type
-
-    # The API does not provide information about the basic actions that can be
-    # performed on a resource so define them here:
-    RESOURCE_ACTIONS = {
-      :destroy => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment', 'backup'],
-      :update => ['deployment', 'instance', 'server_array', 'server', 'backup'],
-      :no_show => ['input', 'session', 'resource_tag']  # Once again, easier to define those that don't have a show call associated with them
-    }
 
     def inspect
       "#<#{self.class.name} " +
@@ -19,31 +10,31 @@ module RightApi
       "#{', name='+name.inspect if self.respond_to?(:name)}" +
       "#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
     end
-  
+
     # ResourceDetail will MODIFY hash
     def initialize(client, resource_type, href, hash)
       @client = client
       @resource_type = resource_type
       @raw = hash.dup
       @attributes, @associations, @actions = Set.new, Set.new, Set.new
-    
+
       links = hash.delete('links') || []
       raw_actions = hash.delete('actions') || []
-      
-      # We have to delete the self href from the links because later we will 
+
+      # We have to delete the self href from the links because later we will
       # go through these links and add them in as methods
       self_hash = get_and_delete_href_from_links(links)
       if self_hash != nil
         hash['href'] = self_hash
       end
-    
+
       # Add links to attributes set and create a method that returns the links
       attributes << :links
       define_instance_method(:links) { return links }
 
       # Follow the actions:
         # API doesn't tell us whether a resource action is a GET or a POST, but
-        # I think they are all post so add them all as posts for now.
+        # they are all post so add them all as posts for now.
       raw_actions.each do |action|
         action_name = action['rel']
         # Add it to the actions set
@@ -70,7 +61,7 @@ module RightApi
           end
         end
       end
-    
+
       # Add the rest as instance methods
       hash.each do |k, v|
         # If a parent resource is requested with a view then it might return
@@ -104,21 +95,21 @@ module RightApi
       end
 
       # Add destroy method to relevant resources
-      if RESOURCE_ACTIONS[:destroy].include?(resource_type)
+      if Helper::RESOURCE_ACTIONS[:destroy].include?(resource_type)
         define_instance_method('destroy') do
           client.do_delete(href)
         end
       end
 
       # Add update method to relevant resources
-      if RESOURCE_ACTIONS[:update].include?(resource_type)
+      if Helper::RESOURCE_ACTIONS[:update].include?(resource_type)
         define_instance_method('update') do |*args|
           client.do_put(href, *args)
         end
       end
 
       # Add show method to relevant resources
-      if !RESOURCE_ACTIONS[:no_show].include?(resource_type)
+      if !Helper::RESOURCE_ACTIONS[:no_show].include?(resource_type)
         define_instance_method('show') do |*args|
           self
         end

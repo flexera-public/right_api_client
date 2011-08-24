@@ -1,58 +1,3 @@
-# Design Decisions:
-# 
-# In the code, we only hard code CRUD operations for resources. We use the .show and .index methods to make the client more efficient. Since it dynamically creates methods it needs to query the API at times. The .show and the .index make it explicit that querying needs to take place. Without them a GET would have to be queried every step of the way. (ie: the index call would be client.deployments, and the create call would be client.deployments.create which would first do an index call).
-# 
-# 
-# 
-# Special Cases:
-# 
-# 
-# Special case: Returning resource_types that are not actual API resources:
-#  * tags:
-#     - by_resource, by_tag  : both return a COLLECTION of resource_type = RESOURCE_TAG
-#        . no show or index is defined for that resource_type, therefore return a collection of ResourceDetail objects
-#        
-#  * data:
-#    - querying .data for monitoring_metrics:
-#         . no show is defined for that resource_type, therefore return a ResourceDetail object 
-# 
-# 
-# 
-# 
-# Special case: index call does not act like an index call
-#  * session:
-#    - session.index should act like a show call and not like an index call (since you cannot query show): therefore it should return a ResourceDetail object
-#   
-# 
-#  * inputs
-#    - inputs.index cannot return a collection of Resource objects since .show is not allowed:  therefore it should return a collection of ResourceDetail object
-# 
-# 
-# 
-# 
-# Special case: Having a resource_type that cannot be accurately determined from the URL:
-#  * In server_arrays show: resource_type = current_instance(s) (although it should be instance(s))
-#  * In multi_cloud_images show: resource_type = setting(s) (although it should be multi_cloud_image_setting)
-#  * Put these in: INCONSISTENT_RESOURCE_TYPES
-# 
-# 
-# 
-# Special case: method defined on the generic resource_type itself
-#   * 'instances' => {:multi_terminate => 'do_post', :multi_run_executable => 'do_post'},
-#   * 'inputs' => {:multi_update => 'do_put'},
-#   * 'tags' => {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'},
-#   * 'backups' => {:cleanup => 'do_post'}
-#   * Put these in RESOURCE_TYPE_SPECIAL_ACTIONS
-# 
-# 
-# Special case: resources are not linked together
-#   * In ResourceDetail resource_type = Instance, need live_tasks as a method
-#     
-#     
-#     
-# Note:
-#  * In general, when a new API resource is added you need to indicate in the Client whether index, show, create, update and delete methods are allowed for that resource
-
 require 'rest_client'
 require 'json'
 require 'set'
@@ -64,66 +9,60 @@ require 'right_api_client/resource'
 require 'right_api_client/resource_detail'
 require 'right_api_client/resources'
 
-# RightApiClient has the generic get/post/delete/put calls that are used
-# by resources
+# RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
   class Client
+    include Helper
 
     ROOT_RESOURCE = '/api/session'
     ROOT_INSTANCE_RESOURCE = '/api/session/instance'
+    DEFAULT_API_URL = 'https://my.rightscale.com'
 
     # permitted parameters for initializing
     AUTH_PARAMS = %w(email password account_id api_url api_version cookies instance_token)
-  
-    include RightApiHelper
-
-    # The cookies for our client.
     attr_reader :cookies, :instance_token
 
     def initialize(args)
-
       # Default params
-      @api_url, @api_version = 'https://my.rightscale.com', API_VERSION
-      
+      @api_url, @api_version = DEFAULT_API_URL, API_VERSION
       # Initializing all instance variables from hash
       args.each { |key,value|
         instance_variable_set("@#{key}", value) if value && AUTH_PARAMS.include?(key.to_s)
       } if args.is_a? Hash
 
-      raise 'This API client is only compatible with RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
+      raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
       @client = RestClient::Resource.new(@api_url)
 
       # There are three options for login: credentials, instance token, or if the user already has the cookies they can just use those
       @cookies ||= login()
 
+      # Add the top level links for instance_facing_calls
       if @instance_token
-        # Add in the top level links for instance_facing_calls here:
-        
         resource_type, path, data = self.do_get(ROOT_INSTANCE_RESOURCE)
         # The instance's href. get_href_from_links is read only
         instance_href = get_href_from_links(data['links'])
         cloud_href = instance_href.split('/instances')[0]
+
+        Helper::INSTANCE_FACING_RESOURCES.each do |meth|
+          define_instance_method(meth) do |*args|
+            obj_path = cloud_href + '/' + meth.to_s
+            if has_id(*args)
+                # add_id_and_params_to_path will modify args
+              obj_path = add_id_and_params_to_path(obj_path, *args)
+              RightApi::Resource.process(self, get_singular(meth), obj_path)
+            else
+                # Don't allow users to specify filters here (users need to specify the filters in
+                # the index call itself.)
+              RightApi::Resources.new(self, obj_path, meth.to_s)
+            end
+          end
+        end
 
         define_instance_method(:get_instance) do |*params|
           type, instance_path, instance_data = self.do_get(ROOT_INSTANCE_RESOURCE)
           RightApi::ResourceDetail.new(self, type, instance_path, instance_data)
         end
 
-        [:volumes, :volume_attachments, :volume_snapshots, :volume_types].each do |meth|
-          define_instance_method(meth) do |*args|
-            obj_path = cloud_href + '/' + meth.to_s
-            if has_id(*args)
-              # add_id_and_params_to_path will modify args
-              obj_path = add_id_and_params_to_path(obj_path, *args)
-              RightApi::Resource.process(self, get_singular(meth), obj_path)
-            else
-              # Don't allow users to specify filters here (users need to specify the filters in
-              # the index call itself.)
-              RightApi::Resources.new(self, obj_path, meth.to_s)
-            end
-          end
-        end
-        
         define_instance_method(:live_tasks) do |*args|
           obj_path = instance_href + '/live/tasks'
           if has_id(*args) # can only call this with an id
@@ -141,8 +80,7 @@ module RightApi
               RightApi::Resources.new(self, obj_path, 'backups')
           end
         end
-      else 
-        # Not an instance-facing-call: 
+      else
         # Session is the root resource that has links to all the base resources
         define_instance_method(:session) do |*params|
           RightApi::Resources.new(self, ROOT_RESOURCE, 'session')
@@ -151,11 +89,11 @@ module RightApi
         get_associated_resources(self, session.index.links, nil)
       end
     end
-  
+
     def to_s
-      "#<RightApiClient>"
+      "#<RightApi::Client>"
     end
-    
+
     # Log HTTP calls to file (file can be STDOUT as well)
     def log(file)
       RestClient.log = file
@@ -163,7 +101,6 @@ module RightApi
 
     # Users shouldn't need to call the following methods directly
 
-    # you can login with username and password or with an instance_token
     def login
       if @instance_token
         params = {
@@ -218,7 +155,7 @@ module RightApi
             raise "Unexpected response #{response.code.to_s}, #{response.body}"
           end
         end
-        #Session cookie is expired or invalid
+      #Session cookie is expired or invalid
       rescue RuntimeError => e
         if re_login?(e)
           @cookies = login()
@@ -231,7 +168,7 @@ module RightApi
       data = JSON.parse(body)
       [resource_type, path, data]
     end
-  
+
     # Generic post
     def do_post(path, params={})
       begin
@@ -242,12 +179,12 @@ module RightApi
             href = response.headers[:location]
             relative_href = href.split(@api_url)[-1]
             # Return the resource that was just created
-            # Determine the resource_type from the href: (eg. .../clouds/id).
+            # Determine the resource_type from the href (eg. api/clouds/id).
             # This is based on the assumption that we can determine the resource_type without doing a do_get
             resource_type = get_singular(relative_href.split('/')[-2])
             RightApi::Resource.process(self, resource_type, relative_href)
           when 200..299
-            # this is needed for the tags Resource -- which returns a 200 and has a content type
+            # This is needed for the tags Resource -- which returns a 200 and has a content type
             # therefore, a resource object needs to be returned
             if response.code == 200 && response.headers[:content_type].index('rightscale')
               resource_type = get_resource_type(response.headers[:content_type])
@@ -257,7 +194,7 @@ module RightApi
               data.map { |obj|
                 RightApi::ResourceDetail.new(self, resource_type, path, obj)
               }
-            else          
+            else
               response.return!(request, result)
             end
           else
@@ -315,9 +252,9 @@ module RightApi
     end
 
     def re_login?(e)
-      e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid) 
+      e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid)
     end
-  
+
     # returns the resource_type
     def get_resource_type(content_type)
       content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]

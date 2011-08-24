@@ -11,7 +11,7 @@
 
 - Clone the right_api_client git repo
   
-  require File.expand_path('lib/client')
+  require 'right_api_client'
 
 == Versioning
 - The right_api_client gem is versioned with the usual X.Y.Z notation, where X.Y is the API version, and Z is the client version.
@@ -117,3 +117,65 @@ If you call a invalid method you will get: 403, Permission denied
 Enough talk, get started:
  * look at the examples/usage.rb file for a stunning number of examples
  * When in doubt query api_methods
+
+
+
+
+
+
+== Design Docs (work-in-progress)
+
+# Design Decisions:
+#
+# In the code, we only hard code CRUD operations for resources. We use the .show and .index methods to make the client more efficient. Since it dynamically creates methods it needs to query the API at times. The .show and the .index make it explicit that querying needs to take place. Without them a GET would have to be queried every step of the way. (ie: the index call would be client.deployments, and the create call would be client.deployments.create which would first do an index call).
+#
+#
+#
+# Special Cases:
+#
+#
+# Special case: Returning resource_types that are not actual API resources:
+#  * tags:
+#     - by_resource, by_tag  : both return a COLLECTION of resource_type = RESOURCE_TAG
+#        . no show or index is defined for that resource_type, therefore return a collection of ResourceDetail objects
+#
+#  * data:
+#    - querying .data for monitoring_metrics:
+#         . no show is defined for that resource_type, therefore return a ResourceDetail object
+#
+#
+#
+#
+# Special case: index call does not act like an index call
+#  * session:
+#    - session.index should act like a show call and not like an index call (since you cannot query show): therefore it should return a ResourceDetail object
+#
+#
+#  * inputs
+#    - inputs.index cannot return a collection of Resource objects since .show is not allowed:  therefore it should return a collection of ResourceDetail object
+#
+#
+#
+#
+# Special case: Having a resource_type that cannot be accurately determined from the URL:
+#  * In server_arrays show: resource_type = current_instance(s) (although it should be instance(s))
+#  * In multi_cloud_images show: resource_type = setting(s) (although it should be multi_cloud_image_setting)
+#  * Put these in: INCONSISTENT_RESOURCE_TYPES
+#
+#
+#
+# Special case: method defined on the generic resource_type itself
+#   * 'instances' => {:multi_terminate => 'do_post', :multi_run_executable => 'do_post'},
+#   * 'inputs' => {:multi_update => 'do_put'},
+#   * 'tags' => {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'},
+#   * 'backups' => {:cleanup => 'do_post'}
+#   * Put these in RESOURCE_TYPE_SPECIAL_ACTIONS
+#
+#
+# Special case: resources are not linked together
+#   * In ResourceDetail resource_type = Instance, need live_tasks as a method
+#
+#
+#
+# Note:
+#  * In general, when a new API resource is added you need to indicate in the Client whether index, show, create, update and delete methods are allowed for that resource
