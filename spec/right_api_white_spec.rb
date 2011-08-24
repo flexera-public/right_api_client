@@ -56,6 +56,7 @@ describe "Instance Facing Api" do
 
     @instance.create_and_attach_volumes(@volname, 2, "1")
     @instance.backup(@backup_options)
+    puts "waiting 60 seconds for backups to become avail"
     sleep(60) # sleeping to allow backups to become avail
     backup = @instance.find_latest_backup(@lineage)
     backup.restore(:instance_href => @instance.href)
