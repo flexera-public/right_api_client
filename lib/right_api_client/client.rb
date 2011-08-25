@@ -3,11 +3,11 @@ require 'json'
 require 'set'
 require 'cgi'
 
-require 'right_api_client/version' unless defined?(RightApi::Client::VERSION)
-require 'right_api_client/helper'
-require 'right_api_client/resource'
-require 'right_api_client/resource_detail'
-require 'right_api_client/resources'
+require File.expand_path('../version', __FILE__) unless defined?(RightApi::Client::VERSION)
+require File.expand_path('../helper', __FILE__)
+require File.expand_path('../resource', __FILE__)
+require File.expand_path('../resource_detail', __FILE__)
+require File.expand_path('../resources', __FILE__)
 
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
@@ -31,7 +31,7 @@ module RightApi
       } if args.is_a? Hash
 
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
-      @client = RestClient::Resource.new(@api_url)
+      @rest_client = RestClient::Resource.new(@api_url)
 
       # There are three options for login: credentials, instance token, or if the user already has the cookies they can just use those
       @cookies ||= login()
@@ -116,7 +116,7 @@ module RightApi
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
-      response = @client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result|
+      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result|
         case response.code
         when 302
           response
@@ -140,7 +140,7 @@ module RightApi
 
       begin
         # Return content type so the resulting resource object knows what kind of resource it is.
-        resource_type, body = @client[path].get(headers) do |response, request, result|
+        resource_type, body = @rest_client[path].get(headers) do |response, request, result|
           case response.code
           when 200
             # Get the resource_type from the content_type, the resource_type will
@@ -172,7 +172,7 @@ module RightApi
     # Generic post
     def do_post(path, params={})
       begin
-        @client[path].post(params, headers) do |response, request, result|
+        @rest_client[path].post(params, headers) do |response, request, result|
           case response.code
           when 201, 202
             # Create and return the resource
@@ -214,7 +214,7 @@ module RightApi
     # Generic delete
     def do_delete(path)
       begin
-        @client[path].delete(headers) do |response|
+        @rest_client[path].delete(headers) do |response|
           case response.code
           when 200, 204
           else
@@ -234,7 +234,7 @@ module RightApi
     # Generic put
     def do_put(path, params={})
       begin
-        @client[path].put(params, headers) do |response|
+        @rest_client[path].put(params, headers) do |response|
           case response.code
           when 204
           else

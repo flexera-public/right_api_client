@@ -1,5 +1,4 @@
-$:.unshift('lib')
-require 'right_api_client'
+require File.expand_path('../lib/right_api_client', __FILE__)
 require 'rake'
 require 'spec/rake/spectask'
 
