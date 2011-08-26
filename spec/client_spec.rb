@@ -5,8 +5,9 @@ require 'yaml'
 describe RightApi::Client do
   context "Given a valid set of credentials in the examples/login.yml file" do
     before(:all) do
+      @creds = '../../examples/login.yml'
       begin
-        @client = RightApi::Client.new(YAML.load_file(File.expand_path('../../examples/login.ym', __FILE__)))
+        @client = RightApi::Client.new(YAML.load_file(File.expand_path(@creds, __FILE__)))
       rescue Exception => e
         puts "WARNING: The following specs need a valid set of credentials as they are integration tests that can only be done by calling the API server"
         puts e.message
@@ -25,7 +26,7 @@ describe RightApi::Client do
 
     it "Should accept a cookie argument when creating a new client" do
       client1 = RightApi::Client.new(:cookies => @client.cookies)
-      client2 = RightApi::Client.new(YAML.load_file(File.expand_path('../../examples/login.yml', __FILE__)))
+      client2 = RightApi::Client.new(YAML.load_file(File.expand_path(@creds, __FILE__)))
 
       client1.cookies.should     == @client.cookies
       client2.cookies.should_not == @client.cookies

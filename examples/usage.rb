@@ -19,9 +19,11 @@ puts 'Available methods:', client.api_methods
 ##Or you can just tell the client to use an already-authenticated cookie (from another client or session), e.g.:
 #client = RightApiClient.new(:cookies => my_already_authenticated_cookies)
 
-# The HTTP calls made by RightApiClient can be logged in two ways:
+# The HTTP calls made by right_api_client can be logged in two ways:
 # Log to a file
-#client.log('C:\Users\Ali\Desktop\log.txt')
+#client.log('~/right_api_client.log')
 # Log to SDTOUT, which is usually the screen
 #require 'logger'
-#client.log(Logger.new(STDOUT))
+#client.log(STDOUT)
+
+#More examples to come...
