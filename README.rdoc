@@ -2,8 +2,8 @@
 
 == Installation
 - right_api_client uses Ruby 1.9.2 but should also work with 1.8.7. Install the gems:
-  gem install rest-client (this gem is used by right_api_client)
-  gem install right_api_client
+    gem install rest-client (this gem is used by right_api_client)
+    gem install right_api_client
 
 == Versioning
 - The right_api_client gem is versioned with the usual X.Y.Z notation, where X.Y is the RightScale API version, and Z is the client version.
@@ -12,9 +12,9 @@
 - Check the examples directory for code snippets on how to use the client.
 - New users can start with the following lines of code and navigate their way around the API by following the available methods:
 
-  require 'right_api_client'
-  client = RightApi::Client.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
-  puts 'Available methods:', client.api_methods
+    require 'right_api_client'
+    client = RightApi::Client.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
+    puts 'Available methods:', client.api_methods
 
 You can find your account number by logging into RightScale > Settings > Account Settings,
 the account number is at the end of the browser address bar. 
