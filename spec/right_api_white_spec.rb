@@ -11,33 +11,33 @@ describe "Instance Facing Api" do
     @instance = RightApi::InstanceFacing.new(:instance_token => token, :account_id => account_id, :api_url => "https://#{ENV['RS_SERVER']}")
   end
 
-  it "returns correct device naming" do
-    @instance.reset
-
-    @volname = "spec_test_correct_device_naming"
-
-    @instance.create_and_attach_volumes(@volname, 1, "1")
-    api_name = @instance.volume_attachments.first.show.device
-    api_name.gsub!(/^\/dev\//,"")
-    IO.read("/proc/partitions").should include(api_name)
-  end
-
-  it "will backup" do
-    @instance.reset
-
-    @volname = "spec_test_will_backup"
-    @lineage = "#{@volname}_test_lineage"
-    @backup_options = { :lineage => @lineage,
-                        :name => @volname,
-                        :max_snapshots => 1,
-                        :keep_dailies => 1,
-                        :keep_weeklies => 1,
-                        :keep_monthlies => 1,
-                        :keep_yearlies => 1 }
-
-    @instance.create_and_attach_volumes(@volname, 2, "1")
-    @instance.backup(@backup_options)
-  end
+#  it "returns correct device naming" do
+#    @instance.reset
+#
+#    @volname = "spec_test_correct_device_naming"
+#
+#    @instance.create_and_attach_volumes(@volname, 1, "1")
+#    api_name = @instance.volume_attachments.first.show.device
+#    api_name.gsub!(/^\/dev\//,"")
+#    IO.read("/proc/partitions").should include(api_name)
+#  end
+#
+#  it "will backup" do
+#    @instance.reset
+#
+#    @volname = "spec_test_will_backup"
+#    @lineage = "#{@volname}_test_lineage"
+#    @backup_options = { :lineage => @lineage,
+#                        :name => @volname,
+#                        :max_snapshots => 1,
+#                        :keep_dailies => 1,
+#                        :keep_weeklies => 1,
+#                        :keep_monthlies => 1,
+#                        :keep_yearlies => 1 }
+#
+#    @instance.create_and_attach_volumes(@volname, 2, "1")
+#    @instance.backup(@backup_options)
+#  end
 
 
   it "will restore" do
@@ -54,12 +54,22 @@ describe "Instance Facing Api" do
                         :keep_yearlies => 1 }
 
 
-    @instance.create_and_attach_volumes(@volname, 2, "1")
+    @instance.create_and_attach_volumes(@volname, 1, "1")
+    puts "waiting 120 seconds after sending creating and attaching volumes command"
+    sleep(120)
+
     @instance.backup(@backup_options)
-    puts "waiting 60 seconds for backups to become avail"
-    sleep(60) # sleeping to allow backups to become avail
+    puts "waiting 180 seconds after sending backup command"
+    sleep(180)
+
+    @instance.reset
+    puts "waiting 120 seconds after sending reset command"
+    sleep(120)
+    
     backup = @instance.find_latest_backup(@lineage)
+    puts "Backup found"
     backup.restore(:instance_href => @instance.href)
+    puts "marker after restore command"
   end
 
 end
