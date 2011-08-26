@@ -26,8 +26,8 @@ module RightApi::Helper
     'backups'   => {:cleanup         => 'do_post'}
   }
 
-  INSTANCE_FACING_RESOURCES = [:volumes, :volume_attachments, :volume_snapshots, :volume_types]
-  # Backups, live_tasks and get_instance are also available as instance-facing calls but have to be manually added to the client (see client.rb)
+  # List of resources that are available as instance-facing calls
+  INSTANCE_FACING_RESOURCES = [:backups, :live_tasks, :volumes, :volume_attachments, :volume_snapshots, :volume_types]
 
   # Helper used to add methods to classes dynamically
   def define_instance_method(meth, &blk)

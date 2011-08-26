@@ -23,7 +23,6 @@ module RightApi
     attr_reader :cookies, :instance_token
 
     def initialize(args)
-      # Default params
       @api_url, @api_version = DEFAULT_API_URL, API_VERSION
       # Initializing all instance variables from hash
       args.each { |key,value|
@@ -33,51 +32,33 @@ module RightApi
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
       @rest_client = RestClient::Resource.new(@api_url)
 
-      # There are three options for login: credentials, instance token, or if the user already has the cookies they can just use those
+      # There are three options for login: credentials, instance token, or if the user already
+      # has the cookies they can just use those. See examples/login.yml.example for more info.
       @cookies ||= login()
 
       # Add the top level links for instance_facing_calls
       if @instance_token
         resource_type, path, data = self.do_get(ROOT_INSTANCE_RESOURCE)
-        # The instance's href. get_href_from_links is read only
         instance_href = get_href_from_links(data['links'])
         cloud_href = instance_href.split('/instances')[0]
-
-        Helper::INSTANCE_FACING_RESOURCES.each do |meth|
-          define_instance_method(meth) do |*args|
-            obj_path = cloud_href + '/' + meth.to_s
-            if has_id(*args)
-                # add_id_and_params_to_path will modify args
-              obj_path = add_id_and_params_to_path(obj_path, *args)
-              RightApi::Resource.process(self, get_singular(meth), obj_path)
-            else
-                # Don't allow users to specify filters here (users need to specify the filters in
-                # the index call itself.)
-              RightApi::Resources.new(self, obj_path, meth.to_s)
-            end
-          end
-        end
 
         define_instance_method(:get_instance) do |*params|
           type, instance_path, instance_data = self.do_get(ROOT_INSTANCE_RESOURCE)
           RightApi::ResourceDetail.new(self, type, instance_path, instance_data)
         end
 
-        define_instance_method(:live_tasks) do |*args|
-          obj_path = instance_href + '/live/tasks'
-          if has_id(*args) # can only call this with an id
-            obj_path = add_id_and_params_to_path(obj_path, *args)
-            RightApi::Resource.process(self, 'live_task', obj_path)
-          end
-        end
-
-        define_instance_method(:backups) do |*args|
-          obj_path = '/api/backups'
-          if has_id(*args)
+        Helper::INSTANCE_FACING_RESOURCES.each do |meth|
+          define_instance_method(meth) do |*args|
+            obj_path = cloud_href + '/' + meth.to_s
+            # Following are special cases that need to over-ride the obj_path
+            obj_path = '/api/backups'                if meth == :backups
+            obj_path = instance_href + '/live/tasks' if meth == :live_tasks
+            if has_id(*args)
               obj_path = add_id_and_params_to_path(obj_path, *args)
-              RightApi::Resource.process(self, 'backup', obj_path)
-          else
-              RightApi::Resources.new(self, obj_path, 'backups')
+              RightApi::Resource.process(self, get_singular(meth), obj_path)
+            else
+              RightApi::Resources.new(self, obj_path, meth.to_s)
+            end
           end
         end
       else
