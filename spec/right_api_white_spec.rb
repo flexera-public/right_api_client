@@ -54,7 +54,7 @@ describe "Instance Facing Api" do
                         :keep_yearlies => 1 }
 
 
-    @instance.create_and_attach_volumes(@volname, 1, "1")
+    @instance.create_and_attach_volumes(@volname, 1, "5")
     puts "waiting 30 seconds after sending creating and attaching volumes command"
     sleep(30)
 
