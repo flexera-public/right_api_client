@@ -1,27 +1,19 @@
 = RightScale API Client
 
 == Installation
-- rake build
-- gem install right_api_client-1.5.0.gem
-
-== Manual Installation
-- right_api_client uses Ruby 1.9.2 but should also work with 1.8.7, the rest_client gem is also required:
-  
-  gem install rest-client
-
-- Clone the right_api_client git repo
-  
-  require 'right_api_client'
+- right_api_client uses Ruby 1.9.2 but should also work with 1.8.7. Install the gems:
+  gem install rest-client (this gem is used by right_api_client)
+  gem install right_api_client
 
 == Versioning
-- The right_api_client gem is versioned with the usual X.Y.Z notation, where X.Y is the API version, and Z is the client version.
+- The right_api_client gem is versioned with the usual X.Y.Z notation, where X.Y is the RightScale API version, and Z is the client version.
 
 == Usage Instructions
 - Check the examples directory for code snippets on how to use the client.
-- New users can start with the following 2 lines of code and navigate their way around the API by following the available methods:
+- New users can start with the following lines of code and navigate their way around the API by following the available methods:
 
+  require 'right_api_client'
   client = RightApi::Client.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
- 
   puts 'Available methods:', client.api_methods
 
 You can find your account number by logging into RightScale > Settings > Account Settings,
@@ -31,15 +23,15 @@ the account number is at the end of the browser address bar.
 -----------------------------------------------------------------------------------
 The Idea Behind The RightScale API Client for Ruby: 
 
-The client makes working with and getting to know the API much easier. It spiders the API dynamically to discover its resources on the fly. At every step, the user has the ability to query api_methods() that indicate the potential methods that can be called. 
+The client makes working with and getting to know the API much easier. It spiders the API dynamically to discover its resources on the fly. At every step, the user has the ability to query api_methods() that indicates the potential methods that can be called.
 
 To start:
  * create a client object:
     client = RightApi::Client.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
-    client.api_methods  will return all methods that you can call
+    client.api_methods will return all methods that you can call
     
 To make an API call:
-Essentially, just following the RightScale API documentation:
+Essentially, just following the RightScale API documentation (available from http://support.rightscale.com):
 
 Examples:
    - Index:     /api/clouds/:cloud_id/datacenters             =>  client.clouds(:id => :cloud_id).show.datacenters.index
@@ -75,23 +67,15 @@ The API client returns three types of objects:
  
 
 For a POST with HTTP response code: 201, 202 the client will actually return the Resource object that was created and not just the href
-
-The RightScale API client currently has the following special cases:
- - You need to use:
-    * clouds(:id => :cloud_id).show.volumes(:id -> :volume_id).show.current_volume_attachment ,
-    instead of:
-   * clouds(:id => :cloud_id).show.volumes(:id -> :volume_id).show.volume_attachment   
-   to query the API Documented url:  /api/clouds/:cloud_id/volumes/:volume_id/volume_attachment
-
- - Calling create on this URL is not supported in the current version of the API Client
  
 
-
 Instance-Facing-Calls:
-The client also supports instance-facing-calls which uses the instance_token to login.
-Unlike regular email-password login, instance-facing-calls are limited in the amount of allowable calls. Since in most of the cases, the calls are scoped to the instance's cloud (or the instance itself), the cloud_id and the instance_id will be automatically recorded by the client, so that the user does not need to specify it.
+The client also supports instance-facing-calls, which uses the instance_token to login.
+Unlike regular email-password login, instance-facing-calls are limited in the amount of allowable calls.
+Since in most of the cases, the calls are scoped to the instance's cloud (or the instance itself), the cloud_id and the instance_id will be automatically recorded by the client, so that the user does not need to specify it.
 
 Examples:
+instance_client = RightApi::Client.new(:instance_token => 'my_token', :account_id => 'my_account_id')
 instance_client.volume_attachments     links to /api/clouds/:cloud_id/volume_attachments
 instance_client.volumes_snapshots      links to /api/clouds/:cloud_id/volumes_snapshots
 instance_client.volumes_types          links to /api/clouds/:cloud_id/volumes_types
@@ -106,20 +90,17 @@ Note:
  * For volume_attachments there is a third url: /api/clouds/:cloud_id/instances/:instance_id/volume_attachments. To access this do:
           instance_client.get_instance.volume_attachments
 
-Because the cloud_id and the instance_id are automatically added by the client, scripts that work for regular email-password login will have to be modified for instance-facing-calls. The main reason behind this design choice was the inability for instance-facing-calls to access the resource clouds, instances (ie: they cannot do a .show on clouds: instance_client.clouds(:id=> :cloud_id).show)
+Because the cloud_id and the instance_id are automatically added by the client, scripts that work for regular email-password login will have to be modified for instance-facing-calls.
+The main reason behind this design choice was the inability for instance-facing-calls to access the resource clouds, instances (ie: they cannot do a .show on clouds: instance_client.clouds(:id=> :cloud_id).show)
 
-When you query api_methods(), it will all the methods that one sees with regular email-password login. Due to the limiting scope of the instance-token only a subset of these methods can be called. (See API documentation for valid methods).
+When you query api_methods(), it will list all of the methods that one sees with regular email-password login.
+Due to the limiting scope of the instance-token only a subset of these methods can be called. (See API documentation for valid methods).
 If you call a invalid method you will get: 403, Permission denied
 
 
-
-
 Enough talk, get started:
- * look at the examples/usage.rb file for a stunning number of examples
+ * look at the examples/usage.rb and examples/login.yml.example file for a number of examples
  * When in doubt query api_methods
-
-
-
 
 
 
@@ -153,9 +134,9 @@ Special case: Having a resource_type that cannot be accurately determined from t
 
 Special case: method defined on the generic resource_type itself
    * 'instances' => {:multi_terminate => 'do_post', :multi_run_executable => 'do_post'},
-   * 'inputs' => {:multi_update => 'do_put'},
-   * 'tags' => {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'},
-   * 'backups' => {:cleanup => 'do_post'}
+   * 'inputs'    => {:multi_update => 'do_put'},
+   * 'tags'      => {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'},
+   * 'backups'   => {:cleanup => 'do_post'}
    * Put these in RESOURCE_TYPE_SPECIAL_ACTIONS
 
 Special case: resources are not linked together

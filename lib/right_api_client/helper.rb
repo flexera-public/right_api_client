@@ -27,7 +27,7 @@ module RightApi::Helper
   }
 
   INSTANCE_FACING_RESOURCES = [:volumes, :volume_attachments, :volume_snapshots, :volume_types]
-  # Backups and live_tasks are also available as instance-facing calls but have to be manually added to the client (see client.rb)
+  # Backups, live_tasks and get_instance are also available as instance-facing calls but have to be manually added to the client (see client.rb)
 
   # Helper used to add methods to classes dynamically
   def define_instance_method(meth, &blk)

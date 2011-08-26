@@ -7,8 +7,8 @@ module RightApi
     def inspect
       "#<#{self.class.name} " +
       "resource_type=\"#{@resource_type}\"" +
-      "#{', name='+name.inspect if self.respond_to?(:name)}" +
-      "#{', resource_uid='+resource_uid.inspect if self.respond_to?(:resource_uid)}>"
+      "#{', name=' + name.inspect if self.respond_to?(:name)}" +
+      "#{', resource_uid='+ resource_uid.inspect if self.respond_to?(:resource_uid)}>"
     end
 
     # ResourceDetail will MODIFY hash
