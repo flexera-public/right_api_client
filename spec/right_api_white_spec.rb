@@ -47,11 +47,11 @@ describe "Instance Facing Api" do
     @lineage = "#{@volname}_test_lineage"
     @backup_options = { :lineage => @lineage,
                         :name => @volname,
-                        :max_snapshots => 1,
-                        :keep_dailies => 1,
-                        :keep_weeklies => 1,
-                        :keep_monthlies => 1,
-                        :keep_yearlies => 1 }
+                        :max_snapshots => 5,
+                        :keep_dailies => 5,
+                        :keep_weeklies => 5,
+                        :keep_monthlies => 5,
+                        :keep_yearlies => 5 }
 
 
     @instance.create_and_attach_volumes(@volname, 1, "5")
