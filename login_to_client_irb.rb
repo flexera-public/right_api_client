@@ -7,9 +7,9 @@ require 'yaml'
 require 'irb'
 
 begin
-  @client = RightApi::Client.new(YAML.load_file(File.dirname(__FILE__) + '/examples/instance_login.yml'))
+  @client = RightApi::Client.new(YAML.load_file(File.expand_path('../examples/login.yml', __FILE__)))
   puts "logged-in to the API, use the '@client' variable to use the client, e.g. '@client.session.index.message' will output:"
-  #puts @client.session.index.message
+  puts @client.session.index.message
 end
 
 IRB.start

@@ -166,11 +166,11 @@ module RightApi
             RightApi::Resource.process(self, resource_type, relative_href)
           when 200..299
             # This is needed for the tags Resource -- which returns a 200 and has a content type
-            # therefore, a resource object needs to be returned
+            # therefore, ResourceDetail objects needs to be returned
             if response.code == 200 && response.headers[:content_type].index('rightscale')
               resource_type = get_resource_type(response.headers[:content_type])
               data = JSON.parse(response)
-              # Resource_tag is returned after querrying tags.by_resource or tags.by_tags.
+              # Resource_tag is returned after querying tags.by_resource or tags.by_tags.
               # You cannot do a show on a resource_tag, but that is basically what we want to do
               data.map { |obj|
                 RightApi::ResourceDetail.new(self, resource_type, path, obj)
