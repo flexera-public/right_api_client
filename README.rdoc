@@ -8,6 +8,7 @@ It is assumed that users are already familiar with the RightScale API:
 - API Reference Docs: http://support.rightscale.com/api1.5
 
 == Installation
+Ruby 1.9 is required.
     gem install right_api_client
 
 == Versioning
