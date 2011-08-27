@@ -8,4 +8,5 @@ nbproject
 .idea
 .idea/*
 coverage/*
+doc/*
 *~
