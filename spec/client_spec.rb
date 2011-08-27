@@ -1,5 +1,4 @@
-require File.expand_path('../../lib/right_api_client', __FILE__)
-require 'spec'
+require File.expand_path('../spec_helper', __FILE__)
 require 'yaml'
 
 describe RightApi::Client do

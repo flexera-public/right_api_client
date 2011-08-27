@@ -7,4 +7,5 @@ nbproject
 .bundle
 .idea
 .idea/*
+coverage/*
 *~

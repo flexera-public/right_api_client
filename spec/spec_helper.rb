@@ -1,3 +1,5 @@
+require 'simplecov'
+SimpleCov.start if ENV["COVERAGE"]
 require File.expand_path('../../lib/right_api_client', __FILE__)
 require 'spec'
 require 'rest_client'
