@@ -1,5 +1,10 @@
 = RightScale API Client
 
+== Background
+This gem aims to simplify working with the RigthScale API 1.5 (currently the latest version).
+The RightScale API documentation is available at: http://support.rightscale.com/12-Guides/RightScale_API_1.5
+API Reference Docs: http://support.rightscale.com/api1.5/
+
 == Installation
 - right_api_client uses Ruby 1.9.2 but should also work with 1.8.7. Install the gems:
     gem install rest-client (this gem is used by right_api_client)
@@ -9,19 +14,17 @@
 - The right_api_client gem is versioned with the usual X.Y.Z notation, where X.Y is the RightScale API version, and Z is the client version.
 
 == Usage Instructions
-- Check the examples directory for code snippets on how to use the client.
 - New users can start with the following lines of code and navigate their way around the API by following the available methods:
-
     require 'right_api_client'
     client = RightApi::Client.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
     puts 'Available methods:', client.api_methods
 
 You can find your account number by logging into RightScale > Settings > Account Settings,
-the account number is at the end of the browser address bar. 
+the account number is at the end of the browser address bar.
 
 
 -----------------------------------------------------------------------------------
-The Idea Behind The RightScale API Client for Ruby: 
+The Idea Behind The RightScale API Client for Ruby:
 
 The client makes working with and getting to know the API much easier. It spiders the API dynamically to discover its resources on the fly. At every step, the user has the ability to query api_methods() that indicates the potential methods that can be called.
 
@@ -29,7 +32,7 @@ To start:
  * create a client object:
     client = RightApi::Client.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id')
     client.api_methods will return all methods that you can call
-    
+
 To make an API call:
 Essentially, just following the RightScale API documentation (available from http://support.rightscale.com):
 
@@ -49,25 +52,25 @@ When to put the parameters? Pass in the parameters to the method that they belon
    @client.deployments.index(:filter => ['name==my_deployment'])
    The filter is the parameter for the index call and not the deployment call
 
-The API client returns three types of objects:    
+The API client returns three types of objects:
   Resources, Resource and ResourceDetail
 
  * A Resources object will be returned when you are querying a collection of resources  (ie: client.deployments)
  * A Resource will be returned when you specify an id and therefore a specific resource (ie: client.deployments(:id => :deployment_id))
-   - When the Content-type is type=collection then an array of Resource objects will be returned (ie: client.deployments.index)  
+   - When the Content-type is type=collection then an array of Resource objects will be returned (ie: client.deployments.index)
    - When the Content-type is not a collection then a Resource object will be returned (ie: client.deployments(:id => deployment_id).show)
  * A ResourceDetail will be returned when you do a .show on a Resource (ie: client.deployments(:id => deployment_id).show)
- On all three types of objects you can query .api_methods 
- 
+ On all three types of objects you can query .api_methods
+
  Exceptions:
  - inputs.index will return an array of ResourceDetail objects since you cannot do a .show on an input
  - session.index will return a ResourceDetail object since you cannot do a .show on a session
  - tags.by_resource, tags.by_tag will return an array of ResourceDetail objects since you cannot do a .show on a resource_tag
  - monitoring_metrics(:id => :m_m_id).show.data will return a ResourceDetail object since you cannot do a .show on a monitoring_metric_data
- 
+
 
 For a POST with HTTP response code: 201, 202 the client will actually return the Resource object that was created and not just the href
- 
+
 
 Instance-Facing-Calls:
 The client also supports instance-facing-calls, which uses the instance_token to login.
@@ -85,7 +88,7 @@ instance_client.backups                links to /api/backups
 instance_client.live_tasks(:id)        links to /api/clouds/:cloud_id/instances/:instance_id/live/tasks/:id
 
 Note:
- * For volume_attachments and volumes_snapshots you can also go through the volume (ie: instance_client.volumes(:id => volume_id).show.volume_attachments will map to:                         
+ * For volume_attachments and volumes_snapshots you can also go through the volume (ie: instance_client.volumes(:id => volume_id).show.volume_attachments will map to:
            /api/clouds/:cloud_id/volumes/:volume_id/volume_attachment)
  * For volume_attachments there is a third url: /api/clouds/:cloud_id/instances/:instance_id/volume_attachments. To access this do:
           instance_client.get_instance.volume_attachments
@@ -97,11 +100,59 @@ When you query api_methods(), it will list all of the methods that one sees with
 Due to the limiting scope of the instance-token only a subset of these methods can be called. (See API documentation for valid methods).
 If you call a invalid method you will get: 403, Permission denied
 
+== Logging HTTP requests
+The HTTP calls made by right_api_client can be logged in two ways:
+1. Log to a file
+    @client.log('~/right_api_client.log')
+2. Log to SDTOUT
+    @client.log(STDOUT)
 
-Enough talk, get started:
- * look at the examples/usage.rb and examples/login.yml.example file for a number of examples
- * When in doubt query api_methods
 
+== Examples
+Get a list of all servers (aka doing an Index call)
+    @client.servers.index
+
+Get a list of all servers in a deployment
+    @client.deployments(:id => 'my_deployment_id').show.servers.index
+
+Get a particular server (aka doing a Show call)
+    @client.servers(:id => 'my_server_id').show
+
+Creating a server involves setting up the required parameters, then calling the create method
+    server_template_href = @client.server_templates.index(:filter => ['name==Base ServerTemplate']).first.href
+    cloud = @client.clouds(:id => 'my_cloud_id').show
+    params = { :server => {
+        :name => 'Test Server',
+        :deployment_href => @client.deployments(:id => 'my_deployment_id').show.href,
+        :instance => {
+            :server_template_href => server_template_href,
+            :cloud_href           => cloud.href,
+            :security_group_hrefs => [cloud.security_groups.index(:filter => ['name==default']).first.href],
+            :ssh_key_href         => cloud.ssh_keys.index.first.href,
+            :datacenter_href      => cloud.datacenters.index.first.href
+        }}}
+    new_server = @client.servers.create(params)
+    new_server.api_methods
+
+Launch the newly created server. Inputs are a bit tricky so they have to be set in a long string
+    inputs = "inputs[][name]=NAME1&inputs[][value]=text:VALUE1&inputs[][name]=NAME2&inputs[][value]=text:VALUE2"
+    new_server.show.launch(inputs)
+
+Run a script on the server. The API does not currently expose right_scripts, hence, the script href has
+to be retrieved from the dashboard and put in the following href format.
+    script_href = "right_script_href=/api/right_scripts/382371"
+    task = new_server.show.current_instance.show.run_executable(script_href + "&inputs[][name]=TEST_NAME&inputs[][value]=text:VALUE1")
+    task.show.api_methods
+
+Update the server's name
+    params = { :server => {:name => 'New Server Name'}}
+    @client.servers(:id => 1033656).update(params)
+
+Terminate the server (i.e. shutdown its current_instance)
+    @client.servers(:id => 'my_server_id').show.terminate
+
+Destroy the server (i.e. delete it)
+    @client.servers(:id => 'my_server_id').destroy
 
 
 == Design Docs (work-in-progress)

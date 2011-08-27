@@ -33,7 +33,7 @@ module RightApi
       @rest_client = RestClient::Resource.new(@api_url)
 
       # There are three options for login: credentials, instance token, or if the user already
-      # has the cookies they can just use those. See examples/login.yml.example for more info.
+      # has the cookies they can just use those. See config/login.yml.example for more info.
       @cookies ||= login()
 
       # Add the top level links for instance_facing_calls

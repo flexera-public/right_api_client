@@ -1,5 +1,5 @@
 = right_api_client - CHANGELOG.rdoc
 
 
-== right_api_client - 1.5.0    not yet released
+== right_api_client - 1.5.0
 Initial public release, supports all of the calls in RightScale API 1.5.

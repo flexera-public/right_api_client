@@ -68,10 +68,6 @@ module RightApi
         # extra data that can be used to build child resources here, without
         # doing another get request.
         if associations.include?(k.to_sym)
-          # We could use one rescue block rather than these multiple ifs, but
-          # exceptions are slow and the whole points of this code block is
-          # optimization so we'll stick to using ifs.
-
           # v might be an array or hash so use include rather than has_key
           if v.include?('links')
             child_self_link = v['links'].find { |target| target['rel'] == 'self' }

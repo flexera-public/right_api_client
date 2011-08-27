@@ -3,9 +3,9 @@ require 'spec'
 require 'yaml'
 
 describe RightApi::Client do
-  context "Given a valid set of credentials in the examples/login.yml file" do
+  context "Given a valid set of credentials in the config/login.yml file" do
     before(:all) do
-      @creds = '../../examples/login.yml'
+      @creds = '../../config/login.yml'
       begin
         @client = RightApi::Client.new(YAML.load_file(File.expand_path(@creds, __FILE__)))
       rescue Exception => e
