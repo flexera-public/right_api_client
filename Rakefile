@@ -7,7 +7,7 @@ task :build do
 end
 
 task :release => :build do
-  system "gem push right_api_client-#{RightApi::Client::VERSION}"
+  system "gem push right_api_client-#{RightApi::Client::VERSION}.gem"
 end
 
 Spec::Rake::SpecTask.new('spec') do |t|

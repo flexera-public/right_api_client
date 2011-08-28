@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.authors = [ 'Ali Khajeh-Hosseini' ]
   s.email = [ 'alikhajeh1@gmail.com' ]
-  s.homepage = 'http://support.rightscale.com'
+  s.homepage = 'https://github.com/rightscale/right_api_client'
   s.summary = 'RightScale API HTTP client'
   s.description = %{
 RightScale API HTTP client. Spiders the API to discover its resources on the fly.
