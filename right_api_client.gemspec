@@ -16,6 +16,7 @@ a simple object model of the API resources, and handles all of the fine details 
 in making HTTP calls and translating their responses.
   }
   s.files = `git ls-files`.split(' ')
+  s.test_files = `git ls-files spec config`.split(' ')
   s.rubygems_version = '1.6.2'
 
   s.add_runtime_dependency 'json'
