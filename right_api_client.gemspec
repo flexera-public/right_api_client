@@ -6,8 +6,8 @@ Gem::Specification.new do |s|
   s.platform     = Gem::Platform::RUBY
   s.date         = Time.now.utc.strftime("%Y-%m-%d")
   s.require_path = 'lib'
-  s.authors      = [ 'Ali Khajeh-Hosseini' ]
-  s.email        = [ 'alikhajeh1@gmail.com' ]
+  s.authors      = [ 'Ali Khajeh-Hosseini, Natalie Schauser, Nagender Paduru' ]
+  s.email        = [ 'ali@rightscale.com' ]
   s.homepage     = 'https://github.com/rightscale/right_api_client'
   s.summary      = 'RightScale MultiCloud API HTTP Client'
   s.description  = %{
