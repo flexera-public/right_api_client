@@ -33,6 +33,7 @@ describe RightApi::Client do
 
     it "Should send post/get/put/delete requests to the server correctly" do
       new_deployment = @client.deployments.create(:deployment => {:name => 'test'})
+      new_deployment2 = @client.deployments.create(:deployment => {:name => 'test2'})
       new_deployment.class.should     == RightApi::Resource
       new_deployment.show.name.should == 'test'
 
@@ -45,13 +46,15 @@ describe RightApi::Client do
       deployment.show.name.should == 'test2'
 
       # Tags are a bit special as they use POST and return content type so they need specific tests
-      @client.tags.multi_add("resource_hrefs[]=#{deployment.show.href}&tags[]=tag1").should == ""
-      tags = @client.tags.by_resource("resource_hrefs[]=#{deployment.show.href}")
+      @client.tags.multi_add("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}&tags[]=tag1").should == ""
+      tags = @client.tags.by_resource("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}")
       tags.class.should == Array
       tags.first.class.should == RightApi::ResourceDetail
       tags.first.tags.first.should == {"name" => "tag1"}
+      tags.first.resource.first.show.name.should == 'test2'
 
       deployment.destroy.should be_nil
+      new_deployment2.destroy.should be_nil
     end
   end
 end
