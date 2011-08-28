@@ -1,8 +1,8 @@
 = RightScale API Client
 
-The right_api_client gem simplifies the use of RigthScale's MultiCloud API. It provides
-a simple object model of the API resources by handling all of the fine details of making
-HTTP calls and translating their responses.
+The right_api_client gem simplifies the use of RightScale's MultiCloud API. It provides
+a simple object model of the API resources, and handles all of the fine details involved
+in making HTTP calls and translating their responses.
 It is assumed that users are already familiar with the RightScale API:
 - API Documentation: http://support.rightscale.com/12-Guides/RightScale_API_1.5
 - API Reference Docs: http://support.rightscale.com/api1.5
@@ -14,8 +14,8 @@ Ruby 1.9 is required.
 == Versioning
 The right_api_client gem is versioned using the usual X.Y.Z notation, where X.Y is the
 RightScale API version, and Z is the client version. For example, if you want to use
-RightScale API 1.5, you should use the latest version of the 1.5 gem (currently 1.5.0).
-This will ensure that you get the latest bug fixes for the client.
+RightScale API 1.5, you should use the latest version of the 1.5 gem. This will ensure
+that you get the latest bug fixes for the client that is compatible with that API version.
 
 == Usage Instructions
 New users can start with the following few lines of code and navigate their way around the API by following
