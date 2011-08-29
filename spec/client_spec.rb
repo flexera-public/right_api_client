@@ -18,16 +18,23 @@ describe RightApi::Client do
       @client.session.index.message.should == 'You have successfully logged into the RightScale API.'
     end
 
-    it "Should return a cookies Hash with a 'domain' and a '_session_id'" do
-      @client.cookies.class.should     == Hash
+    it "Should return valid cookies" do
+      @client.cookies.class.should == Hash
       @client.cookies.keys.sort.should == %w[ _session_id domain rs_gbl ]
     end
 
     it "Should accept a cookie argument when creating a new client" do
-      client1 = RightApi::Client.new(:cookies => @client.cookies)
-      client2 = RightApi::Client.new(YAML.load_file(File.expand_path(@creds, __FILE__)))
+      my_hash = YAML.load_file(File.expand_path(@creds, __FILE__))
+      my_hash.delete(:email)
+      my_hash.delete(:password)
+      my_hash.delete(:cookies)
+      my_hash[:cookies] = @client.cookies
+      client1 = RightApi::Client.new(my_hash)
+      client1.cookies.should == @client.cookies
+    end
 
-      client1.cookies.should     == @client.cookies
+    it "Should accept a YAML argument when creating a new client" do
+      client2 = RightApi::Client.new(YAML.load_file(File.expand_path(@creds, __FILE__)))
       client2.cookies.should_not == @client.cookies
     end
 
