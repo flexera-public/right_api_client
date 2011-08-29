@@ -20,7 +20,9 @@ describe RightApi::Client do
 
     it "Should return valid cookies" do
       @client.cookies.class.should == Hash
-      @client.cookies.keys.sort.should == %w[ _session_id domain rs_gbl ]
+      @client.cookies['_session_id'].should_not be_nil
+      @client.cookies['domain'].should match /rightscale.com$/
+      @client.cookies.keys.sort.last.should match /^rs_gbl/ # HACK: not quite sane sanity check
     end
 
     it "Should accept a cookie argument when creating a new client" do
