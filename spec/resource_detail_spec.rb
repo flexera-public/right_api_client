@@ -32,8 +32,28 @@ describe RightApi::ResourceDetail do
 
     it "Should have the actions for instances of the ResourceDetail class" do
       resource = RightApi::ResourceDetail.new(@client, 'deployment', '/api/deployments/1',
-                                              {'actions' => [{'rel' => 'action1'}, {'rel' => 'action2'}]})
-      resource.api_methods.sort.should == [:action1, :action2, :destroy, :links, :show, :update]
+                                              {'links' => [{'rel' => 'self', 'href' => 'self'}],
+                                               'actions' => [{'rel' => 'action1'}, {'rel' => 'action2'}]})
+      resource.api_methods.sort.should == [:action1, :action2, :destroy, :href, :links, :show, :update]
+
+      flexmock(@rest_client).should_receive(:post).with({}, @header, Proc).and_return('ok')
+      resource.action1.should == 'ok'
+    end
+
+    it "Should have live_tasks for the 'instance' resource" do
+      resource = RightApi::ResourceDetail.new(@client, 'instance', '/api/instances/1', {})
+      resource.api_methods.sort.should == [:links, :live_tasks, :show, :update]
+      flexmock(RightApi::Resource).should_receive(:process).with(@client, 'live_task', '/api/instances/1/live/tasks/1').and_return('ok')
+      resource.live_tasks(:id => '1').should == 'ok'
+    end
+
+    it "Should add methods for child resources from detailed views" do
+      resource = RightApi::ResourceDetail.new(@client, 'server', '/api/servers/1', {
+          'links' => [
+              {'href' => '/api/servers/1', 'rel' => 'self'},
+              {'href' => '/api/clouds/1/instances/1', 'rel' => 'current_instance'}],
+          'current_instance' => {'links' => [{'href' => '/api/clouds/1/instances/1', 'rel' => 'self'}]}})
+      resource.api_methods.sort.should == [:current_instance, :destroy, :href, :links, :show, :update]
     end
   end
 end
