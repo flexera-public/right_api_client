@@ -55,16 +55,16 @@ describe "Instance Facing Api" do
 
 
     @instance.create_and_attach_volumes(@volname, 1, "5")
-    puts "waiting 30 seconds after sending creating and attaching volumes command"
-    sleep(30)
+    puts "waiting 90 seconds after sending creating and attaching volumes command"
+    sleep(90)
 
     @instance.backup(@backup_options)
-    puts "waiting 30 seconds after sending backup command"
-    sleep(30)
+    puts "waiting 90 seconds after sending backup command"
+    sleep(90)
 
     @instance.reset
-    puts "waiting 30 seconds after sending reset command"
-    sleep(30)
+    puts "waiting 90 seconds after sending reset command"
+    sleep(90)
     
     backup = @instance.find_latest_backup(@lineage)
     puts "Backup found"
