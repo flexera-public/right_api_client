@@ -14,7 +14,7 @@ describe "Instance Facing Api" do
 #  it "returns correct device naming" do
 #    @instance.reset
 #
-#    @volname = "spec_test_correct_device_naming"
+#    @volname = "spec_test_correct_device_naming_#{$$}"
 #
 #    @instance.create_and_attach_volumes(@volname, 1, "1")
 #    api_name = @instance.volume_attachments.first.show.device
@@ -43,7 +43,8 @@ describe "Instance Facing Api" do
   it "will restore" do
     @instance.reset
 
-    @volname = "spec_test_will_restore"
+    @volname = "spec_test_will_restore_#{$$}"
+
     @lineage = "#{@volname}_test_lineage"
     @backup_options = { :lineage => @lineage,
                         :name => @volname,
@@ -53,10 +54,31 @@ describe "Instance Facing Api" do
                         :keep_monthlies => 5,
                         :keep_yearlies => 5 }
 
+    puts "VOLNAME = #{@volname}"
 
     @instance.create_and_attach_volumes(@volname, 1, "5")
-    puts "waiting 120 seconds after sending creating and attaching volumes command"
-    sleep(120)
+    puts "waiting 60 seconds after sending creating and attaching volumes command"
+    sleep(60)
+
+    # get device id just attached
+    device_name = @instance.volume_attachments.first.show.device
+    puts "waiting 60 seconds after sending creating attaching volumes command"
+    sleep(60)
+
+    # Writing data to device
+    sfdisk_cmd = "sfdisk #{device_name} << EOF\n"
+    sfdisk_cmd << ";\n"
+    sfdisk_cmd << "EOF\n"
+    
+    system(sfdisk_cmd)
+    sleep 3
+    system("mkfs.ext3 #{device_name}1")
+    system("mount #{device_name}1 /mnt")
+    system("dd if=/dev/zero of=/mnt/200m bs=1M count=200")
+    system("umount /mnt")
+
+    puts "waiting 30 seconds after writing to volumes"
+    sleep(30)
 
     @instance.backup(@backup_options)
     puts "waiting 120 seconds after sending backup command"
