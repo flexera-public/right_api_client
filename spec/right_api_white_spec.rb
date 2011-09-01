@@ -69,7 +69,7 @@ describe "Instance Facing Api" do
     sfdisk_cmd = "sfdisk #{device_name} << EOF\n"
     sfdisk_cmd << ";\n"
     sfdisk_cmd << "EOF\n"
-    
+
     system(sfdisk_cmd)
     sleep 3
     system("mkfs.ext3 #{device_name}1")
