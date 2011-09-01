@@ -68,7 +68,7 @@ describe "Instance Facing Api" do
     
     backup = @instance.find_latest_backup(@lineage)
     puts "Backup found"
-    puts "waiting 120 seconds after sending reset command"
+    puts "waiting 120 seconds after finding lastest backup"
     sleep(120)
 
     backup.restore(:instance_href => @instance.href)
