@@ -15,7 +15,7 @@ account_id, token = ENV['RS_API_TOKEN'].split(/:/)
 api_url = ENV['RS_SERVER']
 puts account_id, token, api_url
 
-@client = RightApi::InstanceFacing.new( :instance_token => token,
+@instance = RightApi::InstanceFacing.new( :instance_token => token,
                                         :account_id => account_id,
                                         :api_url => "https://#{api_url}" )
 

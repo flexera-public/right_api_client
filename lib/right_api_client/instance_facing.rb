@@ -56,6 +56,10 @@ module RightApi
                                :volume_attachment_hrefs => backup_hrefs}}
       new_backup = @client.backups.create(params)
       # TODO: backups need to be a separate call .. for tight chef integration
+      while (completed = new_backup.show.completed) != true
+        puts "waiting for backup to complete - completed is #{completed}"
+        sleep 2
+      end
       new_backup.update(:backup => {:committed => "true"})
       @client.backups.cleanup(:lineage => options[:lineage],
                               :keep_last => options[:max_snapshots],
@@ -64,6 +68,26 @@ module RightApi
                               :monthlies => options[:keep_monthlies],
                               :yearlies => options[:keep_yearlies]
                              )
+
+      new_backup
+    end
+
+    # restores and waits for restore to finish
+    # current statuses observed:
+    # - pending
+    # - failed
+    # - in-progress
+    # - completed
+    def restore(backup)
+      restore = backup.restore(:instance_href => href)
+
+      while (status = restore.show.summary.split(':').first) != 'completed'
+        raise "restore failed!" if status == 'failed'
+        puts "waiting for restore to complete - status is #{status}"
+        sleep 2
+      end
+
+      restore
     end
 
     # Returns latest backup as RightApiClient::Resource
@@ -111,23 +135,22 @@ module RightApi
           params[:volume][:volume_type_href] = @client.volume_types.index.first.show.href
         # euca requires size
         else
-          params[:volume][:size] = '1'
+          params[:volume][:size] = volume_size.to_s
         end
 
         new_vol = @client.volumes.create(params)
         puts "waiting for volume to create - initial current status = #{new_vol.show.status}"
-        while (new_vol.show.status != "available")
-          puts "waiting for volume to create - status is #{new_vol.show.status}"
+        while ((status = new_vol.show.status) != "available")
+          puts "waiting for volume to create - status is #{status}"
           sleep 2
         end
 
         # attach the new volume
         params = {:volume_attachment => {:volume_href => new_vol.show.href, :instance_href => instance.href, :device => physical_device_names[index] } }
         new_attachment = @client.volume_attachments.create(params)
-
         puts "waiting for volume to attach - initial current status = #{new_vol.show.status}"
-        while (new_vol.show.status != "in-use") do
-          puts "waiting for volume to attach - status is #{new_vol.show.status}"
+        while ((status = new_vol.show.status) != "in-use") && ((state = new_attachment.show.state) != "attached") do
+          puts "attaching - waiting for volume to attach - status is #{status} / #{state}"
           sleep 2
         end
         attached_volumes << new_attachment
@@ -151,7 +174,6 @@ module RightApi
 
     # Returns list of volume attachments for THIS instance
     def volume_attachments
-      instance = @client.get_instance
       va = @client.volume_attachments.index(:filter => ["instance_href==#{href}"])
       myattachments = []
       va.each do |a|
@@ -164,8 +186,14 @@ module RightApi
     def reset
       delete_these = []
       # Detach
+
       myattachments = volume_attachments
       myattachments.each do |attachment|
+        while ((state = @client.volume_attachments(:id => attachment.href.split('/').last).show.state) != "attached") do
+
+          puts "resetting - waiting for volume to attach - status is #{state}"
+          sleep 2
+        end
         delete_these << attachment.show.volume
         attachment.destroy
       end
