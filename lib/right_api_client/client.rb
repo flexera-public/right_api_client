@@ -195,7 +195,7 @@ module RightApi
     # Generic delete
     def do_delete(path)
       begin
-        @rest_client[path].delete(headers) do |response|
+        @rest_client[path].delete(headers) do |response, request, result|
           case response.code
           when 200, 204
           else
@@ -215,7 +215,7 @@ module RightApi
     # Generic put
     def do_put(path, params={})
       begin
-        @rest_client[path].put(params, headers) do |response|
+        @rest_client[path].put(params, headers) do |response, request, result|
           case response.code
           when 204
           else
