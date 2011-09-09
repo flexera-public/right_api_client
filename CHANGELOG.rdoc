@@ -1,5 +1,8 @@
 = right_api_client - CHANGELOG.rdoc
 
 
+== right_api_client - 1.5.2
+Fix issues with client when using Ruby 1.8.7 (note that right_api_client has not been fully tested with 1.8.7 yet).
+
 == right_api_client - 1.5.1
 Initial public release, supports all of the calls in RightScale API 1.5.

@@ -9,7 +9,7 @@ describe RightApi::Resource do
 
     it "Should have the required methods for instances of the Resource class" do
       resource = RightApi::Resource.process(@client, 'deployment', '/api/deployments/1')
-      resource.api_methods.sort.should == [:destroy, :show, :update]
+      resource.api_methods.sort.collect{|s| s.to_s}.should == ["destroy", "show", "update"]
     end
 
     it "Should not have destroy/show/update for instances of the Resource class that do not support them" do
