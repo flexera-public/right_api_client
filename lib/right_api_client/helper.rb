@@ -7,6 +7,7 @@ module RightApi::Helper
     'setting'  => 'multi_cloud_image_setting'
   }
 
+  # TODO: add this information to the API instead
   # The API does not provide information about the basic actions that can be
   # performed on a resource so define them here:
   RESOURCE_ACTIONS = {
