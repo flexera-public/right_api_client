@@ -146,7 +146,7 @@ module RightApi
         end
       end
 
-      data = JSON.parse(body)
+      data = JSON.parse(body) # TODO: check type before parsing as JSON
       [resource_type, path, data]
     end
 
