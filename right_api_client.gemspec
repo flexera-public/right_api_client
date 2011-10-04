@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.date         = Time.now.utc.strftime("%Y-%m-%d")
   s.require_path = 'lib'
   s.authors      = [ 'RightScale, Inc.' ]
-  s.email        = [ 'opensource@rightscale.com' ]
+  s.email        = [ 'rubygems@rightscale.com' ]
   s.homepage     = 'https://github.com/rightscale/right_api_client'
   s.summary      = 'RightScale MultiCloud API HTTP Client'
   s.description  = %{
