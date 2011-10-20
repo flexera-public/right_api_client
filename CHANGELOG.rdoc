@@ -1,5 +1,7 @@
 = right_api_client - CHANGELOG.rdoc
 
+== right_api_client - 1.5.4
+Fix singular for audit_entries resources. Update rest-client gem version to 1.6.7.
 
 == right_api_client - 1.5.3
 Add support for audit_entries resources. Update RConf ruby version to ruby-1.9.2-p290.
