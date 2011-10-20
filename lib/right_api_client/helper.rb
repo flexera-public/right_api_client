@@ -185,14 +185,9 @@ module RightApi::Helper
   end
 
   # Will not change obj
-  # TODO: use ActiveSupport::Inflector and singularize instead
   def get_singular(obj)
-    str = obj.to_s.dup
-    if str == "audit_entries"
-      str = "audit_entry"
-    else
-      str.chomp!('s')
-    end
-    str
+    str = obj.to_s
+    return 'audit_entry' if str == 'audit_entries'
+    str.chomp('s')
   end
 end
