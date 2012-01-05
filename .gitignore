@@ -1,0 +1,13 @@
+.DS_Store
+nbproject
+*login.yml
+.loadpath
+.project
+.rvmrc
+.bundle
+.idea
+.idea/*
+coverage/*
+doc/*
+*~
+Gemfile.lock

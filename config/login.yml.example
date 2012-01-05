@@ -1,0 +1,25 @@
+# The API login details can be put in a YAML file. This is an example login.yml which
+# will be needed for login_to_client_irb.rb quick login method.
+
+# Account ID is a required parameter. You can find your account number by logging into the
+# RightScale dashboard (https://my.rightscale.com), navigate to the Settings > Account Settings page.
+# The account number is at the end of the browser address bar.
+:account_id: my_account_id
+
+# There are three login mechanisms:
+
+# 1. Use the following parameters to login with your email and password:
+:email: my@email.com
+:password: my_password
+
+# 2. Use the following parameter to login with an instance_token:
+# To find the instance_token, launch a server, navigate to the info page and under
+# User Data box, you will see RS_API_TOKEN = your_account_id:the_instance_token
+:instance_token: my_instance_token
+
+# 3. Use the following parameter to login with pre-authenticated cookies:
+:cookies: my_cookie_string
+
+# The following are optional parameters can also be set:
+:api_url: (this defaults to https://my.rightscale.com)
+:api_version: (this defaults to 1.5)

@@ -1,0 +1,19 @@
+= right_api_client - CHANGELOG.rdoc
+
+
+== right_api_client - 1.5.5 - not yet released
+
+- fixes crash on audit_entry.detail.show (text and not JSON)
+
+
+== right_api_client - 1.5.4
+Fix singular for audit_entries resources. Update rest-client gem version to 1.6.7.
+
+== right_api_client - 1.5.3
+Add support for audit_entries resources. Update RConf ruby version to ruby-1.9.2-p290.
+
+== right_api_client - 1.5.2
+Fix issues with client when using Ruby 1.8.7 (note that right_api_client has not been fully tested with 1.8.7 yet).
+
+== right_api_client - 1.5.1
+Initial public release, supports all of the calls in RightScale API 1.5.

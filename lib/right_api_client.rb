@@ -1,0 +1,1 @@
+require File.expand_path('../right_api_client/client', __FILE__)
