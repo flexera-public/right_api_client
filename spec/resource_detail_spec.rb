@@ -12,11 +12,6 @@ describe RightApi::ResourceDetail do
       resource.api_methods.sort.collect{|s| s.to_s}.should == ["destroy", "links", "show", "update"]
     end
 
-    it "Should not have destroy/show/update for instances of the ResourceDetail class that do not support them" do
-      resource = RightApi::ResourceDetail.new(@client, 'session', '/api/session', {})
-      resource.api_methods.sort.collect{|s| s.to_s}.should == ["links"]
-    end
-
     it "Should have resource-specific methods for instances of the ResourceDetail class" do
       resource = RightApi::ResourceDetail.new(@client, 'deployment', '/api/deployments/1',
                                               {:attribute1 => 'value1', :attribute2 => 'value2'})
@@ -42,7 +37,7 @@ describe RightApi::ResourceDetail do
 
     it "Should have live_tasks for the 'instance' resource" do
       resource = RightApi::ResourceDetail.new(@client, 'instance', '/api/instances/1', {})
-      resource.api_methods.sort.collect{|s| s.to_s}.should == ["links", "live_tasks", "show", "update"]
+      resource.api_methods.sort.collect{|s| s.to_s}.should == ["destroy", "links", "live_tasks", "show", "update"]
       flexmock(RightApi::Resource).should_receive(:process).with(@client, 'live_task', '/api/instances/1/live/tasks/1').and_return('ok')
       resource.live_tasks(:id => '1').should == 'ok'
     end

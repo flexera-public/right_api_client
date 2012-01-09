@@ -12,9 +12,9 @@ describe RightApi::Resources do
       resource.api_methods.sort.collect{|s| s.to_s}.should == ["create", "index"]
     end
 
-    it "Should not have index for instances of the Resources class that do not support it" do
+    it "Should have index even for instances of the Resources class that do not support it" do
       resource = RightApi::Resources.new(@client, '/api/tags', 'tags')
-      resource.api_methods.sort.collect{|s| s.to_s}.should == ["by_resource", "by_tag", "multi_add", "multi_delete"]
+      resource.api_methods.sort.collect{|s| s.to_s}.should == ["by_resource", "by_tag", "create", "index", "multi_add", "multi_delete"]
     end
 
     it "Should have resource-specific methods for instances of the Resources class" do

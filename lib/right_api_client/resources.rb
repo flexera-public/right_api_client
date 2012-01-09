@@ -6,6 +6,7 @@ module RightApi
   class Resources
     include Helper
 
+    attr_reader :client, :path
     def inspect
       "#<#{self.class.name} " +
       "resource_type=\"#{@resource_type}\">"
@@ -15,26 +16,25 @@ module RightApi
     # Resource_type should always be plural.
     # All parameters are treated as read only
     def initialize(client, path, resource_type)
+      @client = client
+      @path   = path
+
       if INCONSISTENT_RESOURCE_TYPES.has_key?(get_singular(resource_type))
         resource_type = INCONSISTENT_RESOURCE_TYPES[get_singular(resource_type)] + 's'
       end
       @resource_type = resource_type
       # Add create methods for the relevant root RightApi::Resources
-      if Helper::RESOURCE_ACTIONS[:create].include?(resource_type)
-        self.define_instance_method('create') do |*args|
-          client.do_post(path, *args)
-        end
+      self.define_instance_method('create') do |*args|
+        client.do_post(path, *args)
       end
 
       # Add in index methods for the relevant root RightApi::Resources
-      if !Helper::RESOURCE_ACTIONS[:no_index].include?(resource_type)
-        self.define_instance_method('index') do |*args|
-          # Session uses .index like a .show (so need to treat it as a special case)
-          if resource_type == 'session'
-            ResourceDetail.new(client, *client.do_get(path, *args))
-          else
-            RightApi::Resource.process(client, *client.do_get(path, *args))
-          end
+      self.define_instance_method('index') do |*args|
+        # Session uses .index like a .show (so need to treat it as a special case)
+        if resource_type == 'session'
+          ResourceDetail.new(client, *client.do_get(path, *args))
+        else
+          RightApi::Resource.process(client, *client.do_get(path, *args))
         end
       end
 
@@ -46,6 +46,13 @@ module RightApi
           client.send action, action_path, *args
         end
       end if Helper::RESOURCE_SPECIAL_ACTIONS[resource_type]
+    end
+
+    #Any other method other than standard actions(create, index) is simply appended to the path and
+    #called with a POST.
+    def method_missing(m, *args)
+      action_path = path + "/" + m.to_s
+      client.do_post(action_path, *args)
     end
   end
 end
