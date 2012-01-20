@@ -1,5 +1,11 @@
 = right_api_client - CHANGELOG.rdoc
 
+
+== right_api_client - 1.5.5 - not yet released
+
+- fixes crash on audit_entry.detail.show (text and not JSON)
+
+
 == right_api_client - 1.5.4
 Fix singular for audit_entries resources. Update rest-client gem version to 1.6.7.
 
