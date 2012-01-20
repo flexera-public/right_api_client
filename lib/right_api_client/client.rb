@@ -146,7 +146,12 @@ module RightApi
         end
       end
 
-      data = JSON.parse(body) # TODO: check type before parsing as JSON
+      data = if resource_type == 'text'
+        { 'text' => body }
+      else
+        JSON.parse(body)
+      end
+
       [resource_type, path, data]
     end
 
