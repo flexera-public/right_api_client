@@ -7,17 +7,6 @@ module RightApi::Helper
     'setting'  => 'multi_cloud_image_setting'
   }
 
-  # TODO: add this information to the API instead
-  # The API does not provide information about the basic actions that can be
-  # performed on a resource so define them here:
-  RESOURCE_ACTIONS = {
-    :create   => ['deployments', 'server_arrays', 'servers', 'ssh_keys', 'volumes', 'volume_snapshots', 'volume_attachments', 'backups', 'audit_entries'],
-    :destroy  => ['deployment', 'server_array', 'server', 'ssh_key', 'volume', 'volume_snapshot', 'volume_attachment', 'backup'],
-    :update   => ['deployment', 'instance', 'server_array', 'server', 'backup', 'audit_entries'],
-    :no_index => ['tags', 'tasks', 'monitoring_metric_data'], # Easier to specify those that don't need an index call
-    :no_show  => ['input', 'session', 'resource_tag']  # Once again, easier to define those that don't have a show call
-  }
-
   # Some RightApi::Resources have methods that operate on the resource type itself
   # and not on a particular one (ie: without specifying an id). Place these here:
   RESOURCE_SPECIAL_ACTIONS = {
