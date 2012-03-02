@@ -8,6 +8,7 @@ require File.expand_path('../helper', __FILE__)
 require File.expand_path('../resource', __FILE__)
 require File.expand_path('../resource_detail', __FILE__)
 require File.expand_path('../resources', __FILE__)
+require File.expand_path('../exceptions', __FILE__)
 
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
@@ -132,13 +133,15 @@ module RightApi
             end
 
             [type, response.body]
+          when 404
+            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
-            raise "Unexpected response #{response.code.to_s}, #{response.body}"
+            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           end
         end
-      #Session cookie is expired or invalid
-      rescue RuntimeError => e
+      rescue Exceptions::ApiException => e
         if re_login?(e)
+          #Session cookie is expired or invalid
           @cookies = login()
           retry
         else
@@ -183,11 +186,13 @@ module RightApi
             else
               response.return!(request, result)
             end
+          when 404
+            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
-            raise "Unexpected response #{response.code.to_s}, #{response.body}"
+            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           end
         end
-      rescue RuntimeError => e
+      rescue Exceptions::ApiException => e
         if re_login?(e)
           @cookies = login()
           retry
@@ -203,11 +208,13 @@ module RightApi
         @rest_client[path].delete(headers) do |response, request, result|
           case response.code
           when 200, 204
+          when 404
+            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
-            raise "Unexpected response #{response.code.to_s}, #{response.body}"
+            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           end
         end
-      rescue RuntimeError => e
+      rescue Exceptions::ApiException => e
         if re_login?(e)
           @cookies = login()
           retry
@@ -223,11 +230,13 @@ module RightApi
         @rest_client[path].put(params, headers) do |response, request, result|
           case response.code
           when 204
+          when 404
+            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
-            raise "Unexpected response #{response.code.to_s}, #{response.body}"
+            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           end
         end
-      rescue RuntimeError => e
+      rescue Exceptions::ApiException => e
         if re_login?(e)
           @cookies = login()
           retry
