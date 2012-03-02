@@ -24,6 +24,7 @@ module RightApi
     attr_reader :cookies, :instance_token
 
     def initialize(args)
+      raise 'This API client is only compatible with Ruby 1.9 and upwards.' if (RUBY_VERSION < '1.9')
       @api_url, @api_version = DEFAULT_API_URL, API_VERSION
       # Initializing all instance variables from hash
       args.each { |key,value|
