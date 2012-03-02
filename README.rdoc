@@ -194,3 +194,9 @@ Put these special cases in the <tt>RightApi::Helper::RESOURCE_TYPE_SPECIAL_ACTIO
 
 === Resources are not linked together
   - In ResourceDetail, resource_type = Instance, need live_tasks as a method.
+
+= Troubleshooting
+
+== Wrong ruby version
+
+Ruby 1.9 is required. Ruby 1.8 will give undefined results, such as missing attributes.
