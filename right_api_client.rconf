@@ -1,6 +1,6 @@
 ruby do
-  version  'ruby-1.9.3-p125'
-  rubygems '1.8.11'
+  version  'ruby-1.9.2-p290'
+  rubygems '1.8.17'
   gemset   'right_api_client'
 end
 bundler do
