@@ -24,6 +24,7 @@ module RightApi
     attr_reader :cookies, :instance_token
 
     def initialize(args)
+      raise 'This API client is only compatible with Ruby 1.9 and upwards.' if (RUBY_VERSION < '1.9')
       @api_url, @api_version = DEFAULT_API_URL, API_VERSION
       # Initializing all instance variables from hash
       args.each { |key,value|
@@ -31,7 +32,7 @@ module RightApi
       } if args.is_a? Hash
 
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
-      @rest_client = RestClient::Resource.new(@api_url)
+      @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
 
       # There are three options for login: credentials, instance token, or if the user already
       # has the cookies they can just use those. See config/login.yml.example for more info.
