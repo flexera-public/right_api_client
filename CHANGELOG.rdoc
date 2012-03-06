@@ -1,5 +1,8 @@
 = right_api_client - CHANGELOG.rdoc
 
+== right_api_client - 1.5.8
+Fix invalid gemspec by downgrading to Ruby 1.9.2 when building gem.
+
 == right_api_client - 1.5.7
 Enforce Ruby 1.9 interpreter.
 Remove the default 60 second timeout on requests.
