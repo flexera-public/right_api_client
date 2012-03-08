@@ -199,4 +199,4 @@ Put these special cases in the <tt>RightApi::Helper::RESOURCE_TYPE_SPECIAL_ACTIO
 
 == Wrong ruby version
 
-Ruby 1.9 is required. Ruby 1.8 will give undefined results, such as missing attributes.
+Ruby 1.8.7 or higher is required.
