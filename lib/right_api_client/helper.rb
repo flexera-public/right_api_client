@@ -56,7 +56,6 @@ module RightApi::Helper
           if has_id(*args) || is_singular?(rel)
             # User wants a single resource. Either doing a show, update, delete...
             # get the resource_type
-
             # Special case: calling .data you don't want a resources object back
             # but rather all its details since you cannot do a show
             return RightApi::ResourceDetail.new(client, *client.do_get(hrefs.first, *args)) if rel == :data
@@ -152,7 +151,7 @@ module RightApi::Helper
   # Helper method that checks whether the string is singular
   def is_singular?(str)
     return true if ['data'].include?(str.to_s)
-    (str.to_s)[-1] != 's'
+    (str.to_s)[-1, 1] != 's' # use legacy syntax for Ruby 1.8.7
   end
 
   # Does not modify links
