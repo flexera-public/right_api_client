@@ -1,5 +1,8 @@
 = right_api_client - CHANGELOG.rdoc
 
+== right_api_client - 1.5.9
+Downgrade even further to Ruby 1.8.7. Should still work in Ruby 1.9.x.
+
 == right_api_client - 1.5.8
 Fix invalid gemspec by downgrading to Ruby 1.9.2 when building gem.
 

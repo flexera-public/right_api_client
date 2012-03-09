@@ -2,7 +2,7 @@
 module RightApi
   class Client
     API_VERSION = '1.5'
-    CLIENT_VERSION = '8'
+    CLIENT_VERSION = '9'
     VERSION = "#{API_VERSION}.#{CLIENT_VERSION}"
   end
 end
