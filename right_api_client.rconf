@@ -1,5 +1,5 @@
 ruby do
-  version  'ruby-1.9.2-p290'
+  version  'ree-1.8.7-2011.02'
   rubygems '1.8.17'
   gemset   'right_api_client'
 end

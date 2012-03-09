@@ -17,7 +17,7 @@ in making HTTP calls and translating their responses.
   }
   s.files = `git ls-files`.split(' ')
   s.test_files = `git ls-files spec config`.split(' ')
-  s.rubygems_version = '1.6.2'
+  s.rubygems_version = '1.8.17'
 
   s.add_runtime_dependency 'json'
   s.add_runtime_dependency 'rest-client',      '1.6.7'
