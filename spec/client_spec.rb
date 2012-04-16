@@ -55,7 +55,7 @@ describe RightApi::Client do
       deployment.show.name.should == 'test2'
 
       # Tags are a bit special as they use POST and return content type so they need specific tests
-      @client.tags.multi_add("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}&tags[]=tag1").should == ""
+      @client.tags.multi_add("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}&tags[]=tag1").should == nil
       tags = @client.tags.by_resource("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}")
       tags.class.should == Array
       tags.first.class.should == RightApi::ResourceDetail
