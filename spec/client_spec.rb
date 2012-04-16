@@ -65,5 +65,12 @@ describe RightApi::Client do
       deployment.destroy.should be_nil
       new_deployment2.destroy.should be_nil
     end
+
+    it "should singularize resource_types correctly" do
+      @client.get_singular('servers').should == 'server'
+      @client.get_singular('deployments').should == 'deployment'
+      @client.get_singular('audit_entries').should == 'audit_entry'
+      @client.get_singular('processes').should == 'process'
+    end
   end
 end

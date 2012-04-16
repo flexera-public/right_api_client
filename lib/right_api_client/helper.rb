@@ -1,3 +1,5 @@
+require 'active_support/inflector'
+
 # Methods shared by the Client, Resource and Resources.
 module RightApi::Helper
   # Some resource_types are not the same as the last thing in the URL, put these here to ensure consistency
@@ -174,8 +176,6 @@ module RightApi::Helper
 
   # Will not change obj
   def get_singular(obj)
-    str = obj.to_s
-    return 'audit_entry' if str == 'audit_entries'
-    str.chomp('s')
+    obj.to_s.singularize
   end
 end

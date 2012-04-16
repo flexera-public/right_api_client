@@ -26,5 +26,6 @@ in making HTTP calls and translating their responses.
   s.add_development_dependency 'rspec',        '1.3.0'
   s.add_development_dependency 'flexmock',     '0.8.7'
   s.add_development_dependency 'simplecov',    '0.4.2'
+  s.add_development_dependency 'activesupport'
   s.add_development_dependency 'bundler'
 end
