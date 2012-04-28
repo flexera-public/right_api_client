@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 #require 'right_api_client'
-require '../right_api_client/lib/right_api_client'
+require File.expand_path('../../lib/right_api_client', __FILE__)
 require 'optparse'
 require 'json'
+
+puts ARGV.inspect
 
 # Monkey-patch right_api_client
 module RightApi
@@ -53,14 +55,14 @@ loop do
   end
   $system.delete 'cookies'
   printf "system [#{$system['host']}]: "
-  host = readline
+  host = STDIN.readline
   $system['host'] = host.chomp if host.size > 1
   printf "email  [#{$system['email']}]: "
-  email = readline
+  email = STDIN.readline
   $system['email'] = email.chomp if email.size > 1
   system "stty -echo"
   printf "pw     [#{"*"*($system['pw']||"").size}]: "
-  pw = readline
+  pw = STDIN.readline
   system "stty echo"
   $system['pw'] = pw.chomp if pw.size > 1
   puts "*"*($system['pw']||"").size
@@ -119,8 +121,9 @@ end
 
 def show_process_definition(p)
   p = p.show(:view => 'workflow_definition') unless p.respond_to?(:input_info)
+  puts p.input_info.inspect
   # variables
-  vars = p.input_info['variables'] || {}
+  vars = p.input_info['inputs'] || p.input_info['variables'] || {}
   puts "Input Variables:" if vars.size > 0
   vars.each_pair do |k, v|
     if v.is_a? Hash
@@ -362,7 +365,7 @@ def run
     opts.separator("a process UUID prefix (in this search order).")
     opts.separator("Options:")
     opts.on("-i", "--input name=value", "specify an input variable, repeat for each variable") do |f|
-      if f =~ /\A([-\w\d:$]+)=(.*)/
+      if f =~ /\A([-\w\d:$@]+)=(.*)/
         variables[$1] = $2
       end
     end
@@ -391,7 +394,7 @@ def run
     selected_processes(procs, [pdef]) do |p|
       p = p.show(:view => 'workflow_definition') unless p.respond_to?(:input_info)
       wdef = p.input_info['workflow_definition']
-      variables ||= p.input_info['variables']
+      variables ||= p.input_info['inputs']
       name = p.name
       if name =~ /(.*?)(\d+)$/
         name = $1 + ($2.to_i+1).to_s
@@ -413,7 +416,7 @@ def run
 
   begin
     res = $client.maestro_processes.create(:name => name,
-        :workflow_definition => wdef, :variables => variables)
+        :workflow_definition => wdef, :inputs => variables)
   rescue RightApi::Exceptions::ApiException => e
     if e.message =~ /(Unable to parse workflow_definition). (.*) at line (\d+) (char|column) (\d+)"/
       sum = $1; err = $2; line = $3.to_i; col = $5.to_i
