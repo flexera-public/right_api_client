@@ -1,0 +1,450 @@
+#!/usr/bin/env ruby
+#require 'right_api_client'
+require '../right_api_client/lib/right_api_client'
+require 'optparse'
+require 'json'
+
+# Monkey-patch right_api_client
+module RightApi
+  class ResourceDetail
+    # We define an 'id' method which may not always work, but is good enough for here
+    def id
+      href.split('/').last
+    end
+  end
+end
+
+# Check that the user is giving us an action to perform
+ACTIONS = %w{list show run kill pause resume purge logout}
+
+unless ARGV.size > 0 && ACTIONS.include?(ARGV.first)
+  puts "Usage: #{$0} [#{ACTIONS.join("|")}]"
+  puts "For help use #{$0} <action> -h"
+  exit 1
+end
+action = ARGV.shift
+
+# Read config file
+$system = File.readable?('.wfrc') ? JSON.restore(File.open('.wfrc','r')) : {}
+#puts ".wfrc: #{$system.inspect}"
+$system['host'] ||= 'my.rightscale.com'
+$system['email'] ||= 'someone@rightscale.com'
+
+# Init right_api_client
+loop do
+  if $system.key?('cookies') && $system.key?('host')
+    begin
+      $client = RightApi::Client.new(:cookies => $system['cookies'],
+                                     :api_url => "https://#{$system['host']}",
+                                     :account_id => '71')
+      break
+    rescue Exception => e
+      puts "Can't log in to #{$system['host']} account 71 using existing cookies", e.inspect
+    end
+  elsif $system.key?('email') && $system.key?('pw') && $system.key?('host')
+    begin
+      $client = RightApi::Client.new(:email => $system['email'], :password => $system['pw'],
+                                     :api_url => "https://#{$system['host']}",
+                                     :account_id => '71')
+      break
+    rescue Exception => e
+      puts "Can't log in to #{$system['host']} account 71 as #{$system['email']}:", e.inspect
+    end
+  end
+  $system.delete 'cookies'
+  printf "system [#{$system['host']}]: "
+  host = readline
+  $system['host'] = host.chomp if host.size > 1
+  printf "email  [#{$system['email']}]: "
+  email = readline
+  $system['email'] = email.chomp if email.size > 1
+  system "stty -echo"
+  printf "pw     [#{"*"*($system['pw']||"").size}]: "
+  pw = readline
+  system "stty echo"
+  $system['pw'] = pw.chomp if pw.size > 1
+  puts "*"*($system['pw']||"").size
+end
+$system.delete('pw')
+$system['cookies'] = $client.cookies
+File.open(".wfrc", "w") do |f| JSON.dump($system, f) end
+
+
+#========== HELPER METHODS ==========
+
+def ago(t)
+  dt = (Time.now - t).to_f
+  #puts "DT=#{dt}"
+  if dt < 120 then "#{dt.round(0)} seconds"
+  elsif dt < 7200 then "#{(dt/60).round(1)} minutes"
+  elsif dt < 48*3600 then "#{(dt/3600).round(1)} hours"
+  else "#{(dt/60/3600).round(1)} days"
+  end
+end
+
+def show_process(p, verbose=false)
+  id = p.href[/processes\/(.*)/, 1]
+  printf "===== %s ===== %s\n", p.name, id
+  p.methods.select{|m|m.to_s.end_with?('_at')}.sort.each do |t|
+    ts = p.send(t)
+    unless ts == nil
+      printf "  %11s: %s (%s ago)\n", t, ts, ago(Time.parse(ts))
+    end
+  end
+end
+
+def show_tasks(p, vars=false)
+  tasks = p.maestro_tasks.index #(:view => 'extended')
+  if tasks.size == 0
+    puts "No tasks"
+  else
+    puts "Tasks:"
+    tasks.each do |task|
+      t_id = task.href[/tasks\/(.....)/, 1]
+      line = task.position['line']
+      col  = task.position['column']
+      printf("  %6s (%s): %8s @%d:%d\n", task.name, t_id, task.state, line, col)
+      if task.respond_to? :error
+        p = p.show(:view => 'workflow_definition') unless p.respond_to?(:input_info)
+        err = task.error.sub(/^#<\w+::/, '').sub(/>$/, '')
+        wdef = p.input_info['workflow_definition'].split("\n")
+        printf "    E:%s\n", wdef[line-1]
+        printf "    E:%s^--%s\n", " "*(col-1), err
+      end
+      #puts task.raw.inspect
+    end
+  end
+  p
+end
+
+def show_process_definition(p)
+  p = p.show(:view => 'workflow_definition') unless p.respond_to?(:input_info)
+  # variables
+  vars = p.input_info['variables'] || {}
+  puts "Input Variables:" if vars.size > 0
+  vars.each_pair do |k, v|
+    if v.is_a? Hash
+      puts "  #{k}: Hash of:"
+      v.each_pair{|kk,vv| puts "    #{kk}: #{vv}"}
+    else
+      puts "  #{k}: #{v}"
+    end
+  end
+  # definition text
+  puts "Workflow definition:"
+  wdef = p.input_info['workflow_definition'].split("\n")
+  wdef.each_index{|i| printf "%3d:%s\n", i, wdef[i]}
+  #
+  puts "New keys!? #{p.input_info.keys.join(' ')}" if p.input_info.keys.size > 2
+  #puts p.show(:view => 'extended').raw.inspect
+  p
+end
+
+def show_globals(p)
+  p = p.show(:view => 'summary') unless p.respond_to?(:summary)
+  # variables
+  if p.respond_to?(:summary) && p.summary.key?('global_variables')
+    vars = p.summary['global_variables']
+    refs = p.summary['global_references']
+    puts "Globals:" if vars.size > 0 || refs.size > 0
+    vars.each_pair do |k, v|
+      if v.is_a? Hash
+        puts "  $#{k}: Hash of:"
+        v.each_pair{|kk,vv| puts "    #{kk}: #{vv.inspect}"}
+      else
+        puts "  $#{k}: #{v.inspect}"
+      end
+    end
+    refs.each_pair do |k, v|
+      puts "  %#{k}: #{v}"
+    end
+  else
+    puts "No globals reported"
+  end
+  p
+end
+
+def show_audit_entry(ae, detail=false)
+  printf "  %s: %s\n", ae.updated_at, ae.summary
+  if detail
+    aed = ae.detail.show.text
+    aed.split("\n").each{|l| printf "    %s\n", l}
+  end
+end
+
+def is_process_id(id)
+  (id =~ /\A[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}\Z/) == 0
+end
+
+# Iterate over processes selected by a list of pids, which can be either process names,
+# full process IDs, or beginnings of process IDs
+def selected_processes(procs, pids)
+  pp = procs.select do |p|
+    pids.size == 0 \
+      || pids.inject(false){|r,pid| r || p.id.start_with?(pid)} \
+      || pids.include?(p.name)
+  end
+  pp.sort{|a,b| (a.updated_at||a.created_at)<=>(b.updated_at||b.created_at)}.each do |p|
+    yield p
+  end
+end
+
+#========== logout ==========
+# Logout - delete cookie
+
+def logout
+  $system.delete 'cookies'
+  File.open(".wfrc", "w") do |f| JSON.dump($system, f) end
+end
+
+#========== list ==========
+# List workflow processes
+
+def list
+  tasks = defs = audits = vars = false
+  op = OptionParser.new do |opts|
+    opts.banner = "Usage: #{$0} list [options] [processes...]"
+    opts.separator("Processes can be addressed using their name, their full UUID, or a UUID prefix")
+    opts.separator("Options:")
+    opts.on("-a", "--[no-]audits", "display audit entries for each process") do |v|
+      audits = v
+    end
+    opts.on("-t", "--[no-]tasks", "display tasks detail for each process") do |v|
+      tasks = v
+    end
+    opts.on("-d", "--[no-]definiton", "display workflow definitions") do |v|
+      defs = v
+    end
+    opts.on("-v", "--[no-]variables", "display global and task variables") do |v|
+      vars = v
+    end
+    opts.on_tail("-h", "--help", "display help") do
+      puts opts; exit
+    end
+  end.permute!
+  pids = ARGV
+
+  procs = $client.maestro_processes.index
+  procs.reject!{|p| Time.parse(p.created_at) < Time.parse("2012-04-24 00:00:00 UTC")}
+  selected_processes(procs, pids) do |p|
+    puts
+    show_process(p)
+    p = show_tasks(p, vars) if tasks
+    p = show_process_definition(p) if defs
+    if audits
+      puts "Audit entries:"
+      aes = $client.audit_entries.index(
+          :start_date => Time.parse(p.created_at).strftime("%Y/%m/%d %H:%M:%S +0000"),
+          :end_date => Time.now.utc.strftime("%Y/%m/%d %H:%M:%S +0000"),
+          :limit => 10, :filter => ["auditee_href==#{p.href}"])
+      aes.sort{|a,b|a.updated_at <=>b.updated_at}.each do |ae|
+        show_audit_entry(ae, :detail)
+      end
+    end
+    if vars
+      puts "Global variables:"
+      show_globals(p)
+    end
+  end
+end
+
+#========== watch ==========
+# Watch changes of a process and display them
+
+def watch
+  tasks = defs = audits = false
+  op = OptionParser.new do |opts|
+    opts.banner = "Usage: #{$0} list [options] [processes...]"
+    opts.separator("Processes can be addressed using their name, their full UUID, or a UUID prefix")
+    opts.separator("Options:")
+    opts.on("-a", "--[no-]audits", "display audit entries for each process") do |v|
+      audits = v
+    end
+    opts.on("-t", "--[no-]tasks", "display tasks detail for each process") do |v|
+      tasks = v
+    end
+    opts.on("-d", "--[no-]definiton", "display workflow definitions") do |v|
+      defs = v
+    end
+    opts.on_tail("-h", "--help", "display help") do
+      puts opts; exit
+    end
+  end.permute!
+  pids = ARGV
+
+  procs = $client.maestro_processes.index
+  procs.reject!{|p| Time.parse(p.created_at) < Time.parse("2012-04-24 00:00:00 UTC")}
+  selected_processes(procs, pids) do |p|
+    puts
+    show_process(p)
+    p = show_tasks(p) if tasks
+    p = show_process_definition(p) if defs
+    if audits
+      puts "Audit entries:"
+      aes = $client.audit_entries.index(
+          :start_date => Time.parse(p.created_at).strftime("%Y/%m/%d %H:%M:%S +0000"),
+          :end_date => Time.now.utc.strftime("%Y/%m/%d %H:%M:%S +0000"),
+          :limit => 10, :filter => ["auditee_href==#{p.href}"])
+      aes.sort{|a,b|a.updated_at <=>b.updated_at}.each do |ae|
+        show_audit_entry(ae, :detail)
+      end
+    end
+  end
+end
+
+#========== purge ==========
+# Purge processes that are not running for more than one hour
+def purge
+  unless ARGV.size == 0
+    puts "Usage: $0 purge"
+    exit 1
+  end
+  procs = $client.maestro_processes.index
+  procs.reject!{|p| Time.parse(p.created_at) < Time.parse("2012-04-24 00:00:00 UTC")}
+  procs.each do |p|
+    if Time.now - Time.parse((p.updated_at || p.created_at)) > 3600
+      unless p.maestro_tasks.index.inject(false){|r,t| r || t.state == 'running'}
+        puts "***** PURGING: #{p.name}"
+        begin p.destroy
+        rescue RuntimeError => e
+          if e.message =~ /UnknownResourceFault/
+            puts "      YUCK, this process doesn't actually exist"
+          else
+            raise
+          end
+        end
+      end
+    end
+  end
+end
+
+#========== kill ==========
+# kill a process by id
+def kill
+  options = { :abort => false }
+  OptionParser.new do |opts|
+    opts.banner = "Usage: #{$0} kill [options] processes..."
+    opts.separator("Processes can be addressed using their name, their full UUID, or a UUID prefix")
+    opts.separator("Options:")
+    opts.on("-a", "--[no-]abort", "abort processes instead of canceling") do |a|
+      options[:abort] = a
+    end
+    opts.on_tail("-h", "--help", "display help") do
+      puts opts; exit
+    end
+  end.permute!
+  pids = ARGV
+  
+  procs = $client.maestro_processes.index
+  procs.reject!{|p| Time.parse(p.created_at) < Time.parse("2012-04-24 00:00:00 UTC")}
+  selected_processes(procs, pids) do |p|
+    puts "***** #{options[:abort] ? 'ABORTING' : 'CANCELING'}: #{p.name}"
+    begin
+      options[:abort] ? p.abort : p.cancel
+    rescue RuntimeError => e
+      if e.message =~ /UnknownResourceFault/
+        puts "      YUCK, this process doesn't actually exist"
+      else
+        raise
+      end
+    end
+  end
+end
+
+#========== run ==========
+# run a process
+def run
+  variables = {}
+  watch = false
+  op = OptionParser.new do |opts|
+    opts.banner = "Usage: #{$0} run [options] definition"
+    opts.separator("The definition may be a filename, an existing process name, or")
+    opts.separator("a process UUID prefix (in this search order).")
+    opts.separator("Options:")
+    opts.on("-i", "--input name=value", "specify an input variable, repeat for each variable") do |f|
+      if f =~ /\A([-\w\d:$]+)=(.*)/
+        variables[$1] = $2
+      end
+    end
+    opts.on("-w", "--[no-]watch", "keep watching process after launch") do |w|
+      watch = w
+    end
+    opts.on_tail("-h", "--help", "display help") do
+      puts opts; exit
+    end
+  end
+  op.permute!
+  unless ARGV.size == 1
+    puts "Exactly one process definition expected, found #{ARGV.size}"
+    exit
+  end
+  pdef = ARGV.first
+
+  wdef = ""
+  name = ""
+  if File.readable? pdef
+    wdef = IO.read(pdef)
+    name = pdef[/(.*\/)?(.*?)(\.\w+)$/, 2]
+  else
+    procs = $client.maestro_processes.index
+    procs.reject!{|p| Time.parse(p.created_at) < Time.parse("2012-04-24 00:00:00 UTC")}
+    selected_processes(procs, [pdef]) do |p|
+      p = p.show(:view => 'workflow_definition') unless p.respond_to?(:input_info)
+      wdef = p.input_info['workflow_definition']
+      variables ||= p.input_info['variables']
+      name = p.name
+      if name =~ /(.*?)(\d+)$/
+        name = $1 + ($2.to_i+1).to_s
+      else
+        name << ' 1'
+      end
+      break
+    end
+    unless wdef
+      puts "No process matching #{pdef} found"
+      exit 1
+    end
+  end
+
+  first_line = wdef[/^[^\n]*/]
+  puts "Workflow #{name}"
+  puts "  Inputs: #{variables.keys.join(' ')}"
+  puts "  First line: #{first_line}"
+
+  begin
+    res = $client.maestro_processes.create(:name => name,
+        :workflow_definition => wdef, :variables => variables)
+  rescue RightApi::Exceptions::ApiException => e
+    if e.message =~ /(Unable to parse workflow_definition). (.*) at line (\d+) (char|column) (\d+)"/
+      sum = $1; err = $2; line = $3.to_i; col = $5.to_i
+      err.gsub!(/\\"/, '"')
+      puts   "Workflow failed to launch: #{sum}"
+      printf "  E:%s\n", wdef.split("\n")[line-1]
+      printf "  E:%s^--%s\n", " "*(col-1), err
+      exit
+    else
+      puts e
+      exit
+    end
+  end
+  puts
+  p = res.show
+  show_process(p)
+  p = show_tasks(p)
+
+  while watch
+    puts '...'
+    sleep 10
+    p = res.show
+    puts
+    show_process(p)
+    p = show_tasks(p)
+  end
+end
+
+
+
+#========== main ==========
+
+send(action.to_sym)
+exit 0
