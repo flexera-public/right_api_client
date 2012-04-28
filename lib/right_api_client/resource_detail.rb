@@ -8,7 +8,8 @@ module RightApi
       "#<#{self.class.name} " +
       "resource_type=\"#{@resource_type}\"" +
       "#{', name=' + name.inspect if self.respond_to?(:name)}" +
-      "#{', resource_uid='+ resource_uid.inspect if self.respond_to?(:resource_uid)}>"
+      "#{', resource_uid='+ resource_uid.inspect if self.respond_to?(:resource_uid)}" +
+      ", ATTRIBUTES: #{raw.inspect}, ASSOCIATIONS: #{associations.inspect}>"
     end
 
     # ResourceDetail will MODIFY hash
@@ -101,8 +102,13 @@ module RightApi
       end
 
       # Add show method to relevant resources
+      # Requery if arguments are passed
       define_instance_method('show') do |*args|
-        self
+        if args.size == 0
+          self
+        else
+          RightApi::ResourceDetail.new(client, *client.do_get(href, *args))
+        end
       end
     end
 

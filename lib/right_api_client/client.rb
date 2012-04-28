@@ -135,9 +135,9 @@ module RightApi
 
             [type, response.body]
           when 404
-            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::UnknownRouteException.new("GET #{path}, HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
-            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::ApiException.new("GET #{path}, HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           end
         end
       rescue Exceptions::ApiException => e
@@ -188,9 +188,9 @@ module RightApi
               response.return!(request, result)
             end
           when 404
-            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::UnknownRouteException.new("POST #{path}, HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
-            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::ApiException.new("POST #{path}, HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           end
         end
       rescue Exceptions::ApiException => e
@@ -210,9 +210,9 @@ module RightApi
           case response.code
           when 200, 204
           when 404
-            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::UnknownRouteException.new("DELETE #{path}, HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
-            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::ApiException.new("DELETE #{path}, HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           end
         end
       rescue Exceptions::ApiException => e
@@ -232,9 +232,9 @@ module RightApi
           case response.code
           when 204
           when 404
-            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::UnknownRouteException.new("PUT #{path}, HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
-            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::ApiException.new("PUT #{path}, HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           end
         end
       rescue Exceptions::ApiException => e
