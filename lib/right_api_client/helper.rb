@@ -178,4 +178,30 @@ module RightApi::Helper
     return 'audit_entry' if str == 'audit_entries'
     str.chomp('s')
   end
+
+  # Restclient does not post params correctly for all the keys whose values are arrays of hashes
+  # Modifying the keys to append a '[]' to play nice.
+  #
+  def fix_array_of_hashes(args)
+
+    if args.is_a?(Array)
+
+      #recursively fix each element of the array
+      #
+      args.collect{|a| fix_array_of_hashes(a)}
+    elsif args.is_a?(Hash)
+
+      args.inject({}) do |res, (k, v)|
+        k = k.to_s + '[]' if v.is_a?(Array) && !v.empty? && v.first.is_a?(Hash)
+
+        res[k] = fix_array_of_hashes(v)
+
+        res
+      end
+    else
+
+      args
+    end
+  end
+
 end
