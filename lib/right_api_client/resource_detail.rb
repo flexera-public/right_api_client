@@ -91,8 +91,8 @@ module RightApi
       end
 
       # Add destroy method to relevant resources
-      define_instance_method('destroy') do
-        client.do_delete(href)
+      define_instance_method('destroy') do |*args|
+        client.do_delete(href, *args)
       end
 
       # Add update method to relevant resources
