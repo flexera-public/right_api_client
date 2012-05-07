@@ -206,7 +206,10 @@ module RightApi
     end
 
     # Generic delete
-    def do_delete(path)
+    def do_delete(path, params={})
+      # Resource id is a special param as it needs to be added to the path
+      path = add_id_and_params_to_path(path, params)
+
       begin
         @rest_client[path].delete(headers) do |response, request, result|
           case response.code
