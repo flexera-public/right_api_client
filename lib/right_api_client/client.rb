@@ -161,6 +161,8 @@ module RightApi
 
     # Generic post
     def do_post(path, params={})
+      params = fix_array_of_hashes(params)
+
       begin
         @rest_client[path].post(params, headers) do |response, request, result|
           case response.code
@@ -204,7 +206,10 @@ module RightApi
     end
 
     # Generic delete
-    def do_delete(path)
+    def do_delete(path, params={})
+      # Resource id is a special param as it needs to be added to the path
+      path = add_id_and_params_to_path(path, params)
+
       begin
         @rest_client[path].delete(headers) do |response, request, result|
           case response.code
@@ -227,6 +232,8 @@ module RightApi
 
     # Generic put
     def do_put(path, params={})
+      params = fix_array_of_hashes(params)
+
       begin
         @rest_client[path].put(params, headers) do |response, request, result|
           case response.code
