@@ -6,9 +6,14 @@
 # The account number is at the end of the browser address bar.
 :account_id: my_account_id
 
-# There are three login mechanisms:
+# There are four login mechanisms:
 
-# 1. Use the following parameters to login with your email and password:
+# 0. Use the following parameters to login with your email and base64-encoded password:
+# To encode your plaintext password, use 'base64' command or similar.
+:email: my@email.com
+:password_base64: my_password_encoded_as_base64
+
+# 1. Use the following parameters to login with your email and plaintext password:
 :email: my@email.com
 :password: my_password
 
@@ -20,6 +25,6 @@
 # 3. Use the following parameter to login with pre-authenticated cookies:
 :cookies: my_cookie_string
 
-# The following are optional parameters can also be set:
+# The following are optional parameters:
 :api_url: (this defaults to https://my.rightscale.com)
 :api_version: (this defaults to 1.5)
