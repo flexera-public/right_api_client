@@ -2,6 +2,7 @@ require 'rest_client'
 require 'json'
 require 'set'
 require 'cgi'
+require 'base64'
 
 require File.expand_path('../version', __FILE__) unless defined?(RightApi::Client::VERSION)
 require File.expand_path('../helper', __FILE__)
@@ -20,7 +21,7 @@ module RightApi
     DEFAULT_API_URL = 'https://my.rightscale.com'
 
     # permitted parameters for initializing
-    AUTH_PARAMS = %w(email password account_id api_url api_version cookies instance_token)
+    AUTH_PARAMS = %w(email password_base64 password account_id api_url api_version cookies instance_token)
     attr_reader :cookies, :instance_token
 
     def initialize(args)
@@ -90,6 +91,12 @@ module RightApi
           'instance_token' => @instance_token
         }
         path = ROOT_INSTANCE_RESOURCE
+      elsif @password_base64
+        params = {
+          'email'        => @email,
+          'password'     => Base64.decode64(@password_base64),
+        }
+        path = ROOT_RESOURCE
       else
         params = {
           'email'        => @email,

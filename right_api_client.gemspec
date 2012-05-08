@@ -20,7 +20,7 @@ in making HTTP calls and translating their responses.
   s.rubygems_version = '1.8.17'
 
   s.add_runtime_dependency 'json'
-  s.add_runtime_dependency 'rest-client',      '1.6.7'
+  s.add_runtime_dependency 'rest-client',      '~> 1.6'
 
   s.add_development_dependency 'rake',         '0.8.7'
   s.add_development_dependency 'rspec',        '1.3.0'
