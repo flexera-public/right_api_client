@@ -55,7 +55,7 @@ describe RightApi::Client do
       deployment.show.name.should == 'test2'
 
       # Tags are a bit special as they use POST and return content type so they need specific tests
-      @client.tags.multi_add("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}&tags[]=tag1").should == ""
+      @client.tags.multi_add("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}&tags[]=tag1").should == nil
       tags = @client.tags.by_resource("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}")
       tags.class.should == Array
       tags.first.class.should == RightApi::ResourceDetail
@@ -64,6 +64,13 @@ describe RightApi::Client do
 
       deployment.destroy.should be_nil
       new_deployment2.destroy.should be_nil
+    end
+
+    it "should singularize resource_types correctly" do
+      @client.get_singular('servers').should == 'server'
+      @client.get_singular('deployments').should == 'deployment'
+      @client.get_singular('audit_entries').should == 'audit_entry'
+      @client.get_singular('processes').should == 'process'
     end
   end
 end

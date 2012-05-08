@@ -182,6 +182,8 @@ module RightApi
             # This is based on the assumption that we can determine the resource_type without doing a do_get
             resource_type = get_singular(relative_href.split('/')[-2])
             RightApi::Resource.process(self, resource_type, relative_href)
+          when 204
+            nil
           when 200..299
             # This is needed for the tags Resource -- which returns a 200 and has a content type
             # therefore, ResourceDetail objects needs to be returned
@@ -220,7 +222,9 @@ module RightApi
       begin
         @rest_client[path].delete(headers) do |response, request, result|
           case response.code
-          when 200, 204
+          when 200
+          when 204
+            nil
           when 404
             raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
@@ -245,6 +249,7 @@ module RightApi
         @rest_client[path].put(params, headers) do |response, request, result|
           case response.code
           when 204
+            nil
           when 404
             raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
