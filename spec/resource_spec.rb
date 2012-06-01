@@ -10,12 +10,12 @@ describe RightApi::Resource do
 
     it "should have the required methods for instances of the Resource class" do
       resource = RightApi::Resource.process(@client, 'deployment', '/api/deployments/1')
-      resource.api_methods.sort.collect{|s| s.to_s}.should == ["destroy", "show", "update"]
+      resource.api_methods.sort.map(&:to_s).should == %w[ destroy show update ]
     end
 
     it "should have destroy/show/update for all instances of the Resource class" do
       resource = RightApi::Resource.process(@client, 'session', '/api/session')
-      resource.api_methods.sort.should == ['destroy', 'show', 'update']
+      resource.api_methods.sort.map(&:to_s).should == %w[ destroy show update ]
     end
 
     it "should have an array of ResourceDetail instances for index calls" do
