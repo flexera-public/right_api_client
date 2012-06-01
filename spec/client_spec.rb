@@ -36,7 +36,19 @@ describe RightApi::Client do
       client1.cookies.should == @client.cookies
     end
 
+    it "timestamps cookies" do
+
+      @client.cookies.timestamp.should_not == nil
+    end
+
     it "keeps track of the cookies all the time" do
+
+      t0 = @client.cookies.timestamp
+
+      @client.deployments.index
+      t1 = @client.cookies.timestamp
+
+      t0.to_f.should < t1.to_f
     end
 
     it "accepts a YAML argument when creating a new client" do

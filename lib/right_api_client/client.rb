@@ -21,23 +21,34 @@ module RightApi
     DEFAULT_API_URL = 'https://my.rightscale.com'
 
     # permitted parameters for initializing
-    AUTH_PARAMS = %w(email password_base64 password account_id api_url api_version cookies instance_token)
+    AUTH_PARAMS = %w[
+      email password_base64 password account_id api_url api_version
+      cookies instance_token
+    ]
+
     attr_reader :cookies, :instance_token
 
     def initialize(args)
+
       raise 'This API client is only compatible with Ruby 1.8.7 and upwards.' if (RUBY_VERSION < '1.8.7')
+
       @api_url, @api_version = DEFAULT_API_URL, API_VERSION
+
       # Initializing all instance variables from hash
       args.each { |key,value|
         instance_variable_set("@#{key}", value) if value && AUTH_PARAMS.include?(key.to_s)
       } if args.is_a? Hash
 
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
+
       @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
 
-      # There are three options for login: credentials, instance token, or if the user already
-      # has the cookies they can just use those. See config/login.yml.example for more info.
-      @cookies ||= login()
+      # There are three options for login: credentials, instance token,
+      # or if the user already has the cookies they can just use those.
+      # See config/login.yml.example for more info.
+      login() unless @cookies
+
+      timestamp_cookies
 
       # Add the top level links for instance_facing_calls
       if @instance_token
@@ -114,7 +125,8 @@ module RightApi
           response.return!(request, result)
         end
       end
-      response.cookies
+
+      update_cookies(response)
     end
 
     # Returns the request headers
@@ -131,6 +143,7 @@ module RightApi
       begin
         # Return content type so the resulting resource object knows what kind of resource it is.
         resource_type, body = @rest_client[path].get(headers) do |response, request, result|
+          update_cookies(response)
           case response.code
           when 200
             # Get the resource_type from the content_type, the resource_type will
@@ -150,7 +163,7 @@ module RightApi
       rescue Exceptions::ApiException => e
         if re_login?(e)
           #Session cookie is expired or invalid
-          @cookies = login()
+          login()
           retry
         else
           raise e
@@ -172,6 +185,7 @@ module RightApi
 
       begin
         @rest_client[path].post(params, headers) do |response, request, result|
+          update_cookies(response)
           case response.code
           when 201, 202
             # Create and return the resource
@@ -206,7 +220,7 @@ module RightApi
         end
       rescue Exceptions::ApiException => e
         if re_login?(e)
-          @cookies = login()
+          login()
           retry
         else
           raise e
@@ -221,6 +235,7 @@ module RightApi
 
       begin
         @rest_client[path].delete(headers) do |response, request, result|
+          update_cookies(response)
           case response.code
           when 200
           when 204
@@ -233,7 +248,7 @@ module RightApi
         end
       rescue Exceptions::ApiException => e
         if re_login?(e)
-          @cookies = login()
+          login()
           retry
         else
           raise e
@@ -247,6 +262,7 @@ module RightApi
 
       begin
         @rest_client[path].put(params, headers) do |response, request, result|
+          update_cookies(response)
           case response.code
           when 204
             nil
@@ -258,7 +274,7 @@ module RightApi
         end
       rescue Exceptions::ApiException => e
         if re_login?(e)
-          @cookies = login()
+          login()
           retry
         else
           raise e
@@ -273,6 +289,28 @@ module RightApi
     # returns the resource_type
     def get_resource_type(content_type)
       content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
+    end
+
+    protected
+
+    # Makes sure the @cookies have a timestamp.
+    #
+    def timestamp_cookies
+
+      return unless @cookies
+
+      class << @cookies; attr_accessor :timestamp; end
+      @cookies.timestamp = Time.now
+    end
+
+    # Sets the @cookies (and timestamp it).
+    #
+    def update_cookies(response)
+
+      return unless response.cookies
+
+      (@cookies ||= {}).merge!(response.cookies)
+      timestamp_cookies
     end
   end
 end

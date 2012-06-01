@@ -5,8 +5,8 @@ module MockSpecHelper
     @api_version = RightApi::Client::API_VERSION
     @rest_client = RestClient::Resource.new(RightApi::Client::DEFAULT_API_URL)
     flexmock(RestClient::Resource).should_receive(:new).and_return(@rest_client)
-    @session = flexmock(:cookies => '')
-    @header = {'X_API_VERSION' => @api_version, :cookies => '', :accept => :json}
+    @session = flexmock(:cookies => {})
+    @header = {'X_API_VERSION' => @api_version, :cookies => {}, :accept => :json}
   end
 
   def given_user_facing_client
