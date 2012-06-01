@@ -2,7 +2,7 @@ require File.expand_path('../spec_helper', __FILE__)
 require 'yaml'
 
 describe RightApi::Client do
-  context "Given a valid set of credentials in the config/login.yml file" do
+  context "given a valid set of credentials in the config/login.yml file" do
     before(:all) do
       @creds = '../../config/login.yml'
       begin
@@ -13,19 +13,19 @@ describe RightApi::Client do
       end
     end
 
-    it "Should login" do
+    it "should login" do
       @client.headers[:cookies].should_not be_nil
       @client.session.index.message.should == 'You have successfully logged into the RightScale API.'
     end
 
-    it "Should return valid cookies" do
+    it "should return valid cookies" do
       @client.cookies.class.should == Hash
       @client.cookies['_session_id'].should_not be_nil
       @client.cookies['domain'].should match /rightscale.com$/
       @client.cookies.keys.sort.last.should match /^rs_gbl/ # HACK: not quite sane sanity check
     end
 
-    it "Should accept a cookie argument when creating a new client" do
+    it "should accept a cookie argument when creating a new client" do
       my_hash = YAML.load_file(File.expand_path(@creds, __FILE__))
       my_hash.delete(:email)
       my_hash.delete(:password)
@@ -35,12 +35,12 @@ describe RightApi::Client do
       client1.cookies.should == @client.cookies
     end
 
-    it "Should accept a YAML argument when creating a new client" do
+    it "should accept a YAML argument when creating a new client" do
       client2 = RightApi::Client.new(YAML.load_file(File.expand_path(@creds, __FILE__)))
       client2.cookies.should_not == @client.cookies
     end
 
-    it "Should send post/get/put/delete requests to the server correctly" do
+    it "should send post/get/put/delete requests to the server correctly" do
       new_deployment = @client.deployments.create(:deployment => {:name => 'test'})
       new_deployment2 = @client.deployments.create(:deployment => {:name => 'test2'})
       new_deployment.class.should     == RightApi::Resource
