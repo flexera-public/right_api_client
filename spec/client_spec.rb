@@ -14,19 +14,19 @@ describe RightApi::Client do
       end
     end
 
-    it "should login" do
+    it "logins" do
       @client.headers[:cookies].should_not be_nil
       @client.session.index.message.should == 'You have successfully logged into the RightScale API.'
     end
 
-    it "should return valid cookies" do
+    it "returns valid cookies" do
       @client.cookies.class.should == Hash
       @client.cookies['_session_id'].should_not be_nil
       @client.cookies['domain'].should match /rightscale.com$/
       @client.cookies.keys.sort.last.should match /^rs_gbl/ # HACK: not quite sane sanity check
     end
 
-    it "should accept a cookie argument when creating a new client" do
+    it "accepts a cookie argument when creating a new client" do
       my_hash = YAML.load_file(File.expand_path(@creds, __FILE__))
       my_hash.delete(:email)
       my_hash.delete(:password)
@@ -39,12 +39,12 @@ describe RightApi::Client do
     it "keeps track of the cookies all the time" do
     end
 
-    it "should accept a YAML argument when creating a new client" do
+    it "accepts a YAML argument when creating a new client" do
       client2 = RightApi::Client.new(YAML.load_file(File.expand_path(@creds, __FILE__)))
       client2.cookies.should_not == @client.cookies
     end
 
-    it "should send post/get/put/delete requests to the server correctly" do
+    it "sends post/get/put/delete requests to the server correctly" do
       new_deployment = @client.deployments.create(:deployment => {:name => 'test'})
       new_deployment2 = @client.deployments.create(:deployment => {:name => 'test2'})
       new_deployment.class.should     == RightApi::Resource
@@ -70,7 +70,7 @@ describe RightApi::Client do
       new_deployment2.destroy.should be_nil
     end
 
-    it "should singularize resource_types correctly" do
+    it "singularizes resource_types correctly" do
       @client.get_singular('servers').should == 'server'
       @client.get_singular('deployments').should == 'deployment'
       @client.get_singular('audit_entries').should == 'audit_entry'
