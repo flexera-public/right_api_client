@@ -1,6 +1,6 @@
 
 require 'spec_helper'
-include MockSpecHelper
+
 
 describe RightApi::Resource do
   context "given a logged in RightScale user" do

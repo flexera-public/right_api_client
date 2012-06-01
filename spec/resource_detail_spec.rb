@@ -1,6 +1,5 @@
 
 require 'spec_helper'
-include MockSpecHelper
 
 
 describe RightApi::ResourceDetail do
