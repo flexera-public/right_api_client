@@ -14,7 +14,7 @@ describe RightApi::Client do
       end
     end
 
-    it "logins" do
+    it "logs in" do
       @client.headers[:cookies].should_not be_nil
       @client.session.index.message.should == 'You have successfully logged into the RightScale API.'
     end
