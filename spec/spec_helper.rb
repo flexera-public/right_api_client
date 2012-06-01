@@ -1,11 +1,10 @@
 require 'simplecov'
 SimpleCov.start if ENV["COVERAGE"]
 require File.expand_path('../../lib/right_api_client', __FILE__)
-require 'spec'
 require 'pp'
 require 'yaml'
 
-Spec::Runner.configure do |config|
+RSpec.configure do |config|
   config.mock_with :flexmock
 end
 
