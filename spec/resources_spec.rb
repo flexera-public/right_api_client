@@ -1,5 +1,7 @@
-require File.expand_path('../spec_helper', __FILE__)
+
+require 'spec_helper'
 include MockSpecHelper
+
 
 describe RightApi::Resources do
   context "given a logged in RightScale user" do
