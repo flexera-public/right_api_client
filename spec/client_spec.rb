@@ -11,11 +11,12 @@ describe RightApi::Client do
       rescue => e
         puts "WARNING: The following specs need a valid set of credentials as they are integration tests that can only be done by calling the API server"
         puts e.message
+        puts e.backtrace
       end
     end
 
     it "logs in" do
-      @client.headers[:cookies].should_not be_nil
+      @client.send(:headers)[:cookies].should_not be_nil
       @client.session.index.message.should == 'You have successfully logged into the RightScale API.'
     end
 
@@ -87,6 +88,28 @@ describe RightApi::Client do
       @client.get_singular('deployments').should == 'deployment'
       @client.get_singular('audit_entries').should == 'audit_entry'
       @client.get_singular('processes').should == 'process'
+    end
+
+    it "wraps errors with _details" do
+
+      err = begin
+        @client.deployments(:id => 'nada').show
+      rescue => e
+        e
+      end
+
+      #p err
+      #puts err.backtrace
+
+      err._details.verb.should == :get
+      err._details.path.should == '/api/deployments/nada'
+      err._details.params.should == {}
+
+      err._details.request.class.should == RestClient::Request
+
+      err._details.response.code.should == 422
+      err._details.response.class.should == String
+      err._details.response.should == "ResourceNotFound: Couldn't find Deployment with ID=nada "
     end
   end
 end

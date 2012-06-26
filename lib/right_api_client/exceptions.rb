@@ -1,14 +1,28 @@
+
 module RightApi
   module Exceptions
+
     class ApiException < RuntimeError
-      def initialize(message="")
-        super("Error: #{message}")
+
+      def initialize(response)
+
+        super(
+          prefix +
+          "HTTP Code: #{response.code.to_s}, " +
+          "Response body: #{response.body}")
+      end
+
+      def prefix
+
+        'Error: '
       end
     end
 
     class UnknownRouteException < ApiException
-      def initialize(message="")
-        super("Unknown action or route. #{message}")
+
+      def prefix
+
+        'Unknown action or route. '
       end
     end
   end

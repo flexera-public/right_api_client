@@ -41,25 +41,24 @@ module RightApi
 
       # Add destroy method to relevant resources
       define_instance_method('destroy') do |*args|
-        client.do_delete(href, *args)
+        client.send(:do_delete, href, *args)
       end
 
       # Add update method to relevant resources
       define_instance_method('update') do |*args|
-        client.do_put(href, *args)
+        client.send(:do_put, href, *args)
       end
 
       # Add show method to relevant resources
       define_instance_method('show') do |*args|
-        RightApi::ResourceDetail.new(client, *client.do_get(href, *args))
+        RightApi::ResourceDetail.new(client, *client.send(:do_get, href, *args))
       end
     end
 
-    #Any other method other than standard actions(show,update,destroy) is simply appended to the href and
-    #called with a POST.
+    # Any other method other than standard actions(show,update,destroy)
+    # is simply appended to the href and called with a POST.
     def method_missing(m, *args)
-      action_href = href + "/" + m.to_s
-      client.do_post(action_href, *args)
+      client.send(:do_post, [ href, m.to_s ].join('/'), *args)
     end
   end
 end

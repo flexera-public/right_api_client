@@ -94,32 +94,23 @@ module RightApi
       RestClient.log = file
     end
 
-    # Users shouldn't need to call the following methods directly
+    protected
 
     def login
-      if @instance_token
-        params = {
-          'instance_token' => @instance_token
-        }
-        path = ROOT_INSTANCE_RESOURCE
+      params, path = if @instance_token
+        [ { 'instance_token' => @instance_token },
+          ROOT_INSTANCE_RESOURCE ]
       elsif @password_base64
-        params = {
-          'email'        => @email,
-          'password'     => Base64.decode64(@password_base64),
-        }
-        path = ROOT_RESOURCE
+        [ { 'email' => @email, 'password' => Base64.decode64(@password_base64) },
+          ROOT_RESOURCE ]
       else
-        params = {
-          'email'        => @email,
-          'password'     => @password,
-        }
-        path = ROOT_RESOURCE
+        [ { 'email' => @email, 'password' => @password },
+          ROOT_RESOURCE ]
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
       response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result|
-        case response.code
-        when 302
+        if response.code == 302
           response
         else
           response.return!(request, result)
@@ -137,37 +128,44 @@ module RightApi
     # Generic get
     # params are NOT read only
     def do_get(path, params={})
+
       # Resource id is a special param as it needs to be added to the path
       path = add_id_and_params_to_path(path, params)
+
+      req, res = nil
 
       begin
         # Return content type so the resulting resource object knows what kind of resource it is.
         resource_type, body = @rest_client[path].get(headers) do |response, request, result|
+          req, res = request, response
           update_cookies(response)
           case response.code
           when 200
-            # Get the resource_type from the content_type, the resource_type will
-            # be used later to add relevant methods to relevant resources.
-            type = ''
-            if result.content_type.index('rightscale')
-              type = get_resource_type(result.content_type)
+            # Get the resource_type from the content_type, the resource_type
+            # will be used later to add relevant methods to relevant resources
+            type = if result.content_type.index('rightscale')
+              get_resource_type(result.content_type)
+            else
+              ''
             end
 
             [type, response.body]
           when 404
-            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::UnknownRouteException.new(response)
           else
-            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::ApiException.new(response)
           end
         end
       rescue Exceptions::ApiException => e
         if re_login?(e)
-          #Session cookie is expired or invalid
+          # session cookie is expired or invalid
           login()
           retry
         else
-          raise e
+          raise wrap(e, :get, path, params, req, res)
         end
+      rescue => e
+        raise wrap(e, :get, path, params, req, res)
       end
 
       data = if resource_type == 'text'
@@ -183,8 +181,11 @@ module RightApi
     def do_post(path, params={})
       params = fix_array_of_hashes(params)
 
+      req, res = nil
+
       begin
         @rest_client[path].post(params, headers) do |response, request, result|
+          req, res = request, response
           update_cookies(response)
           case response.code
           when 201, 202
@@ -213,18 +214,21 @@ module RightApi
               response.return!(request, result)
             end
           when 404
-            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::UnknownRouteException.new(response)
           else
-            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::ApiException.new(response)
           end
         end
+
       rescue Exceptions::ApiException => e
         if re_login?(e)
           login()
           retry
         else
-          raise e
+          raise wrap(e, :post, path, params, req, res)
         end
+      rescue => e
+        raise wrap(e, :post, path, params, req, res)
       end
     end
 
@@ -233,17 +237,20 @@ module RightApi
       # Resource id is a special param as it needs to be added to the path
       path = add_id_and_params_to_path(path, params)
 
+      req, res = nil
+
       begin
         @rest_client[path].delete(headers) do |response, request, result|
+          req, res = request, response
           update_cookies(response)
           case response.code
           when 200
           when 204
             nil
           when 404
-            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::UnknownRouteException.new(response)
           else
-            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::ApiException.new(response)
           end
         end
       rescue Exceptions::ApiException => e
@@ -251,8 +258,10 @@ module RightApi
           login()
           retry
         else
-          raise e
+          raise wrap(e, :delete, path, params, req, res)
         end
+      rescue => e
+        raise wrap(e, :delete, path, params, req, res)
       end
     end
 
@@ -260,16 +269,19 @@ module RightApi
     def do_put(path, params={})
       params = fix_array_of_hashes(params)
 
+      req, res = nil
+
       begin
         @rest_client[path].put(params, headers) do |response, request, result|
+          req, res = request, response
           update_cookies(response)
           case response.code
           when 204
             nil
           when 404
-            raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::UnknownRouteException.new(response)
           else
-            raise Exceptions::ApiException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
+            raise Exceptions::ApiException.new(response)
           end
         end
       rescue Exceptions::ApiException => e
@@ -277,8 +289,10 @@ module RightApi
           login()
           retry
         else
-          raise e
+          raise wrap(e, :put, path, params, req, res)
         end
+      rescue => e
+        raise wrap(e, :put, path, params, req, res)
       end
     end
 
@@ -290,8 +304,6 @@ module RightApi
     def get_resource_type(content_type)
       content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
     end
-
-    protected
 
     # Makes sure the @cookies have a timestamp.
     #
@@ -311,6 +323,20 @@ module RightApi
 
       (@cookies ||= {}).merge!(response.cookies)
       timestamp_cookies
+    end
+
+    ErrorDetails = Struct.new(:verb, :path, :params, :request, :response)
+
+    # Adds details (path, params) to an error. Returns the error.
+    #
+    def wrap(error, verb, path, params, request, response)
+
+      class << error; attr_accessor :_details; end
+
+      error._details =
+        ErrorDetails.new(verb, path, params, request, response)
+
+      error
     end
   end
 end
