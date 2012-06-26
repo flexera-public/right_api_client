@@ -94,6 +94,23 @@ module RightApi
       RestClient.log = file
     end
 
+    # Given a path returns a RightApiClient::Resource instance.
+    #
+    def resource(path)
+
+      r = Resource.process(self, *do_get(path))
+
+      r.respond_to?(:show) ? r.show : r
+    end
+
+    # Seems #resource tends to expand (call index) on Resources instances,
+    # so this is a workaround.
+    #
+    def resources(type, path)
+
+      Resources.new(self, path, type)
+    end
+
     protected
 
     def login

@@ -3,7 +3,9 @@ require 'spec_helper'
 
 
 describe RightApi::Client do
+
   context "given a valid set of credentials in the config/login.yml file" do
+
     before(:all) do
       @creds = '../../config/login.yml'
       begin
@@ -110,6 +112,15 @@ describe RightApi::Client do
       err._details.response.code.should == 422
       err._details.response.class.should == String
       err._details.response.should == "ResourceNotFound: Couldn't find Deployment with ID=nada "
+    end
+
+    it "returns the resource when calling #resource(href)" do
+
+      d0 = @client.deployments.index.first
+
+      d1 = @client.resource(d0.href)
+
+      d1.href.should == d0.href
     end
   end
 end
