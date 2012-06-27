@@ -41,8 +41,7 @@ module RightApi
         actions << action_name.to_sym
 
         define_instance_method(action_name.to_sym) do |*args|
-          action_href = hash['href'] + "/" + action['rel']
-          client.do_post(action_href, *args)
+          client.send(:do_post, "#{hash['href']}/#{action['rel']}", *args)
         end
       end
 
@@ -92,12 +91,12 @@ module RightApi
 
       # Add destroy method to relevant resources
       define_instance_method('destroy') do |*args|
-        client.do_delete(href, *args)
+        client.send(:do_delete, href, *args)
       end
 
       # Add update method to relevant resources
       define_instance_method('update') do |*args|
-        client.do_put(href, *args)
+        client.send(:do_put, href, *args)
       end
 
       # Add show method to relevant resources
@@ -106,12 +105,11 @@ module RightApi
       end
     end
 
-    #Any other method other than standard actions(show,update,destroy) is simply appended to the href and
-    #called with a POST.
+    # Any other method other than standard actions(show,update,destroy)
+    # is simply appended to the href and called with a POST.
     def method_missing(m, *args)
-      #The method href would have been defined while initializing the object
-      action_href = href + "/" + m.to_s
-      client.do_post(action_href, *args)
+      # the method href would have been defined while initializing the object
+      client.send(:do_post, [ href, m.to_s ].join('/'), *args)
     end
   end
 end

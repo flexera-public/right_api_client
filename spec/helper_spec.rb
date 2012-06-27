@@ -1,10 +1,11 @@
-require File.expand_path('../spec_helper', __FILE__)
+
+require 'spec_helper'
 include RightApi::Helper
 
 describe RightApi::Helper do
 
   context "#fix_array_of_hashes" do
-    it "should fix all the keys that have the value as array of hashes" do
+    it "fixes all the keys that have the value as array of hashes" do
       res = fix_array_of_hashes(
         'a' => '1',
         'b' => [1, 2, 3],
@@ -27,7 +28,7 @@ describe RightApi::Helper do
 
     end
 
-    it "should recursively fix all the keys that have the value as array of hashes " do
+    it "fixes recursively all the keys that have an array of hashes as value" do
       res = fix_array_of_hashes(
         'a' => {
           'b' => [
