@@ -342,16 +342,34 @@ module RightApi
       timestamp_cookies
     end
 
-    ErrorDetails = Struct.new(:verb, :path, :params, :request, :response)
+    #
+    # A helper class for error details
+    #
+    class ErrorDetails
+
+      attr_reader :method, :path, :params, :request, :response
+
+      def initialize(me, pt, ps, rq, rs)
+
+        @method = me
+        @path = pt
+        @params = ps
+        @request = rq
+        @response = rs
+      end
+
+      def code
+
+        @response ? @response.code : nil
+      end
+    end
 
     # Adds details (path, params) to an error. Returns the error.
     #
-    def wrap(error, verb, path, params, request, response)
+    def wrap(error, method, path, params, request, response)
 
       class << error; attr_accessor :_details; end
-
-      error._details =
-        ErrorDetails.new(verb, path, params, request, response)
+      error._details = ErrorDetails.new(method, path, params, request, response)
 
       error
     end

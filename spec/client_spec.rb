@@ -103,7 +103,7 @@ describe RightApi::Client do
       #p err
       #puts err.backtrace
 
-      err._details.verb.should == :get
+      err._details.method.should == :get
       err._details.path.should == '/api/deployments/nada'
       err._details.params.should == {}
 
@@ -112,6 +112,8 @@ describe RightApi::Client do
       err._details.response.code.should == 422
       err._details.response.class.should == String
       err._details.response.should == "ResourceNotFound: Couldn't find Deployment with ID=nada "
+
+      err._details.code.should == 422
     end
 
     it "returns the resource when calling #resource(href)" do
