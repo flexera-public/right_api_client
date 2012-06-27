@@ -92,6 +92,30 @@ describe RightApi::Client do
       @client.get_singular('processes').should == 'process'
     end
 
+    it "returns the resource when calling #resource(href)" do
+
+      d0 = @client.deployments.index.first
+
+      d1 = @client.resource(d0.href)
+
+      d1.href.should == d0.href
+    end
+
+    it "raises meaningful errors" do
+
+      err = begin
+        @client.resource('/api/nada')
+      rescue => e
+        e
+      end
+
+      err.class.should ==
+        RightApi::UnknownRouteError
+      err.message.should ==
+        "Unknown action or route. HTTP Code: 404, Response body: " +
+        "NotFound: No route matches \"/api/nada\" with {:method=>:get}"
+    end
+
     it "wraps errors with _details" do
 
       err = begin
@@ -114,15 +138,6 @@ describe RightApi::Client do
       err._details.response.should == "ResourceNotFound: Couldn't find Deployment with ID=nada "
 
       err._details.code.should == 422
-    end
-
-    it "returns the resource when calling #resource(href)" do
-
-      d0 = @client.deployments.index.first
-
-      d1 = @client.resource(d0.href)
-
-      d1.href.should == d0.href
     end
   end
 end

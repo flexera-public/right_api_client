@@ -168,7 +168,7 @@ module RightApi
 
             [type, response.body]
           when 404
-            raise NotFoundError.new(request, response)
+            raise UnknownRouteError.new(request, response)
           else
             raise ApiError.new(request, response)
           end

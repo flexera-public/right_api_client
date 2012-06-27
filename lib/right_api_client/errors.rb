@@ -19,16 +19,6 @@ module RightApi
     end
   end
 
-  class NotFoundError < ApiError
-
-    def prefix
-
-      path = @request.url.match(/(\/api\/.+)$/)[1]
-
-      "Not found: #{path}. "
-    end
-  end
-
   class UnknownRouteError < ApiError
 
     def prefix
