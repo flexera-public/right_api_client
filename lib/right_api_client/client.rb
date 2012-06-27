@@ -9,7 +9,7 @@ require File.expand_path('../helper', __FILE__)
 require File.expand_path('../resource', __FILE__)
 require File.expand_path('../resource_detail', __FILE__)
 require File.expand_path('../resources', __FILE__)
-require File.expand_path('../exceptions', __FILE__)
+require File.expand_path('../errors', __FILE__)
 
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
@@ -168,12 +168,12 @@ module RightApi
 
             [type, response.body]
           when 404
-            raise Exceptions::UnknownRouteException.new(response)
+            raise NotFoundError.new(request, response)
           else
-            raise Exceptions::ApiException.new(response)
+            raise ApiError.new(request, response)
           end
         end
-      rescue Exceptions::ApiException => e
+      rescue ApiError => e
         if re_login?(e)
           # session cookie is expired or invalid
           login()
@@ -231,13 +231,13 @@ module RightApi
               response.return!(request, result)
             end
           when 404
-            raise Exceptions::UnknownRouteException.new(response)
+            raise UnknownRouteError.new(request, response)
           else
-            raise Exceptions::ApiException.new(response)
+            raise ApiError.new(request, response)
           end
         end
 
-      rescue Exceptions::ApiException => e
+      rescue ApiError => e
         if re_login?(e)
           login()
           retry
@@ -265,12 +265,12 @@ module RightApi
           when 204
             nil
           when 404
-            raise Exceptions::UnknownRouteException.new(response)
+            raise UnknownRouteError.new(request, response)
           else
-            raise Exceptions::ApiException.new(response)
+            raise ApiError.new(request, response)
           end
         end
-      rescue Exceptions::ApiException => e
+      rescue ApiError => e
         if re_login?(e)
           login()
           retry
@@ -296,12 +296,12 @@ module RightApi
           when 204
             nil
           when 404
-            raise Exceptions::UnknownRouteException.new(response)
+            raise UnknownRouteError.new(request, response)
           else
-            raise Exceptions::ApiException.new(response)
+            raise ApiError.new(request, response)
           end
         end
-      rescue Exceptions::ApiException => e
+      rescue ApiError => e
         if re_login?(e)
           login()
           retry
