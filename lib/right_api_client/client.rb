@@ -85,17 +85,25 @@ module RightApi
     # Users shouldn't need to call the following methods directly
 
     def login
+      puts "Starting login"
       if @instance_token
         params = {
           'instance_token' => @instance_token
         }
         path = ROOT_INSTANCE_RESOURCE
-      else
+      elsif @email && @password
         params = {
           'email'        => @email,
           'password'     => @password,
         }
         path = ROOT_RESOURCE
+      else
+        msg = if $! && re_login?($!)
+            "Session cookie is expired or invalid and cannot re-login without instance token or email+password"
+          else
+            "Cannot login without instance token or email+password"
+          end
+        raise Exceptions::ApiException.new(msg)
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
