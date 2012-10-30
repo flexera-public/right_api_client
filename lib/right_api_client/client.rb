@@ -26,7 +26,7 @@ module RightApi
       cookies instance_token
     ]
 
-    attr_reader :cookies, :instance_token
+    attr_reader :cookies, :instance_token, :last_request
 
     def initialize(args)
 
@@ -42,6 +42,7 @@ module RightApi
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
 
       @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
+      @last_request = {}
 
       # There are three options for login: credentials, instance token,
       # or if the user already has the cookies they can just use those.
@@ -142,6 +143,11 @@ module RightApi
       {'X_API_VERSION' => @api_version, :cookies => @cookies, :accept => :json}
     end
 
+    def update_last_request(request, response)
+      @last_request[:request]  = request
+      @last_request[:response] = response
+    end
+
     # Generic get
     # params are NOT read only
     def do_get(path, params={})
@@ -156,6 +162,8 @@ module RightApi
         resource_type, body = @rest_client[path].get(headers) do |response, request, result|
           req, res = request, response
           update_cookies(response)
+          update_last_request(request, response)
+
           case response.code
           when 200
             # Get the resource_type from the content_type, the resource_type
@@ -204,6 +212,8 @@ module RightApi
         @rest_client[path].post(params, headers) do |response, request, result|
           req, res = request, response
           update_cookies(response)
+          update_last_request(request, response)
+
           case response.code
           when 201, 202
             # Create and return the resource
@@ -260,6 +270,8 @@ module RightApi
         @rest_client[path].delete(headers) do |response, request, result|
           req, res = request, response
           update_cookies(response)
+          update_last_request(request, response)
+
           case response.code
           when 200
           when 204
@@ -292,6 +304,8 @@ module RightApi
         @rest_client[path].put(params, headers) do |response, request, result|
           req, res = request, response
           update_cookies(response)
+          update_last_request(request, response)
+
           case response.code
           when 204
             nil
