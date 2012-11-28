@@ -97,7 +97,12 @@ module RightApi
 
       # Add update method to relevant resources
       define_instance_method('update') do |*args|
-        client.do_put(href, *args)
+        if resource_type == 'account' # HACK: handle child_account update specially
+          update_href = href.sub(/account/, 'child_account')
+          client.do_put(update_href, *args)
+        else
+          client.do_put(href, *args)
+        end
       end
 
       # Add show method to relevant resources
