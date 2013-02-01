@@ -106,10 +106,11 @@ module RightApi
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
-      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result|
+      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
         case response.code
         when 302
-          response
+          update_api_url(response)
+          response.follow_redirection(request, result, &block)
         else
           response.return!(request, result)
         end
@@ -130,7 +131,7 @@ module RightApi
 
       begin
         # Return content type so the resulting resource object knows what kind of resource it is.
-        resource_type, body = @rest_client[path].get(headers) do |response, request, result|
+        resource_type, body = @rest_client[path].get(headers) do |response, request, result, &block|
           case response.code
           when 200
             # Get the resource_type from the content_type, the resource_type will
@@ -141,6 +142,9 @@ module RightApi
             end
 
             [type, response.body]
+          when 301, 302
+            update_api_url(response)
+            response.follow_redirection(request, result, &block)
           when 404
             raise Exceptions::UnknownRouteException.new("HTTP Code: #{response.code.to_s}, Response body: #{response.body}")
           else
@@ -273,6 +277,15 @@ module RightApi
     # returns the resource_type
     def get_resource_type(content_type)
       content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
+    end
+
+    private
+
+    def update_api_url(response)
+      # Update the rest client url if we are redirected to another endpoint
+      uri = URI.parse(response.headers[:location])
+      @api_url = "#{uri.scheme}://#{uri.host}"
+      @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
     end
   end
 end
