@@ -14,7 +14,7 @@ describe RightApi::Resource do
 
     it "Should have destroy/show/update for all instances of the Resource class" do
       resource = RightApi::Resource.process(@client, 'session', '/api/session')
-      resource.api_methods.sort.should == ['destroy', 'show', 'update']
+      resource.api_methods.sort.collect{|s| s.to_s}.should == ["destroy", "show", "update"]
     end
 
     it "Should have an array of ResourceDetail instances for index calls" do
