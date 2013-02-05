@@ -1,12 +1,11 @@
-
-require 'spec_helper'
+require File.expand_path('../../spec_helper', __FILE__)
 
 
 describe RightApi::Client do
 
   before(:all) do
 
-    creds = File.expand_path('../../config/login.yml', __FILE__)
+    creds = File.expand_path('../../../config/login.yml', __FILE__)
 
     begin
       @client = RightApi::Client.new(YAML.load_file(creds))

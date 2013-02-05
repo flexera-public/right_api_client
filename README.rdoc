@@ -195,6 +195,17 @@ Put these special cases in the <tt>RightApi::Helper::RESOURCE_TYPE_SPECIAL_ACTIO
 === Resources are not linked together
   - In ResourceDetail, resource_type = Instance, need live_tasks as a method.
 
+
+= Testing
+
+== Unit Testing
+bundle exec rake spec SPEC=spec/unit
+
+== Functional Testing
+See Usage Instructions for how to configure functional testing.
+
+bundle exec rake spec SPEC=spec/functional
+
 = Troubleshooting
 
 == Wrong ruby version
