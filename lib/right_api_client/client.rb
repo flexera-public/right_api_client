@@ -22,7 +22,7 @@ module RightApi
 
     # permitted parameters for initializing
     AUTH_PARAMS = %w(email password_base64 password account_id api_url api_version cookies instance_token)
-    attr_reader :cookies, :instance_token
+    attr_reader :cookies, :instance_token, :to_json
 
     def initialize(args)
       raise 'This API client is only compatible with Ruby 1.8.7 and upwards.' if (RUBY_VERSION < '1.8.7')
@@ -114,6 +114,7 @@ module RightApi
           response.return!(request, result)
         end
       end
+      @to_json = response.body
       response.cookies
     end
 
@@ -131,6 +132,7 @@ module RightApi
       begin
         # Return content type so the resulting resource object knows what kind of resource it is.
         resource_type, body = @rest_client[path].get(headers) do |response, request, result|
+          @to_json = response.body
           case response.code
           when 200
             # Get the resource_type from the content_type, the resource_type will
