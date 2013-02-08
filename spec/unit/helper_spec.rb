@@ -1,5 +1,4 @@
-
-require 'spec_helper'
+require File.expand_path('../../spec_helper', __FILE__)
 include RightApi::Helper
 
 describe RightApi::Helper do
