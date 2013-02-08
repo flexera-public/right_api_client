@@ -127,9 +127,10 @@ module RightApi
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
-      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result|
+      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
         if response.code == 302
-          response
+          update_api_url(response)
+          response.follow_redirection(request, result, &block)
         else
           response.return!(request, result)
         end
@@ -159,7 +160,7 @@ module RightApi
 
       begin
         # Return content type so the resulting resource object knows what kind of resource it is.
-        resource_type, body = @rest_client[path].get(headers) do |response, request, result|
+        resource_type, body = @rest_client[path].get(headers) do |response, request, result, &block|
           req, res = request, response
           update_cookies(response)
           update_last_request(request, response)
@@ -175,6 +176,9 @@ module RightApi
             end
 
             [type, response.body]
+          when 301, 302
+            update_api_url(response)
+            response.follow_redirection(request, result, &block)
           when 404
             raise UnknownRouteError.new(request, response)
           else
@@ -386,6 +390,15 @@ module RightApi
       error._details = ErrorDetails.new(method, path, params, request, response)
 
       error
+    end
+
+    private
+
+    def update_api_url(response)
+      # Update the rest client url if we are redirected to another endpoint
+      uri = URI.parse(response.headers[:location])
+      @api_url = "#{uri.scheme}://#{uri.host}"
+      @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
     end
   end
 end
