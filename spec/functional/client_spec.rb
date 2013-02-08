@@ -1,31 +1,33 @@
 require File.expand_path('../../spec_helper', __FILE__)
-require 'yaml'
 
 describe RightApi::Client do
-  context "Given a valid set of credentials in the config/login.yml file" do
+
+  context "given a valid set of credentials in the config/login.yml file" do
+
     before(:all) do
       @creds = '../../../config/login.yml'
       begin
         @client = RightApi::Client.new(YAML.load_file(File.expand_path(@creds, __FILE__)))
-      rescue Exception => e
+      rescue => e
         puts "WARNING: The following specs need a valid set of credentials as they are integration tests that can only be done by calling the API server"
         puts e.message
+        puts e.backtrace
       end
     end
 
-    it "Should login" do
-      @client.headers[:cookies].should_not be_nil
+    it "logs in" do
+      @client.send(:headers)[:cookies].should_not be_nil
       @client.session.index.message.should == 'You have successfully logged into the RightScale API.'
     end
 
-    it "Should return valid cookies" do
+    it "returns valid cookies" do
       @client.cookies.class.should == Hash
       @client.cookies['_session_id'].should_not be_nil
       @client.cookies['domain'].should match /rightscale.com$/
       @client.cookies.keys.sort.last.should match /^rs_gbl/ # HACK: not quite sane sanity check
     end
 
-    it "Should accept a cookie argument when creating a new client" do
+    it "accepts a cookie argument when creating a new client" do
       my_hash = YAML.load_file(File.expand_path(@creds, __FILE__))
       my_hash.delete(:email)
       my_hash.delete(:password)
@@ -35,12 +37,27 @@ describe RightApi::Client do
       client1.cookies.should == @client.cookies
     end
 
-    it "Should accept a YAML argument when creating a new client" do
+    it "timestamps cookies" do
+
+      @client.cookies.timestamp.should_not == nil
+    end
+
+    it "keeps track of the cookies all the time" do
+
+      t0 = @client.cookies.timestamp
+
+      @client.deployments.index
+      t1 = @client.cookies.timestamp
+
+      t0.to_f.should < t1.to_f
+    end
+
+    it "accepts a YAML argument when creating a new client" do
       client2 = RightApi::Client.new(YAML.load_file(File.expand_path(@creds, __FILE__)))
       client2.cookies.should_not == @client.cookies
     end
 
-    it "Should send post/get/put/delete requests to the server correctly" do
+    it "sends post/get/put/delete requests to the server correctly" do
       new_deployment = @client.deployments.create(:deployment => {:name => 'test'})
       new_deployment2 = @client.deployments.create(:deployment => {:name => 'test2'})
       new_deployment.class.should     == RightApi::Resource
@@ -66,11 +83,59 @@ describe RightApi::Client do
       new_deployment2.destroy.should be_nil
     end
 
-    it "should singularize resource_types correctly" do
+    it "singularizes resource_types correctly" do
       @client.get_singular('servers').should == 'server'
       @client.get_singular('deployments').should == 'deployment'
       @client.get_singular('audit_entries').should == 'audit_entry'
       @client.get_singular('processes').should == 'process'
+    end
+
+    it "returns the resource when calling #resource(href)" do
+
+      d0 = @client.deployments.index.first
+
+      d1 = @client.resource(d0.href)
+
+      d1.href.should == d0.href
+    end
+
+    it "raises meaningful errors" do
+
+      err = begin
+        @client.resource('/api/nada')
+      rescue => e
+        e
+      end
+
+      err.class.should ==
+        RightApi::UnknownRouteError
+      err.message.should ==
+        "Unknown action or route. HTTP Code: 404, Response body: " +
+        "NotFound: No route matches \"/api/nada\" with {:method=>:get}"
+    end
+
+    it "wraps errors with _details" do
+
+      err = begin
+        @client.deployments(:id => 'nada').show
+      rescue => e
+        e
+      end
+
+      #p err
+      #puts err.backtrace
+
+      err._details.method.should == :get
+      err._details.path.should == '/api/deployments/nada'
+      err._details.params.should == {}
+
+      err._details.request.class.should == RestClient::Request
+
+      err._details.response.code.should == 422
+      err._details.response.class.should == String
+      err._details.response.should == "ResourceNotFound: Couldn't find Deployment with ID=nada "
+
+      err._details.code.should == 422
     end
   end
 end

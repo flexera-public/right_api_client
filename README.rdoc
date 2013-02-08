@@ -199,12 +199,12 @@ Put these special cases in the <tt>RightApi::Helper::RESOURCE_TYPE_SPECIAL_ACTIO
 = Testing
 
 == Unit Testing
-bundle exec rake spec SPEC=spec/unit
+bundle exec rspec spec/unit
 
 == Functional Testing
 See Usage Instructions for how to configure functional testing.
 
-bundle exec rake spec SPEC=spec/functional
+bundle exec rspec spec/functional
 
 = Troubleshooting
 
