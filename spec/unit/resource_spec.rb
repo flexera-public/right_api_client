@@ -1,6 +1,4 @@
-
-require 'spec_helper'
-
+require File.expand_path('../../spec_helper', __FILE__)
 
 describe RightApi::Resource do
   context "given a logged in RightScale user" do
