@@ -1,5 +1,12 @@
 = right_api_client - CHANGELOG.rdoc
 
+== right_api_client - 1.5.10
+#28 Preserve the last request made and make it accessible
+#26 Fix specs. Separate out unit tests and functional tests.
+#25 Add support for other RightScale endpoints.
+#23 Fix child_account update href.
+#20 Always store the latest cookies. Also includes a jump from rspec 1.3.0 to 2.9.0 and spec infrastructure reorganization.
+
 == right_api_client - 1.5.9
 Downgrade even further to Ruby 1.8.7. Should still work in Ruby 1.9.x.
 
