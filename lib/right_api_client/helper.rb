@@ -60,7 +60,9 @@ module RightApi::Helper
             # get the resource_type
             # Special case: calling .data you don't want a resources object back
             # but rather all its details since you cannot do a show
-            return RightApi::ResourceDetail.new(client, *client.do_get(hrefs.first, *args)) if rel == :data
+            return RightApi::ResourceDetail.new(
+              client, *client.send(:do_get, hrefs.first, *args)
+            ) if rel == :data
 
             if is_singular?(rel)
               # Then the href will be: /resource_type/:id

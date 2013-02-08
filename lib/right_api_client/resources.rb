@@ -25,16 +25,16 @@ module RightApi
       @resource_type = resource_type
       # Add create methods for the relevant root RightApi::Resources
       self.define_instance_method('create') do |*args|
-        client.do_post(path, *args)
+        client.send(:do_post, path, *args)
       end
 
       # Add in index methods for the relevant root RightApi::Resources
       self.define_instance_method('index') do |*args|
         # Session uses .index like a .show (so need to treat it as a special case)
         if resource_type == 'session'
-          ResourceDetail.new(client, *client.do_get(path, *args))
+          ResourceDetail.new(client, *client.send(:do_get, path, *args))
         else
-          RightApi::Resource.process(client, *client.do_get(path, *args))
+          RightApi::Resource.process(client, *client.send(:do_get, path, *args))
         end
       end
 
@@ -43,16 +43,15 @@ module RightApi
         # Insert_in_path will NOT modify path
         action_path = insert_in_path(path, meth)
         self.define_instance_method(meth) do |*args|
-          client.send action, action_path, *args
+          client.send(action, action_path, *args)
         end
       end if Helper::RESOURCE_SPECIAL_ACTIONS[resource_type]
     end
 
-    #Any other method other than standard actions(create, index) is simply appended to the path and
-    #called with a POST.
+    # Any other method other than standard actions (create, index)
+    # is simply appended to the href and called with a POST.
     def method_missing(m, *args)
-      action_path = path + "/" + m.to_s
-      client.do_post(action_path, *args)
+      client.send(:do_post, [ href, m.to_s ].join('/'), *args)
     end
   end
 end
