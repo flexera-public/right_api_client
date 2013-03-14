@@ -1,4 +1,4 @@
-= RightScale API Client
+# RightScale API Client
 
 The right_api_client gem simplifies the use of RightScale's MultiCloud API. It provides
 a simple object model of the API resources, and handles all of the fine details involved
@@ -7,17 +7,19 @@ It is assumed that users are already familiar with the RightScale API:
 - API Documentation: http://support.rightscale.com/12-Guides/RightScale_API_1.5
 - API Reference Docs: http://support.rightscale.com/api1.5
 
-== Installation
+Maintained by the RightScale "Yellow_team" 
+
+## Installation
 Ruby 1.8.7 or higher is required.
     gem install right_api_client
 
-== Versioning
+## Versioning
 The right_api_client gem is versioned using the usual X.Y.Z notation, where X.Y is the
 RightScale API version, and Z is the client version. For example, if you want to use
 RightScale API 1.5, you should use the latest version of the 1.5 gem. This will ensure
 that you get the latest bug fixes for the client that is compatible with that API version.
 
-== Usage Instructions
+## Usage Instructions
 New users can start with the following few lines of code and navigate their way around the API by following
 the available methods. You can find your account id by logging into the RightScale dashboard (https://my.rightscale.com),
 navigate to the Settings > Account Settings page. The account is is at the end of the browser address bar.
@@ -30,7 +32,7 @@ discover its resources on the fly. At every step, the user has the ability to qu
 indicates the potential methods that can be called. The <tt>config/login.yml.example</tt> file provides
 details of different login parameters.
 
-=== Making API calls
+### Making API calls
 Essentially, just follow the RightScale API documentation (available from http://support.rightscale.com)
 and treat every resource in the paths as objects that can call other objects using the dot (.) operator:
 
@@ -44,19 +46,19 @@ Examples:
 
 As seen above, whenever you need to chain methods, you must call .show before specifying the next method.
 
-=== Parameters
+### Parameters
 Pass-in parameters to the method that they belong to. Lets say you want to filter on the index for deployments:
     @client.deployments.index(:filter => ['name==my_deployment'])
 The filter is the parameter for the index call and not the deployment call.
 
-=== Logging HTTP Requests
+### Logging HTTP Requests
 The HTTP calls made by right_api_client can be logged in two ways:
 1. Log to a file
     @client.log('~/right_api_client.log')
 2. Log to SDTOUT
     @client.log(STDOUT)
 
-== Examples
+## Examples
 Get a list of all servers (aka doing an Index call)
     @client.servers.index
 
@@ -102,7 +104,7 @@ Terminate the server (i.e. shutdown its current_instance)
 Destroy the server (i.e. delete it)
     @client.servers(:id => 'my_server_id').destroy
 
-== Object Types
+## Object Types
 The client returns 3 types of objects:
 - <b>Resources</b>: returned when you are querying a collection of resources, e.g.: <tt>client.deployments</tt>
 - <b>Resource</b>: returned when you specify an id and therefore a specific resource, e.g.: <tt>@client.deployments(:id => :deployment_id)</tt>
@@ -111,20 +113,20 @@ The client returns 3 types of objects:
 - <b>ResourceDetail</b>: returned when you do a .show on a Resource, e.g.: <tt>client.deployments(:id => deployment_id).show</tt>
 <b>On all 3 types of objects you can query <tt>.api_methods</tt> to see a list of available methods, e.g.: <tt>client.deployments.api_methods</tt></b>
 
-=== Exceptions:
+### Exceptions:
 - <tt>inputs.index</tt> will return an array of ResourceDetail objects since you cannot do a .show on an input
 - <tt>session.index</tt> will return a ResourceDetail object since you cannot do a .show on a session
 - <tt>tags.by_resource, tags.by_tag</tt> will return an array of ResourceDetail objects since you cannot do a .show on a resource_tag
 - <tt>monitoring_metrics(:id => :m_m_id).show.data</tt> will return a ResourceDetail object since you cannot do
   a .show on a monitoring_metric_data
 
-== Instance Facing Calls:
+## Instance Facing Calls:
 The client also supports 'instance facing calls', which use the instance_token to login.
 Unlike regular email-password logins, instance-facing-calls are limited in the amount of allowable calls.
 Since in most of the cases, the calls are scoped to the instance's cloud (or the instance itself), the cloud_id and
 the instance_id will be automatically recorded by the client, so that the user does not need to specify it.
 
-=== Examples
+### Examples
     @instance_client = RightApi::Client.new(:instance_token => 'my_token', :account_id => 'my_account_id')
     @instance_client.volume_attachments     links to /api/clouds/:cloud_id/volume_attachments
     @instance_client.volumes_snapshots      links to /api/clouds/:cloud_id/volumes_snapshots
@@ -133,7 +135,7 @@ the instance_id will be automatically recorded by the client, so that the user d
     @instance_client.backups                links to /api/backups
     @instance_client.live_tasks(:id)        links to /api/clouds/:cloud_id/instances/:instance_id/live/tasks/:id
 
-=== Notes
+### Notes
 For volume_attachments and volumes_snapshots you can also go through the volume:
     @instance_client.volumes(:id => :volume_id).show.volume_attachments
     which maps to:
@@ -153,7 +155,7 @@ Due to the limiting scope of the instance-facing calls, only a subset of these m
 you will get a 403 Permission Denied error.
 
 
-= Design Decisions
+# Design Decisions
 In the code, we only hard-code CRUD operations for resources. We use the .show and .index methods to make the client
 more efficient. Since it dynamically creates methods it needs to query the API at times. The .show and the .index make
 it explicit that querying needs to take place. Without them a GET would have to be queried every step of the way
@@ -163,8 +165,8 @@ first do an index call).
 <b>In general, when a new API resource is added, you need to indicate in the client whether index, show, create, update
 and delete methods are allowed for that resource.</b>
 
-== Special Cases
-=== Returning resource_types that are not actual API resources:
+## Special Cases
+### Returning resource_types that are not actual API resources:
   - tags:
     - by_resource, by_tag: both return a COLLECTION of resource_type = RESOURCE_TAG
       - no show or index is defined for that resource_type, therefore return a collection of ResourceDetail objects
@@ -172,7 +174,7 @@ and delete methods are allowed for that resource.</b>
     - querying .data for monitoring_metrics:
       - no show is defined for that resource_type, therefore return a ResourceDetail object
 
-=== Index call does not act like an index call
+### Index call does not act like an index call
   - session:
     - session.index should act like a show call and not like an index call (since you cannot query show).
       Therefore it should return a ResourceDetail object
@@ -180,34 +182,34 @@ and delete methods are allowed for that resource.</b>
     - inputs.index cannot return a collection of Resource objects since .show is not allowed. Therefore it should
       return a collection of ResourceDetail objects
 
-=== Having a resource_type that cannot be accurately determined from the URL:
+### Having a resource_type that cannot be accurately determined from the URL:
   - In server_arrays.show: resource_type = current_instance(s) (although it should be instance(s))
   - In multi_cloud_images.show: resource_type = setting(s) (although it should be multi_cloud_image_setting)
 Put these special cases in the <tt>RightApi::Helper::INCONSISTENT_RESOURCE_TYPES</tt> hash.
 
-=== Method defined on the generic resource_type itself
+### Method defined on the generic resource_type itself
   - 'instances' => {:multi_terminate => 'do_post', :multi_run_executable => 'do_post'},
   - 'inputs'    => {:multi_update => 'do_put'},
   - 'tags'      => {:by_tag => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'},
   - 'backups'   => {:cleanup => 'do_post'}
 Put these special cases in the <tt>RightApi::Helper::RESOURCE_TYPE_SPECIAL_ACTIONS</tt> hash.
 
-=== Resources are not linked together
+### Resources are not linked together
   - In ResourceDetail, resource_type = Instance, need live_tasks as a method.
 
 
-= Testing
+# Testing
 
-== Unit Testing
+## Unit Testing
 bundle exec rspec spec/unit
 
-== Functional Testing
+## Functional Testing
 See Usage Instructions for how to configure functional testing.
 
 bundle exec rspec spec/functional
 
-= Troubleshooting
+# Troubleshooting
 
-== Wrong ruby version
+## Wrong ruby version
 
 Ruby 1.8.7 or higher is required.
