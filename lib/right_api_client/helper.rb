@@ -181,23 +181,33 @@ module RightApi::Helper
     obj.to_s.singularize
   end
 
-  # Restclient does not post params correctly for all the keys whose values are arrays of hashes
-  # Modifying the keys to append a '[]' to play nice.
+  # rest client does not post params correctly for all the keys whose values are arrays of hashes
+  # @see http://stackoverflow.com/questions/6436110/restclient-strips-out-the-array-of-hashes-parameter-with-just-the-last-hash
   #
-  def fix_array_of_hashes(args)
+  def fix_array_of_hashes(args, top_level = true)
 
     if args.is_a?(Array)
 
       #recursively fix each element of the array
       #
-      args.collect{|a| fix_array_of_hashes(a)}
+      args.collect{|a| fix_array_of_hashes(a, false)}
     elsif args.is_a?(Hash)
 
       args.inject({}) do |res, (k, v)|
-        k = k.to_s + '[]' if v.is_a?(Array) && !v.empty? && v.first.is_a?(Hash)
-
-        res[k] = fix_array_of_hashes(v)
-
+        key = k
+        if v.is_a?(Array) && !v.empty? && v.first.is_a?(Hash)
+          if top_level
+            # signal to Rails that this really is an array
+            key = k.to_s + '[]'
+            value = fix_array_of_hashes(v, false)
+          else
+            # signal to Rails that this really is an array
+            value = {'' => fix_array_of_hashes(v, false)}
+          end
+        else
+          value = fix_array_of_hashes(v, false)
+        end
+        res[key] = value
         res
       end
     else
