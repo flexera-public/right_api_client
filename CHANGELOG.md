@@ -1,4 +1,10 @@
-= right_api_client - CHANGELOG.rdoc
+= right_api_client - CHANGELOG.md
+
+== right_api_client - 1.5.11
+#33 fix specs and readme
+#32 fix nested array of hashes params
+#30 README markdown formatting
+#29 rename read me and add mandatory ownership string
 
 == right_api_client - 1.5.10
 #28 Preserve the last request made and make it accessible
