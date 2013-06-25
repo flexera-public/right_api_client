@@ -27,37 +27,42 @@ describe RightApi::Helper do
 
     end
 
-    it "fixes recursively all the keys that have an array of hashes as value" do
+    it "fixes key that have a top-level array of hashes as value" do
       res = fix_array_of_hashes(
-        'a' => {
-          'b' => [
-            {1 => 2},
-            {3 => 4}
-          ],
-          'c' => {
-            'd' => [
-              {5 => 6},
-              {7 => 8}
-            ]
-          }
-        }
+          'a' => [
+              {1 => 2},
+              {3 => 4}
+          ]
       )
 
       res.should == {
-        'a' => {
-          'b[]' => [
-            {1 => 2},
-            {3 => 4}
-          ],
-          'c' => {
-            'd[]' => [
-              {5 => 6},
-              {7 => 8}
-            ]
-          }
-        }
+          'a[]' => [
+              {1 => 2},
+              {3 => 4}
+          ]
       }
     end
 
+    it "fixes key that have a nested array of hashes as value" do
+      res = fix_array_of_hashes(
+          'a' => {
+              'b' => [
+                  {1 => 2},
+                  {3 => 4}
+              ]
+          }
+      )
+
+      res.should == {
+          'a' => {
+              'b' => {
+                  '' => [
+                      {1 => 2},
+                      {3 => 4}
+                  ]
+              }
+          }
+      }
+    end
   end
 end
