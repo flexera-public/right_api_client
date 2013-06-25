@@ -5,8 +5,8 @@ a simple object model of the API resources, and handles all of the fine details 
 in making HTTP calls and translating their responses.
 It is assumed that users are already familiar with the RightScale API:
 
-  - API Documentation: http://support.rightscale.com/12-Guides/RightScale\_API\_1.5
-  - API Reference Docs: http://support.rightscale.com/api1.5
+  - API Documentation: http://support.rightscale.com/12-Guides/RightScale_API_1.5
+  - API Reference Docs: http://reference.rightscale.com/api1.5
 
 Maintained by the RightScale "Yellow_team" 
 
