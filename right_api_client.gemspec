@@ -26,6 +26,5 @@ fine details involved in making HTTP calls and translating their responses.
   s.add_development_dependency 'rspec',        '2.9.0'
   s.add_development_dependency 'flexmock',     '0.8.7'
   s.add_development_dependency 'simplecov',    '0.4.2'
-  s.add_development_dependency 'activesupport', '< 4.0.0' # this avoids Gem::InstallError: activesupport requires Ruby version >= 1.9.3.
   s.add_development_dependency 'bundler'
 end

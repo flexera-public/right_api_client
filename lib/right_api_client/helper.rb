@@ -1,5 +1,3 @@
-require 'active_support/inflector'
-
 # Methods shared by the Client, Resource and Resources.
 module RightApi::Helper
   # Some resource_types are not the same as the last thing in the URL, put these here to ensure consistency
@@ -154,8 +152,19 @@ module RightApi::Helper
 
   # Helper method that checks whether the string is singular
   def is_singular?(str)
-    return true if ['data'].include?(str.to_s)
-    (str.to_s)[-1, 1] != 's' # use legacy syntax for Ruby 1.8.7
+    test_str = str.to_s
+    return true if ['data'].include?(test_str)
+
+    case test_str
+    when "audit_entry"
+      return true
+    when "ip_address"
+      return true
+    when "process"
+      return true
+    else
+      (test_str)[-1, 1] != 's' # use legacy syntax for Ruby 1.8.7
+    end
   end
 
   # Does not modify links
@@ -176,9 +185,23 @@ module RightApi::Helper
     return nil
   end
 
+  # HACK: instead of pulling in activesupport gem, just hardcode some words
+  def simple_singularize(word)
+    case word
+    when "audit_entries"
+      "audit_entry"
+    when "ip_addresses"
+      "ip_address"
+    when "processes"
+      "process"
+    else
+      word.chop
+    end
+  end
+
   # Will not change obj
   def get_singular(obj)
-    obj.to_s.singularize
+    simple_singularize(obj.to_s.downcase)
   end
 
   # rest client does not post params correctly for all the keys whose values are arrays of hashes
