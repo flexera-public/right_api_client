@@ -88,6 +88,7 @@ describe RightApi::Client do
       @client.get_singular('deployments').should == 'deployment'
       @client.get_singular('audit_entries').should == 'audit_entry'
       @client.get_singular('processes').should == 'process'
+      @client.get_singular('ip_addresses').should == 'ip_address'
     end
 
     it "returns the resource when calling #resource(href)" do
