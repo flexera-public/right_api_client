@@ -8,7 +8,7 @@ It is assumed that users are already familiar with the RightScale API:
   - API Documentation: http://support.rightscale.com/12-Guides/RightScale_API_1.5
   - API Reference Docs: http://reference.rightscale.com/api1.5
 
-Maintained by the RightScale "Yellow_team" 
+Maintained by the RightScale Salmon team
 
 ## Installation
 Ruby 1.8.7 or higher is required.
