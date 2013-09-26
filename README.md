@@ -6,7 +6,7 @@ in making HTTP calls and translating their responses.
 It is assumed that users are already familiar with the RightScale API:
 
   - API Documentation: http://support.rightscale.com/12-Guides/RightScale_API_1.5
-  - API Reference Docs: http://reference.rightscale.com/api1.5
+  - API Reference Docs: http://reference.rightscale.com/api1.5/index.html
 
 Maintained by the RightScale Salmon team
 
