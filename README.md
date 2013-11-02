@@ -41,14 +41,40 @@ and treat every resource in the paths as objects that can call other objects usi
 
 Examples:
 
-   - Index:     /api/clouds/:cloud_id/datacenters             =>  @client.clouds(:id => :cloud_id).show.datacenters.index
-   - Show:      /api/clouds/:cloud_id/datacenters/:id         =>  @client.clouds(:id => :cloud_id).show.datacenters(:id => :datacenter_id).show
-   - Create:    /api/deployments/:deployment_id/servers       =>  @client.deployments(:id => :deployment_id).show.servers.create
-   - Update:    /api/deployments/:deployment_id/servers/:id   =>  @client.deployments(:id => :deployment_id).show.servers(:id => :server_id).update
-   - Destroy:   /api/deployments/:deployment_id/servers/:id   =>  @client.deployments(:id => :deployment_id).show.servers(:id => :server_id).destroy
-   - An action: /api/servers/:server_id/launch                =>  @client.servers(:id => :server_id).show.launch
+    # Index datacenters: GET /api/clouds/:cloud_id/datacenters
+    @client.clouds(:id => 1).show.datacenters.index
+   
+    # Show server: GET /api/clouds/:cloud_id/datacenters/:id
+    @client.clouds(:id => 1).show.datacenters(:id => 2).show
+   
+    # Create server: POST /api/deployments/:deployment_id/servers
+    @client.deployments(:id => 3).show.servers.create
+   
+    # Update server: PUT /api/deployments/:deployment_id/servers/:id
+    @client.deployments(:id => 3).show.servers(:id => 4).update
+   
+    # Destroy server: DELETE /api/deployments/:deployment_id/servers/:id
+    @client.deployments(:id => 3).show.servers(:id => 4).destroy
+   
+    # A non-CRUD action: POST /api/servers/:server_id/launch
+    @client.servers(:id => 4).show.launch
 
 As seen above, whenever you need to chain methods, you must call .show before specifying the next method.
+
+### Last HTTP Request
+
+You can inspect all the information about the last HTTP request, including its response.
+For more info: https://github.com/rest-client/rest-client
+
+Examples:
+
+    deployments = @client.deployments.index
+    last_request = @client.last_request[:request]
+    last_url = last_request.url
+    last_method = last_request.method
+    last_response = @client.last_request[:response]
+    last_code = last_response.code
+    last_headers = last_request.headers
 
 ### Parameters
 Pass-in parameters to the method that they belong to. Lets say you want to filter on the index for deployments:
@@ -58,12 +84,13 @@ Pass-in parameters to the method that they belong to. Lets say you want to filte
 The filter is the parameter for the index call and not the deployment call.
 
 ### Logging HTTP Requests
-The HTTP calls made by right\_api\_client can be logged in two ways:
-1. Log to a file
+The HTTP calls made by right\_api\_client can be logged in two ways.
+
+Log to a file:
 
     @client.log('~/right_api_client.log')
 
-2. Log to STDOUT
+Log to STDOUT:
 
     @client.log(STDOUT)
 
