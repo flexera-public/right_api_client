@@ -58,29 +58,45 @@ describe RightApi::Client do
     end
 
     it "sends post/get/put/delete requests to the server correctly" do
-      new_deployment = @client.deployments.create(:deployment => {:name => 'test'})
-      new_deployment2 = @client.deployments.create(:deployment => {:name => 'test2'})
+      deployment_name = "right_api_client functional test #{Time.now.to_s}"
+      # create a new deployment
+      new_deployment = @client.deployments.create(:deployment => {:name => deployment_name})
       new_deployment.class.should     == RightApi::Resource
-      new_deployment.show.name.should == 'test'
+      new_deployment.show.name.should == deployment_name
 
+      # verify new deployment
       deployment = @client.deployments(:id => new_deployment.show.href.split('/').last)
       deployment.class.should      == RightApi::Resource
       deployment.show.class.should == RightApi::ResourceDetail
       deployment.show.href.should  == new_deployment.show.href
 
-      deployment.update(:deployment => {:name => 'test2'}).should be_nil
-      deployment.show.name.should == 'test2'
+      # update deployment
+      deployment.update(:deployment => {:name => "#{deployment_name} updated"}).should be_nil
+      deployment.show.name.should == "#{deployment_name} updated"
 
-      # Tags are a bit special as they use POST and return content type so they need specific tests
-      @client.tags.multi_add("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}&tags[]=tag1").should == nil
-      tags = @client.tags.by_resource("resource_hrefs[]=#{deployment.show.href}&resource_hrefs[]=#{new_deployment2.show.href}")
+      # delete deployment
+      deployment.destroy.should be_nil
+    end
+
+    # Tags are a bit special as they use POST and return content type so they need specific tests
+    it "adds tag to deployment" do
+      deployment_name = "right_api_client functional test #{Time.now.to_s}"
+
+      # create a new deployment
+      new_deployment = @client.deployments.create(:deployment => {:name => deployment_name})
+
+      # add a tag to deployment
+      @client.tags.multi_add("resource_hrefs[]=#{new_deployment.show.href}&tags[]=tag1").should == nil
+
+      # verify tag
+      tags = @client.tags.by_resource("resource_hrefs[]=#{new_deployment.show.href}")
       tags.class.should == Array
       tags.first.class.should == RightApi::ResourceDetail
       tags.first.tags.first.should == {"name" => "tag1"}
-      tags.first.resource.first.show.name.should == 'test2'
+      tags.first.resource.show.name.should == deployment_name
 
-      deployment.destroy.should be_nil
-      new_deployment2.destroy.should be_nil
+      # delete deployment
+      new_deployment.destroy.should be_nil
     end
 
     it "singularizes resource_types correctly" do
