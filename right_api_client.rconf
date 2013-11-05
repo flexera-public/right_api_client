@@ -1,10 +1,9 @@
 ruby do
   version  'ree-1.8.7-2012.02'
-  rubygems '1.8.17'
   gemset   'right_api_client'
 end
 bundler do
-  version     '1.0.21'
+  version     '1.3.5'
   exclusions  'deployment'
   bundle_path File.join(ENV["HOME"], '.rightscale_bundle', 'right_api_client')
 end
