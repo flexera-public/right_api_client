@@ -21,6 +21,11 @@ module RightApi
       links = hash.delete('links') || []
       raw_actions = hash.delete('actions') || []
 
+      # HACK: cloud subnets link is missing in API
+      if resource_type == 'cloud'
+        links << {'rel' => 'subnets', 'href' => "#{href}/subnets"}
+      end
+
       # We have to delete the self href from the links because later we will
       # go through these links and add them in as methods
       self_hash = get_and_delete_href_from_links(links)
