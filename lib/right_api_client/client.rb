@@ -90,6 +90,10 @@ module RightApi
       "#<RightApi::Client>"
     end
 
+    def account_id=(account_id)
+      @account_id = account_id
+    end
+
     # Log HTTP calls to file (file can be STDOUT as well)
     def log(file)
       RestClient.log = file
