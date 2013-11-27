@@ -141,7 +141,7 @@ module RightApi
 
     # Returns the request headers
     def headers
-      {'X_API_VERSION' => @api_version, :cookies => @cookies, :accept => :json}
+      {'X_API_VERSION' => @api_version, 'X_ACCOUNT' => @account_id, :cookies => @cookies, :accept => :json}
     end
 
     def update_last_request(request, response)
