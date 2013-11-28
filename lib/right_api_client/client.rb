@@ -27,6 +27,7 @@ module RightApi
     ]
 
     attr_reader :cookies, :instance_token, :last_request
+    attr_accessor :account_id, :api_url
 
     def initialize(args)
 
@@ -88,10 +89,6 @@ module RightApi
 
     def to_s
       "#<RightApi::Client>"
-    end
-
-    def account_id=(account_id)
-      @account_id = account_id
     end
 
     # Log HTTP calls to file (file can be STDOUT as well)
