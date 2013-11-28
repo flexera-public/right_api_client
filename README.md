@@ -94,6 +94,27 @@ Log to STDOUT:
 
     @client.log(STDOUT)
 
+### Managing multiple accounts
+Multiple accounts can be manged by using the api\_url and account\_id attributes on the client.
+
+The api\_url attribute allows users to modify the shard which the client is being used to connect to.
+This should not be required as the client will find the correct shard using the account id but is
+included for completeness.
+
+Example:
+    @client.api_url // https://my.rightscale.com
+    @client.api_url = 'https://us-3.rightscale.com' // Update the client to make requests to shard 3
+
+The account\_id switches which account is being managed by the client. This allows a user with
+multiple accounts to perform actions whilst only having to authenticate once. This defaults to the
+account which was used to create the client.
+
+Example:
+    @client.account_id = 1
+    @client.users.index.count // The number of users in account with id 1
+    @client.account_id = 2
+    @client.users.index.count // The number of users in account with id 2
+
 ## Examples
 Get a list of all servers (aka doing an Index call)
 
