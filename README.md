@@ -102,6 +102,7 @@ This should not be required as the client will find the correct shard using the 
 included for completeness.
 
 Example:
+
     @client.api_url // https://my.rightscale.com
     @client.api_url = 'https://us-3.rightscale.com' // Update the client to make requests to shard 3
 
@@ -110,6 +111,7 @@ multiple accounts to perform actions whilst only having to authenticate once. Th
 account which was used to create the client.
 
 Example:
+
     @client.account_id = 1
     @client.users.index.count // The number of users in account with id 1
     @client.account_id = 2
