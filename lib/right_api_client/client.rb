@@ -245,6 +245,9 @@ module RightApi
             else
               response.return!(request, result)
             end
+          when 301, 302
+            update_api_url(response)
+            do_post(path, params)
           when 404
             raise UnknownRouteError.new(request, response)
           else
