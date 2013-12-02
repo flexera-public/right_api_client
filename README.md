@@ -103,8 +103,8 @@ included for completeness.
 
 Example:
 
-    @client.api_url // https://my.rightscale.com
-    @client.api_url = 'https://us-3.rightscale.com' // Update the client to make requests to shard 3
+    @client.api_url # https://my.rightscale.com
+    @client.api_url = 'https://us-3.rightscale.com' # Update the client to make requests to shard 3
 
 The account\_id switches which account is being managed by the client. This allows a user with
 multiple accounts to perform actions whilst only having to authenticate once. This defaults to the
@@ -113,9 +113,9 @@ account which was used to create the client.
 Example:
 
     @client.account_id = 1
-    @client.users.index.count // The number of users in account with id 1
+    @client.users.index.count # The number of users in account with id 1
     @client.account_id = 2
-    @client.users.index.count // The number of users in account with id 2
+    @client.users.index.count # The number of users in account with id 2
 
 ## Examples
 Get a list of all servers (aka doing an Index call)
