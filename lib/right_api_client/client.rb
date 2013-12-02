@@ -284,6 +284,9 @@ module RightApi
           when 200
           when 204
             nil
+          when 301, 302
+            update_api_url(response)
+            do_delete(path, params)
           when 404
             raise UnknownRouteError.new(request, response)
           else
@@ -317,6 +320,9 @@ module RightApi
           case response.code
           when 204
             nil
+          when 301, 302
+            update_api_url(response)
+            do_put(path, params)
           when 404
             raise UnknownRouteError.new(request, response)
           else
