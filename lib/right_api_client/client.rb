@@ -27,6 +27,7 @@ module RightApi
     ]
 
     attr_reader :cookies, :instance_token, :last_request
+    attr_accessor :account_id, :api_url
 
     def initialize(args)
 
@@ -141,7 +142,7 @@ module RightApi
 
     # Returns the request headers
     def headers
-      {'X_API_VERSION' => @api_version, :cookies => @cookies, :accept => :json}
+      {'X_API_VERSION' => @api_version, 'X_ACCOUNT' => @account_id, :cookies => @cookies, :accept => :json}
     end
 
     def update_last_request(request, response)
@@ -244,6 +245,9 @@ module RightApi
             else
               response.return!(request, result)
             end
+          when 301, 302
+            update_api_url(response)
+            do_post(path, params)
           when 404
             raise UnknownRouteError.new(request, response)
           else
@@ -280,6 +284,9 @@ module RightApi
           when 200
           when 204
             nil
+          when 301, 302
+            update_api_url(response)
+            do_delete(path, params)
           when 404
             raise UnknownRouteError.new(request, response)
           else
@@ -313,6 +320,9 @@ module RightApi
           case response.code
           when 204
             nil
+          when 301, 302
+            update_api_url(response)
+            do_put(path, params)
           when 404
             raise UnknownRouteError.new(request, response)
           else
