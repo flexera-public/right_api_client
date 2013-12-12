@@ -1,3 +1,4 @@
+
 # RightScale API Client
 
 The right\_api\_client gem simplifies the use of RightScale's MultiCloud API. It provides
