@@ -6,7 +6,7 @@
 # The account number is at the end of the browser address bar.
 :account_id: my_account_id
 
-# There are four login mechanisms:
+# There are five login mechanisms:
 
 # 0. Use the following parameters to login with your email and base64-encoded password:
 # To encode your plaintext password, use 'base64' command or similar.
@@ -22,8 +22,13 @@
 # User Data box, you will see RS_API_TOKEN = your_account_id:the_instance_token
 :instance_token: my_instance_token
 
-# 3. Use the following parameter to login with pre-authenticated cookies:
+# 3. Use the following parameter to send a pre-authenticated cookie with every request:
 :cookies: my_cookie_string
+
+# 4. Use the following parameter to send an existing OAuth access token with every request:
+# To learn more about OAuth and how to obtain an access token, see
+# http://support.rightscale.com/12-Guides/03-Rightscale_API/OAuth
+:access_token: my_token_string
 
 # The following are optional parameters:
 :api_url: (this defaults to https://my.rightscale.com)

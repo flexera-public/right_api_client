@@ -23,10 +23,10 @@ module RightApi
     # permitted parameters for initializing
     AUTH_PARAMS = %w[
       email password_base64 password account_id api_url api_version
-      cookies instance_token
+      cookies instance_token access_token
     ]
 
-    attr_reader :cookies, :instance_token, :last_request
+    attr_reader :cookies, :instance_token, :last_request, :access_token
     attr_accessor :account_id, :api_url
 
     def initialize(args)
@@ -45,10 +45,15 @@ module RightApi
       @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
       @last_request = {}
 
-      # There are three options for login: credentials, instance token,
-      # or if the user already has the cookies they can just use those.
+      # There are four options for login:
+      #  - credentials
+      #  - instance API token
+      #  - existing user-supplied cookies
+      #  - existing user-supplied OAuth access token
+      #
+      # The latter two options are not really login; they imply that the user logged in out of band.
       # See config/login.yml.example for more info.
-      login() unless @cookies
+      login() unless @cookies || @access_token
 
       timestamp_cookies
 
