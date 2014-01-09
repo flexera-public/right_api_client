@@ -6,14 +6,14 @@ module MockSpecHelper
     @rest_client = RestClient::Resource.new(RightApi::Client::DEFAULT_API_URL)
     flexmock(RestClient::Resource).should_receive(:new).and_return(@rest_client)
     @session = flexmock(:cookies => {})
-    @header = {'X_API_VERSION' => @api_version, 'X_ACCOUNT' => @test_account_id, :cookies => {}, :accept => :json}
+    @header = {'X-Api-Version' => @api_version, 'X-Account' => @test_account_id, :cookies => {}, :accept => :json}
   end
 
   def given_user_facing_client
     mock_rest_client
     flexmock(@rest_client).should_receive(:post).with(
         {'email' => 'email', 'password' => 'password', 'account_href' => '/api/accounts/1'},
-        {'X_API_VERSION' => @api_version}, Proc).and_return(@session)
+        {'X-Api-Version' => @api_version}, Proc).and_return(@session)
     flexmock(@rest_client).should_receive(:get).with(@header, Proc).and_return(['', '{}'])
     @client = RightApi::Client.new(:email => 'email', :password => 'password', :account_id => @test_account_id)
   end
@@ -22,7 +22,7 @@ module MockSpecHelper
     mock_rest_client
     flexmock(@rest_client).should_receive(:post).with(
         {'instance_token' => 'instance_token', 'account_href' => '/api/accounts/1'},
-        {'X_API_VERSION' => @api_version}, Proc).and_return(@session)
+        {'X-Api-Version' => @api_version}, Proc).and_return(@session)
     flexmock(@rest_client).should_receive(:get).with(@header, Proc).and_return(['', '{"links": [
         {
           "href": "/api/clouds/1/instances/1",

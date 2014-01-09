@@ -133,7 +133,7 @@ module RightApi
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
-      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
+      response = @rest_client[path].post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
         if response.code == 302
           update_api_url(response)
           response.follow_redirection(request, result, &block)
@@ -148,14 +148,14 @@ module RightApi
     # Returns the request headers
     def headers
       h = {
-        'X_API_VERSION' => @api_version,
-        'X_ACCOUNT' => @account_id,
+        'X-Api-Version' => @api_version,
+        'X-Account' => @account_id,
         :cookies => @cookies,
         :accept => :json,
       }
 
       if @access_token
-        h['AUTHORIZATION'] = "Bearer #{@access_token}"
+        h['Authorization'] = "Bearer #{@access_token}"
       elsif @cookies
         h[:cookies] = @cookies
       end
