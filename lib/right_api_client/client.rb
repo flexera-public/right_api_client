@@ -147,7 +147,20 @@ module RightApi
 
     # Returns the request headers
     def headers
-      {'X_API_VERSION' => @api_version, 'X_ACCOUNT' => @account_id, :cookies => @cookies, :accept => :json}
+      h = {
+        'X_API_VERSION' => @api_version,
+        'X_ACCOUNT' => @account_id,
+        :cookies => @cookies,
+        :accept => :json,
+      }
+
+      if @access_token
+        h['AUTHORIZATION'] = "Bearer #{@access_token}"
+      elsif @cookies
+        h[:cookies] = @cookies
+      end
+
+      h
     end
 
     def update_last_request(request, response)
