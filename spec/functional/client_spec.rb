@@ -13,6 +13,9 @@ describe RightApi::Client do
         puts e.message
         puts e.backtrace
       end
+
+      # Don't bother to run tests if the client didn't initialize
+      @client.should_not be_nil
     end
 
     it "logs in" do
