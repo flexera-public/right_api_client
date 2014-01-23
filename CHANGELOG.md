@@ -1,7 +1,7 @@
 # CHANGELOG.md
 
 ## 1.5.15
-- \#50 Harden client against spotty networks
+- \#50 Ivory 14 02 acu148161 Harden client against spotty networks
 
 ## 1.5.14
 - \#51 Add type aliases for some Exception subclasses whose name changed; restores interface compatibility with 1.5.9
