@@ -121,7 +121,7 @@ module RightApi
     protected
     # Users shouldn't need to call the following methods directly
 
-    def retry_request(max_attempts = 5)
+    def retry_request(is_read_only = false, max_attempts = 5)
       attempts = 0
       begin
         yield
@@ -131,16 +131,20 @@ module RightApi
         raise e if attempts >= max_attempts
         attempts += 1
         retry
-      # Other Errors:
-      # Errno::ECONNRESET
-      # RestClient::ServerBrokeConnection
-      #   Packetloss related. Not necessarily safe
-      # RestClient::RequestTimeout
-      #   There are two timeouts on the ssl negotiation and data read with different
-      #   times. Unfortunately the standard timeout class is used for both and the 
-      #   exceptions are caught and reraised so you can't distinguish between them.
-      #   Unfortunate since ssl negotiation timeouts should always be retryable
-      #   whereas data may not.
+      rescue Errno::ECONNRESET, RestClient::ServerBrokeConnection, RestClient::RequestTimeout => e
+        #   Packetloss related.
+        #   There are two timeouts on the ssl negotiation and data read with different
+        #   times. Unfortunately the standard timeout class is used for both and the 
+        #   exceptions are caught and reraised so you can't distinguish between them.
+        #   Unfortunate since ssl negotiation timeouts should always be retryable
+        #   whereas data may not.
+        if is_read_only
+          raise e if attempts >= max_attempts
+          attempts += 1
+          retry
+        else
+          raise e
+        end        
       rescue ApiError => e
         if re_login?(e)
           #Session cookie is expired or invalid
@@ -176,7 +180,7 @@ module RightApi
             response.return!(request, result)
           end
         end
-      rescue RestClient::RequestTimeout, OpenSSL::SSL::SSLError, RestClient::ServerBrokeConnection
+      rescue Errno::ECONNRESET, RestClient::RequestTimeout, OpenSSL::SSL::SSLError, RestClient::ServerBrokeConnection
         attempts += 1
         retry if attempts <= 5
         raise
@@ -205,7 +209,7 @@ module RightApi
       req, res, resource_type, body = nil
 
       begin
-        retry_request do 
+        retry_request(true) do 
           # Return content type so the resulting resource object knows what kind of resource it is.
           resource_type, body = @rest_client[path].get(headers) do |response, request, result, &block|
             req, res = request, response
