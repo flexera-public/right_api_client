@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    right_api_client (1.5.13)
+    right_api_client (1.5.14)
       json
       rest-client (~> 1.6)
 
@@ -11,7 +11,7 @@ GEM
     diff-lcs (1.1.3)
     flexmock (0.8.7)
     json (1.8.1)
-    mime-types (1.24)
+    mime-types (1.25.1)
     rake (0.8.7)
     rest-client (1.6.7)
       mime-types (>= 1.16)
