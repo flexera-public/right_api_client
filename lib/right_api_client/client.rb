@@ -360,6 +360,9 @@ module RightApi
     end
 
     def re_login?(e)
+      # cannot successfully re-login with only an access token; we want the
+      # expiration error to be raised.
+      return false if @access_token
       e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid)
     end
 
