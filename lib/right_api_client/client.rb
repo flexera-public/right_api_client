@@ -103,9 +103,9 @@ module RightApi
 
     # Given a path returns a RightApiClient::Resource instance.
     #
-    def resource(path)
+    def resource(path, params={})
 
-      r = Resource.process(self, *do_get(path))
+      r = Resource.process(self, *do_get(path, params))
 
       r.respond_to?(:show) ? r.show : r
     end
