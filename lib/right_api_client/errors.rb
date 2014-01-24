@@ -20,8 +20,8 @@ module RightApi
 
       super(
         prefix +
-        "HTTP Code: #{response.code.to_s}, " +
-        "Response body: #{response.body}")
+        "HTTP Code: #{@response.code.to_s}, " +
+        "Response body: #{@response.body}")
     end
 
     def prefix
