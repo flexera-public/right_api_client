@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    right_api_client (1.5.13)
+    right_api_client (1.5.14)
       json
       rest-client (~> 1.6)
 
@@ -20,7 +20,7 @@ GEM
     json (1.8.1)
     linecache (0.46)
       rbx-require-relative (> 0.0.4)
-    mime-types (1.24)
+    mime-types (1.25.1)
     rake (0.8.7)
     rbx-require-relative (0.0.9)
     rest-client (1.6.7)
