@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    right_api_client (1.5.14)
+    right_api_client (1.5.15)
       json
       rest-client (~> 1.6)
 

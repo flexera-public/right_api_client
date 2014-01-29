@@ -150,7 +150,6 @@ module RightApi
       h = {
         'X-Api-Version' => @api_version,
         'X-Account' => @account_id,
-        :cookies => @cookies,
         :accept => :json,
       }
 
