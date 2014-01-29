@@ -23,10 +23,10 @@ module RightApi
     # permitted parameters for initializing
     AUTH_PARAMS = %w[
       email password_base64 password account_id api_url api_version
-      cookies instance_token
+      cookies instance_token access_token
     ]
 
-    attr_reader :cookies, :instance_token, :last_request
+    attr_reader :cookies, :instance_token, :last_request, :access_token
     attr_accessor :account_id, :api_url
 
     def initialize(args)
@@ -45,10 +45,15 @@ module RightApi
       @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
       @last_request = {}
 
-      # There are three options for login: credentials, instance token,
-      # or if the user already has the cookies they can just use those.
+      # There are four options for login:
+      #  - credentials
+      #  - instance API token
+      #  - existing user-supplied cookies
+      #  - existing user-supplied OAuth access token
+      #
+      # The latter two options are not really login; they imply that the user logged in out of band.
       # See config/login.yml.example for more info.
-      login() unless @cookies
+      login() unless @cookies || @access_token
 
       timestamp_cookies
 
@@ -98,9 +103,9 @@ module RightApi
 
     # Given a path returns a RightApiClient::Resource instance.
     #
-    def resource(path)
+    def resource(path, params={})
 
-      r = Resource.process(self, *do_get(path))
+      r = Resource.process(self, *do_get(path, params))
 
       r.respond_to?(:show) ? r.show : r
     end
@@ -128,7 +133,7 @@ module RightApi
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
-      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
+      response = @rest_client[path].post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
         if response.code == 302
           update_api_url(response)
           response.follow_redirection(request, result, &block)
@@ -142,7 +147,19 @@ module RightApi
 
     # Returns the request headers
     def headers
-      {'X_API_VERSION' => @api_version, 'X_ACCOUNT' => @account_id, :cookies => @cookies, :accept => :json}
+      h = {
+        'X-Api-Version' => @api_version,
+        'X-Account' => @account_id,
+        :accept => :json,
+      }
+
+      if @access_token
+        h['Authorization'] = "Bearer #{@access_token}"
+      elsif @cookies
+        h[:cookies] = @cookies
+      end
+
+      h
     end
 
     def update_last_request(request, response)
@@ -342,6 +359,9 @@ module RightApi
     end
 
     def re_login?(e)
+      # cannot successfully re-login with only an access token; we want the
+      # expiration error to be raised.
+      return false if @access_token
       e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid)
     end
 
