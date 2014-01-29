@@ -6,7 +6,6 @@ require 'base64'
 
 require File.expand_path('../version', __FILE__) unless defined?(RightApi::Client::VERSION)
 require File.expand_path('../helper', __FILE__)
-require File.expand_path('../net_http_patch', __FILE__)
 require File.expand_path('../resource', __FILE__)
 require File.expand_path('../resource_detail', __FILE__)
 require File.expand_path('../resources', __FILE__)
@@ -18,7 +17,8 @@ module RightApi
     include Helper
 
     DEFAULT_OPEN_TIMEOUT = 90
-    DEFAULT_TIMEOUT = 330 # serverside timeout is ~ 5.5 minutes 
+    DEFAULT_TIMEOUT = 330 # serverside timeout is ~ 5.5 minutes
+    DEFAULT_MAX_ATTEMPTS = 5
 
     ROOT_RESOURCE = '/api/session'
     ROOT_INSTANCE_RESOURCE = '/api/session/instance'
@@ -27,10 +27,10 @@ module RightApi
     # permitted parameters for initializing
     AUTH_PARAMS = %w[
       email password_base64 password account_id api_url api_version
-      cookies instance_token timeout open_timeout
+      cookies instance_token timeout open_timeout max_attempts enable_retry
     ]
 
-    attr_reader :cookies, :instance_token, :last_request, :timeout, :open_timeout
+    attr_reader :cookies, :instance_token, :last_request, :timeout, :open_timeout, :max_attempts, :enable_retry
     attr_accessor :account_id, :api_url
 
     def initialize(args)
@@ -38,7 +38,8 @@ module RightApi
       raise 'This API client is only compatible with Ruby 1.8.7 and upwards.' if (RUBY_VERSION < '1.8.7')
 
       @api_url, @api_version = DEFAULT_API_URL, API_VERSION
-      @open_timeout, @timeout = DEFAULT_OPEN_TIMEOUT, DEFAULT_TIMEOUT
+      @open_timeout, @timeout, @max_attempts = DEFAULT_OPEN_TIMEOUT, DEFAULT_TIMEOUT, DEFAULT_MAX_ATTEMPTS
+      @enable_retry = false
 
       # Initializing all instance variables from hash
       args.each { |key,value|
@@ -121,33 +122,35 @@ module RightApi
     protected
     # Users shouldn't need to call the following methods directly
 
-    def retry_request(is_read_only = false, max_attempts = 5)
+    def retry_request(is_read_only = false)
       attempts = 0
       begin
         yield
       rescue OpenSSL::SSL::SSLError => e
-        # These errors pertain to the SSL handshake.  Since no data has been 
-        # exchanged its always safe to rety
-        raise e if attempts >= max_attempts
+        raise e unless @enable_retry
+        # These errors pertain to the SSL handshake.  Since no data has been
+        # exchanged its always safe to retry
+        raise e if attempts >= @max_attempts
         attempts += 1
         retry
       rescue Errno::ECONNRESET, RestClient::ServerBrokeConnection, RestClient::RequestTimeout => e
+        raise e unless @enable_retry
         #   Packetloss related.
         #   There are two timeouts on the ssl negotiation and data read with different
-        #   times. Unfortunately the standard timeout class is used for both and the 
+        #   times. Unfortunately the standard timeout class is used for both and the
         #   exceptions are caught and reraised so you can't distinguish between them.
         #   Unfortunate since ssl negotiation timeouts should always be retryable
         #   whereas data may not.
         if is_read_only
-          raise e if attempts >= max_attempts
+          raise e if attempts >= @max_attempts
           attempts += 1
           retry
         else
           raise e
-        end        
+        end
       rescue ApiError => e
         if re_login?(e)
-          #Session cookie is expired or invalid
+          # Session cookie is expired or invalid
           login()
           retry
         else
@@ -181,8 +184,9 @@ module RightApi
           end
         end
       rescue Errno::ECONNRESET, RestClient::RequestTimeout, OpenSSL::SSL::SSLError, RestClient::ServerBrokeConnection
+        raise unless @enable_retry
         attempts += 1
-        retry if attempts <= 5
+        retry if attempts <= @max_attempts
         raise
       end
 
@@ -209,7 +213,7 @@ module RightApi
       req, res, resource_type, body = nil
 
       begin
-        retry_request(true) do 
+        retry_request(true) do
           # Return content type so the resulting resource object knows what kind of resource it is.
           resource_type, body = @rest_client[path].get(headers) do |response, request, result, &block|
             req, res = request, response
@@ -256,8 +260,8 @@ module RightApi
 
       req, res, resource_type, body = nil
 
-      begin 
-        retry_request do 
+      begin
+        retry_request do
           @rest_client[path].post(params, headers) do |response, request, result|
             req, res = request, response
             update_cookies(response)
@@ -311,8 +315,8 @@ module RightApi
 
       req, res, resource_type, body = nil
 
-      begin 
-        retry_request do 
+      begin
+        retry_request do
           @rest_client[path].delete(headers) do |response, request, result|
             req, res = request, response
             update_cookies(response)
@@ -343,8 +347,8 @@ module RightApi
 
       req, res, resource_type, body = nil
 
-      begin 
-        retry_request do 
+      begin
+        retry_request do
           @rest_client[path].put(params, headers) do |response, request, result|
             req, res = request, response
             update_cookies(response)
