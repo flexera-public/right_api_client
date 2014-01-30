@@ -185,9 +185,9 @@ module RightApi
         end
       rescue Errno::ECONNRESET, RestClient::RequestTimeout, OpenSSL::SSL::SSLError, RestClient::ServerBrokeConnection
         raise unless @enable_retry
+        raise if attempts >= @max_attempts
         attempts += 1
-        retry if attempts <= @max_attempts
-        raise
+        retry
       end
 
       update_cookies(response)
