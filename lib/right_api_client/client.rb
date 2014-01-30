@@ -16,8 +16,8 @@ module RightApi
   class Client
     include Helper
 
-    DEFAULT_OPEN_TIMEOUT = 90
-    DEFAULT_TIMEOUT = 330 # serverside timeout is ~ 5.5 minutes
+    DEFAULT_OPEN_TIMEOUT = -1
+    DEFAULT_TIMEOUT = -1
     DEFAULT_MAX_ATTEMPTS = 5
 
     ROOT_RESOURCE = '/api/session'
