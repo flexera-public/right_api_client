@@ -16,7 +16,7 @@ module RightApi
   class Client
     include Helper
 
-    DEFAULT_OPEN_TIMEOUT = -1
+    DEFAULT_OPEN_TIMEOUT = nil
     DEFAULT_TIMEOUT = -1
     DEFAULT_MAX_ATTEMPTS = 5
 
