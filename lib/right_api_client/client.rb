@@ -16,6 +16,10 @@ module RightApi
   class Client
     include Helper
 
+    DEFAULT_OPEN_TIMEOUT = -1
+    DEFAULT_TIMEOUT = -1
+    DEFAULT_MAX_ATTEMPTS = 5
+
     ROOT_RESOURCE = '/api/session'
     ROOT_INSTANCE_RESOURCE = '/api/session/instance'
     DEFAULT_API_URL = 'https://my.rightscale.com'
@@ -23,10 +27,10 @@ module RightApi
     # permitted parameters for initializing
     AUTH_PARAMS = %w[
       email password_base64 password account_id api_url api_version
-      cookies instance_token
+      cookies instance_token timeout open_timeout max_attempts enable_retry
     ]
 
-    attr_reader :cookies, :instance_token, :last_request
+    attr_reader :cookies, :instance_token, :last_request, :timeout, :open_timeout, :max_attempts, :enable_retry
     attr_accessor :account_id, :api_url
 
     def initialize(args)
@@ -34,6 +38,8 @@ module RightApi
       raise 'This API client is only compatible with Ruby 1.8.7 and upwards.' if (RUBY_VERSION < '1.8.7')
 
       @api_url, @api_version = DEFAULT_API_URL, API_VERSION
+      @open_timeout, @timeout, @max_attempts = DEFAULT_OPEN_TIMEOUT, DEFAULT_TIMEOUT, DEFAULT_MAX_ATTEMPTS
+      @enable_retry = false
 
       # Initializing all instance variables from hash
       args.each { |key,value|
@@ -42,7 +48,7 @@ module RightApi
 
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
 
-      @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
+      @rest_client = RestClient::Resource.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout)
       @last_request = {}
 
       # There are three options for login: credentials, instance token,
@@ -114,6 +120,44 @@ module RightApi
     end
 
     protected
+    # Users shouldn't need to call the following methods directly
+
+    def retry_request(is_read_only = false)
+      attempts = 0
+      begin
+        yield
+      rescue OpenSSL::SSL::SSLError => e
+        raise e unless @enable_retry
+        # These errors pertain to the SSL handshake.  Since no data has been
+        # exchanged its always safe to retry
+        raise e if attempts >= @max_attempts
+        attempts += 1
+        retry
+      rescue Errno::ECONNRESET, RestClient::ServerBrokeConnection, RestClient::RequestTimeout => e
+        raise e unless @enable_retry
+        #   Packetloss related.
+        #   There are two timeouts on the ssl negotiation and data read with different
+        #   times. Unfortunately the standard timeout class is used for both and the
+        #   exceptions are caught and reraised so you can't distinguish between them.
+        #   Unfortunate since ssl negotiation timeouts should always be retryable
+        #   whereas data may not.
+        if is_read_only
+          raise e if attempts >= @max_attempts
+          attempts += 1
+          retry
+        else
+          raise e
+        end
+      rescue ApiError => e
+        if re_login?(e)
+          # Session cookie is expired or invalid
+          login()
+          retry
+        else
+          raise e
+        end
+      end
+    end
 
     def login
       params, path = if @instance_token
@@ -128,13 +172,22 @@ module RightApi
       end
       params['account_href'] = "/api/accounts/#{@account_id}"
 
-      response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
-        if response.code == 302
-          update_api_url(response)
-          response.follow_redirection(request, result, &block)
-        else
-          response.return!(request, result)
+      response = nil
+      attempts = 0
+      begin
+        response = @rest_client[path].post(params, 'X_API_VERSION' => @api_version) do |response, request, result, &block|
+          if response.code == 302
+            update_api_url(response)
+            response.follow_redirection(request, result, &block)
+          else
+            response.return!(request, result)
+          end
         end
+      rescue Errno::ECONNRESET, RestClient::RequestTimeout, OpenSSL::SSL::SSLError, RestClient::ServerBrokeConnection
+        raise unless @enable_retry
+        raise if attempts >= @max_attempts
+        attempts += 1
+        retry
       end
 
       update_cookies(response)
@@ -157,42 +210,36 @@ module RightApi
       # Resource id is a special param as it needs to be added to the path
       path = add_id_and_params_to_path(path, params)
 
-      req, res = nil
+      req, res, resource_type, body = nil
 
       begin
-        # Return content type so the resulting resource object knows what kind of resource it is.
-        resource_type, body = @rest_client[path].get(headers) do |response, request, result, &block|
-          req, res = request, response
-          update_cookies(response)
-          update_last_request(request, response)
+        retry_request(true) do
+          # Return content type so the resulting resource object knows what kind of resource it is.
+          resource_type, body = @rest_client[path].get(headers) do |response, request, result, &block|
+            req, res = request, response
+            update_cookies(response)
+            update_last_request(request, response)
 
-          case response.code
-          when 200
-            # Get the resource_type from the content_type, the resource_type
-            # will be used later to add relevant methods to relevant resources
-            type = if result.content_type.index('rightscale')
-              get_resource_type(result.content_type)
+            case response.code
+            when 200
+              # Get the resource_type from the content_type, the resource_type
+              # will be used later to add relevant methods to relevant resources
+              type = if result.content_type.index('rightscale')
+                get_resource_type(result.content_type)
+              else
+                ''
+              end
+
+              [type, response.body]
+            when 301, 302
+              update_api_url(response)
+              response.follow_redirection(request, result, &block)
+            when 404
+              raise UnknownRouteError.new(request, response)
             else
-              ''
+              raise ApiError.new(request, response)
             end
-
-            [type, response.body]
-          when 301, 302
-            update_api_url(response)
-            response.follow_redirection(request, result, &block)
-          when 404
-            raise UnknownRouteError.new(request, response)
-          else
-            raise ApiError.new(request, response)
           end
-        end
-      rescue ApiError => e
-        if re_login?(e)
-          # session cookie is expired or invalid
-          login()
-          retry
-        else
-          raise wrap(e, :get, path, params, req, res)
         end
       rescue => e
         raise wrap(e, :get, path, params, req, res)
@@ -211,58 +258,52 @@ module RightApi
     def do_post(path, params={})
       params = fix_array_of_hashes(params)
 
-      req, res = nil
+      req, res, resource_type, body = nil
 
       begin
-        @rest_client[path].post(params, headers) do |response, request, result|
-          req, res = request, response
-          update_cookies(response)
-          update_last_request(request, response)
+        retry_request do
+          @rest_client[path].post(params, headers) do |response, request, result|
+            req, res = request, response
+            update_cookies(response)
+            update_last_request(request, response)
 
-          case response.code
-          when 201, 202
-            # Create and return the resource
-            href = response.headers[:location]
-            relative_href = href.split(@api_url)[-1]
-            # Return the resource that was just created
-            # Determine the resource_type from the href (eg. api/clouds/id).
-            # This is based on the assumption that we can determine the resource_type without doing a do_get
-            resource_type = get_singular(relative_href.split('/')[-2])
-            RightApi::Resource.process(self, resource_type, relative_href)
-          when 204
-            nil
-          when 200..299
-            # This is needed for the tags Resource -- which returns a 200 and has a content type
-            # therefore, ResourceDetail objects needs to be returned
-            if response.code == 200 && response.headers[:content_type].index('rightscale')
-              resource_type = get_resource_type(response.headers[:content_type])
-              data = JSON.parse(response)
-              # Resource_tag is returned after querying tags.by_resource or tags.by_tags.
-              # You cannot do a show on a resource_tag, but that is basically what we want to do
-              data.map { |obj|
-                RightApi::ResourceDetail.new(self, resource_type, path, obj)
-              }
+            case response.code
+            when 201, 202
+              # Create and return the resource
+              href = response.headers[:location]
+              relative_href = href.split(@api_url)[-1]
+              # Return the resource that was just created
+              # Determine the resource_type from the href (eg. api/clouds/id).
+              # This is based on the assumption that we can determine the resource_type without doing a do_get
+              resource_type = get_singular(relative_href.split('/')[-2])
+              RightApi::Resource.process(self, resource_type, relative_href)
+            when 204
+              nil
+            when 200..299
+              # This is needed for the tags Resource -- which returns a 200 and has a content type
+              # therefore, ResourceDetail objects needs to be returned
+              if response.code == 200 && response.headers[:content_type].index('rightscale')
+                resource_type = get_resource_type(response.headers[:content_type])
+                data = JSON.parse(response)
+                # Resource_tag is returned after querying tags.by_resource or tags.by_tags.
+                # You cannot do a show on a resource_tag, but that is basically what we want to do
+                data.map { |obj|
+                  RightApi::ResourceDetail.new(self, resource_type, path, obj)
+                }
+              else
+                response.return!(request, result)
+              end
+            when 301, 302
+              update_api_url(response)
+              do_post(path, params)
+            when 404
+              raise UnknownRouteError.new(request, response)
             else
-              response.return!(request, result)
+              raise ApiError.new(request, response)
             end
-          when 301, 302
-            update_api_url(response)
-            do_post(path, params)
-          when 404
-            raise UnknownRouteError.new(request, response)
-          else
-            raise ApiError.new(request, response)
           end
         end
-
       rescue ApiError => e
-        if re_login?(e)
-          login()
-          retry
-        else
-          raise wrap(e, :post, path, params, req, res)
-        end
-      rescue => e
         raise wrap(e, :post, path, params, req, res)
       end
     end
@@ -272,33 +313,28 @@ module RightApi
       # Resource id is a special param as it needs to be added to the path
       path = add_id_and_params_to_path(path, params)
 
-      req, res = nil
+      req, res, resource_type, body = nil
 
       begin
-        @rest_client[path].delete(headers) do |response, request, result|
-          req, res = request, response
-          update_cookies(response)
-          update_last_request(request, response)
+        retry_request do
+          @rest_client[path].delete(headers) do |response, request, result|
+            req, res = request, response
+            update_cookies(response)
+            update_last_request(request, response)
 
-          case response.code
-          when 200
-          when 204
-            nil
-          when 301, 302
-            update_api_url(response)
-            do_delete(path, params)
-          when 404
-            raise UnknownRouteError.new(request, response)
-          else
-            raise ApiError.new(request, response)
+            case response.code
+            when 200
+            when 204
+              nil
+            when 301, 302
+              update_api_url(response)
+              do_delete(path, params)
+            when 404
+              raise UnknownRouteError.new(request, response)
+            else
+              raise ApiError.new(request, response)
+            end
           end
-        end
-      rescue ApiError => e
-        if re_login?(e)
-          login()
-          retry
-        else
-          raise wrap(e, :delete, path, params, req, res)
         end
       rescue => e
         raise wrap(e, :delete, path, params, req, res)
@@ -309,32 +345,27 @@ module RightApi
     def do_put(path, params={})
       params = fix_array_of_hashes(params)
 
-      req, res = nil
+      req, res, resource_type, body = nil
 
       begin
-        @rest_client[path].put(params, headers) do |response, request, result|
-          req, res = request, response
-          update_cookies(response)
-          update_last_request(request, response)
+        retry_request do
+          @rest_client[path].put(params, headers) do |response, request, result|
+            req, res = request, response
+            update_cookies(response)
+            update_last_request(request, response)
 
-          case response.code
-          when 204
-            nil
-          when 301, 302
-            update_api_url(response)
-            do_put(path, params)
-          when 404
-            raise UnknownRouteError.new(request, response)
-          else
-            raise ApiError.new(request, response)
+            case response.code
+            when 204
+              nil
+            when 301, 302
+              update_api_url(response)
+              do_put(path, params)
+            when 404
+              raise UnknownRouteError.new(request, response)
+            else
+              raise ApiError.new(request, response)
+            end
           end
-        end
-      rescue ApiError => e
-        if re_login?(e)
-          login()
-          retry
-        else
-          raise wrap(e, :put, path, params, req, res)
         end
       rescue => e
         raise wrap(e, :put, path, params, req, res)

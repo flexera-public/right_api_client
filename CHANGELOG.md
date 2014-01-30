@@ -1,7 +1,11 @@
 # CHANGELOG.md
 
+## 1.5.15
+- \#50 Ivory 14 02 acu148161 Harden client against spotty networks
+
 ## 1.5.14
 - \#51 Add type aliases for some Exception subclasses whose name changed; restores interface compatibility with 1.5.9
+
 ## 1.5.13
 - \#44 Charcoal 13 18 account id in header acu103549
 - \#42 Salmon 13 17 acu135785 add current url
