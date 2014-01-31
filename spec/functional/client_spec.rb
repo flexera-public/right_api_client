@@ -13,6 +13,9 @@ describe RightApi::Client do
         puts e.message
         puts e.backtrace
       end
+
+      # Don't bother to run tests if the client didn't initialize
+      @client.should_not be_nil
     end
 
     it "logs in" do
@@ -35,6 +38,20 @@ describe RightApi::Client do
       my_hash[:cookies] = @client.cookies
       client1 = RightApi::Client.new(my_hash)
       client1.cookies.should == @client.cookies
+    end
+
+    it "accepts an access_token argument when creating a new client" do
+      my_hash = YAML.load_file(File.expand_path(@creds, __FILE__))
+      my_hash.delete(:email)
+      my_hash.delete(:password)
+      my_hash.delete(:cookies)
+
+      access_token = @client.cookies.detect { |k, _| k =~ /^rs_gbl/ }.last
+      access_token.should_not be_nil
+      my_hash[:access_token] = access_token
+
+      client1 = RightApi::Client.new(my_hash)
+      client1.access_token.should == access_token
     end
 
     it "timestamps cookies" do
