@@ -301,7 +301,7 @@ module RightApi
               # therefore, ResourceDetail objects needs to be returned
               if response.code == 200 && response.headers[:content_type].index('rightscale')
                 resource_type = get_resource_type(response.headers[:content_type])
-                data = JSON.parse(response)
+                data = JSON.parse(response, :allow_nan => true)
                 # Resource_tag is returned after querying tags.by_resource or tags.by_tags.
                 # You cannot do a show on a resource_tag, but that is basically what we want to do
                 data.map { |obj|
