@@ -6,7 +6,7 @@ module RightApi
   class Resources
     include Helper
 
-    attr_reader :client, :path
+    attr_reader :client, :path, :resource_type
     def inspect
       "#<#{self.class.name} " +
       "resource_type=\"#{@resource_type}\">"
