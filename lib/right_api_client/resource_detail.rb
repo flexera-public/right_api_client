@@ -77,7 +77,10 @@ module RightApi
                 # future we might like to extract resource_type from child_href
                 # and not hard-code it.
                 if child_href.index('instance')
-                  define_instance_method(k) { RightApi::Resource.process(client, 'instance', child_href, v) }
+                  define_instance_method(k) do |*args|
+                    path = add_id_and_params_to_path(child_href, *args)
+                    RightApi::Resource.process(client, 'instance', path, v)
+                  end
                 end
               end
             end
