@@ -3,7 +3,7 @@ module RightApi
   # This class dynamically adds methods and properties to instances depending on what type of resource they are.
   class Resource
     include Helper
-    attr_reader :client, :href
+    attr_reader :client, :href, :resource_type
 
     # Will create a (or an array of) new Resource object(s)
     # All parameters are treated as read only
