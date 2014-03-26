@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 1.5.16
+- \#57 Sapphire added optional support for querying a (detailed) resource with params, example: client.resource(href, :view => 'full')
+
 ## 1.5.15
 - \#50 Ivory 14 02 acu148161 Harden client against spotty networks
 
