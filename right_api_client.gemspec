@@ -10,6 +10,7 @@ Gem::Specification.new do |s|
   s.email            = [ 'rubygems@rightscale.com' ]
   s.homepage         = 'https://github.com/rightscale/right_api_client'
   s.summary          = 'RightScale MultiCloud API HTTP Client'
+  s.license          = 'MIT'
   s.description      = %{
 The right_api_client gem simplifies the use of RightScale's MultiCloud API.
 It provides a simple object model of the API resources, and handles all of the
