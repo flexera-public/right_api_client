@@ -20,7 +20,7 @@ fine details involved in making HTTP calls and translating their responses.
   s.test_files       = `git ls-files spec config`.split(' ')
   s.rubygems_version = '1.3.7'
 
-  s.add_runtime_dependency 'json'
+  s.add_runtime_dependency 'json',             '~> 1.0'
   s.add_runtime_dependency 'mime-types',       '~> 1.0'
   s.add_runtime_dependency 'rest-client',      '~> 1.6'
 
@@ -28,5 +28,5 @@ fine details involved in making HTTP calls and translating their responses.
   s.add_development_dependency 'rspec',        '2.9.0'
   s.add_development_dependency 'flexmock',     '0.8.7'
   s.add_development_dependency 'simplecov',    '0.4.2'
-  s.add_development_dependency 'bundler'
+  s.add_development_dependency 'bundler',      '~> 1.0'
 end

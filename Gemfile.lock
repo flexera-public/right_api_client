@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     right_api_client (1.5.16)
-      json
+      json (~> 1.0)
       mime-types (~> 1.0)
       rest-client (~> 1.6)
 
@@ -47,7 +47,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler
+  bundler (~> 1.0)
   debugger
   flexmock (= 0.8.7)
   rake (= 0.8.7)
