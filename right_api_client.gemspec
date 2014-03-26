@@ -20,6 +20,7 @@ fine details involved in making HTTP calls and translating their responses.
   s.rubygems_version = '1.3.7'
 
   s.add_runtime_dependency 'json'
+  s.add_runtime_dependency 'mime-types',       '~> 1.0'
   s.add_runtime_dependency 'rest-client',      '~> 1.6'
 
   s.add_development_dependency 'rake',         '0.8.7'
