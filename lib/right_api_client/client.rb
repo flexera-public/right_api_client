@@ -27,7 +27,8 @@ module RightApi
     # permitted parameters for initializing
     AUTH_PARAMS = %w[
       email password_base64 password account_id api_url api_version
-      cookies instance_token access_token timeout open_timeout max_attempts enable_retry
+      cookies instance_token access_token timeout open_timeout max_attempts
+      enable_retry rest_client_class
     ]
 
     attr_reader :cookies, :instance_token, :access_token, :last_request, :timeout, :open_timeout, :max_attempts, :enable_retry
@@ -48,7 +49,9 @@ module RightApi
 
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
 
-      @rest_client = RestClient::Resource.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout)
+      # allow a custom resource-style REST client (for special logging, etc.)
+      @rest_client_class ||= ::RestClient::Resource
+      @rest_client = @rest_client_class.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout)
       @last_request = {}
 
       # There are four options for login:
@@ -110,9 +113,12 @@ module RightApi
     # Given a path returns a RightApiClient::Resource instance.
     #
     def resource(path, params={})
+      r = Resource.process_detailed(self, *do_get(path, params))
 
-      r = Resource.process(self, *do_get(path, params))
-
+      # note that process_detailed will make a best-effort to return an already
+      # detailed resource or array of detailed resources but there may still be
+      # legacy cases where #show is still needed. calling #show on an already
+      # detailed resource is a no-op.
       r.respond_to?(:show) ? r.show : r
     end
 
