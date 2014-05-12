@@ -20,6 +20,27 @@ module RightApi
       end
     end
 
+    # Data may already be 'detailed' (i.e. has a self-href) so avoid returning
+    # an undetailed resource in that case. this is because calling #show on
+    # the undetailed resource would generate a redundant call to
+    #   client#do_get(...)
+    #
+    # FIX: this logic should probably be the behavior of the Resource.process()
+    # method but we are not willing to change legacy behavior for RightAPI v1.5.
+    # the RightAPI v1.6+ client should only use this logic going forward.
+    def self.process_detailed(client, resource_type, path, data={})
+      if data.kind_of?(Array)
+        process(client, resource_type, path, data)
+      else
+        if obj_href = client.get_href_from_links(data["links"])
+          ResourceDetail.new(client, resource_type, obj_href, data)
+        else
+          # no self-href means make an undetailed resource (legacy behavior).
+          process(client, resource_type, path, data)
+        end
+      end
+    end
+
     def inspect
       "#<#{self.class.name} " +
       "resource_type=\"#{@resource_type}\"" +
