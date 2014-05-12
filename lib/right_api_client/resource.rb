@@ -22,7 +22,7 @@ module RightApi
 
     # Data may already be 'detailed' (i.e. has a self-href) so avoid returning
     # an undetailed resource in that case. this is because calling #show on
-    # the undetailed resource would generate an redundant call to
+    # the undetailed resource would generate a redundant call to
     #   client#do_get(...)
     #
     # FIX: this logic should probably be the behavior of the Resource.process()

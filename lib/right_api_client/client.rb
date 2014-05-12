@@ -465,7 +465,12 @@ module RightApi
       # Update the rest client url if we are redirected to another endpoint
       uri = URI.parse(response.headers[:location])
       @api_url = "#{uri.scheme}://#{uri.host}"
-      @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
+
+      # note that the legacy code did not use the proper timeout values upon
+      # redirect (i.e. always set :timeout => -1) but that seems like an
+      # oversight; always use configured timeout values regardless of redirect.
+      @rest_client = @rest_client_class.new(
+        @api_url, :open_timeout => @open_timeout, :timeout => @timeout)
     end
   end
 end
