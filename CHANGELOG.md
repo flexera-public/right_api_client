@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 1.5.17
+ - \#61 Fix for REST client timeouts changing on redirect.
+ - \#61 Also added rest_client_class initializer parameter so that activity_service can use a different REST client implementation with better logging.
+
 ## 1.5.16
 - \#57 Sapphire added optional support for querying a (detailed) resource with params, example: client.resource(href, :view => 'full')
 
