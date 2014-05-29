@@ -57,7 +57,6 @@ module RightApi
     # Any other method other than standard actions (create, index)
     # is simply appended to the href and called with a POST.
     def method_missing(m, *args)
-      puts "calling method #{m}"
       # note that 'href' method is not defined on this class; use 'path' instead.
       client.send(:do_post, [ path, m.to_s ].join('/'), *args)
     end
