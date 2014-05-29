@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 1.5.18
+ - \#62 Implement to_ary in Resource class to avoid method_missing transforming it into a post call
+   (for example, when doing something like 'puts @client.clouds' in Ruby 1.9+)
+
 ## 1.5.17
  - \#61 Fix for REST client timeouts changing on redirect.
  - \#61 Also added rest_client_class initializer parameter to enable using different REST client implementations with better logging.
