@@ -10,6 +10,7 @@ require File.expand_path('../resource', __FILE__)
 require File.expand_path('../resource_detail', __FILE__)
 require File.expand_path('../resources', __FILE__)
 require File.expand_path('../errors', __FILE__)
+require File.expand_path('../exceptions', __FILE__)
 
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
