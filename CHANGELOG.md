@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 1.5.19
+ - \#38 Specify `:allow_nan => true` in calls to `JSON.parse` so we don't choke on NAN values.
+ - \#60 Make exception [namespace change](https://github.com/rightscale/right_api_client/commit/84f477907eef0a583ee5bec0ee5336309d933c75) fully backwards compatible.
+
 ## 1.5.18
  - \#62 Implement to_ary in Resource class to avoid method_missing transforming it into a post call
    (for example, when doing something like 'puts @client.clouds' in Ruby 1.9+)
