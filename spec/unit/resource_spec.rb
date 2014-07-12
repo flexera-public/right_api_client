@@ -1,6 +1,6 @@
 require File.expand_path('../../spec_helper', __FILE__)
 
-describe RightApi::Resource do
+describe RightApi::Resource, :unit=>true do
   context "given a logged in RightScale user" do
     before(:each) do
       given_user_facing_client

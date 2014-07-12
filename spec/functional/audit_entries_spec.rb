@@ -1,6 +1,6 @@
 require File.expand_path('../../spec_helper', __FILE__)
 
-describe RightApi::Client do
+describe RightApi::Client, :functional=>true do
 
   before(:all) do
 

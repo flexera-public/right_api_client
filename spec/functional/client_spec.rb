@@ -1,6 +1,6 @@
 require File.expand_path('../../spec_helper', __FILE__)
 
-describe RightApi::Client do
+describe RightApi::Client, :functional=>true do
 
   context "given a valid set of credentials in the config/login.yml file" do
 
