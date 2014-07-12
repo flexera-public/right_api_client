@@ -25,6 +25,7 @@ fine details involved in making HTTP calls and translating their responses.
 
   # Keep the gem nice and svelte
   gem.files.exclude 'config'
+  gem.files.exclude 'cookies'
   gem.files.exclude 'spec'
 end
 

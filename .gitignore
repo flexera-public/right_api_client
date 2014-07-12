@@ -1,6 +1,7 @@
 .DS_Store
 nbproject
 *login.yml
+cookies
 .loadpath
 .project
 .rvmrc
