@@ -48,8 +48,11 @@ describe RightApi::Client, :functional=>true do
 
       access_token = @client.cookies.detect { |k, _| k =~ /^rs_gbl/ }.last
       access_token.should_not be_nil
-      my_hash[:access_token] = access_token
 
+      # Transform %3D back into =
+      access_token = CGI.unescape(access_token)
+
+      my_hash[:access_token] = access_token
       client1 = RightApi::Client.new(my_hash)
       client1.access_token.should == access_token
     end

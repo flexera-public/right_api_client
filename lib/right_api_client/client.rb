@@ -10,6 +10,7 @@ require File.expand_path('../resource', __FILE__)
 require File.expand_path('../resource_detail', __FILE__)
 require File.expand_path('../resources', __FILE__)
 require File.expand_path('../errors', __FILE__)
+require File.expand_path('../exceptions', __FILE__)
 
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
@@ -27,7 +28,8 @@ module RightApi
     # permitted parameters for initializing
     AUTH_PARAMS = %w[
       email password_base64 password account_id api_url api_version
-      cookies instance_token access_token timeout open_timeout max_attempts enable_retry
+      cookies instance_token access_token timeout open_timeout max_attempts
+      enable_retry rest_client_class
     ]
 
     attr_reader :cookies, :instance_token, :access_token, :last_request, :timeout, :open_timeout, :max_attempts, :enable_retry
@@ -48,7 +50,9 @@ module RightApi
 
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
 
-      @rest_client = RestClient::Resource.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout)
+      # allow a custom resource-style REST client (for special logging, etc.)
+      @rest_client_class ||= ::RestClient::Resource
+      @rest_client = @rest_client_class.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout)
       @last_request = {}
 
       # There are four options for login:
@@ -110,9 +114,12 @@ module RightApi
     # Given a path returns a RightApiClient::Resource instance.
     #
     def resource(path, params={})
+      r = Resource.process_detailed(self, *do_get(path, params))
 
-      r = Resource.process(self, *do_get(path, params))
-
+      # note that process_detailed will make a best-effort to return an already
+      # detailed resource or array of detailed resources but there may still be
+      # legacy cases where #show is still needed. calling #show on an already
+      # detailed resource is a no-op.
       r.respond_to?(:show) ? r.show : r
     end
 
@@ -265,7 +272,7 @@ module RightApi
       data = if resource_type == 'text'
         { 'text' => body }
       else
-        JSON.parse(body)
+        JSON.parse(body, :allow_nan => true)
       end
 
       [resource_type, path, data]
@@ -301,7 +308,7 @@ module RightApi
               # therefore, ResourceDetail objects needs to be returned
               if response.code == 200 && response.headers[:content_type].index('rightscale')
                 resource_type = get_resource_type(response.headers[:content_type])
-                data = JSON.parse(response)
+                data = JSON.parse(response, :allow_nan => true)
                 # Resource_tag is returned after querying tags.by_resource or tags.by_tags.
                 # You cannot do a show on a resource_tag, but that is basically what we want to do
                 data.map { |obj|
@@ -459,7 +466,12 @@ module RightApi
       # Update the rest client url if we are redirected to another endpoint
       uri = URI.parse(response.headers[:location])
       @api_url = "#{uri.scheme}://#{uri.host}"
-      @rest_client = RestClient::Resource.new(@api_url, :timeout => -1)
+
+      # note that the legacy code did not use the proper timeout values upon
+      # redirect (i.e. always set :timeout => -1) but that seems like an
+      # oversight; always use configured timeout values regardless of redirect.
+      @rest_client = @rest_client_class.new(
+        @api_url, :open_timeout => @open_timeout, :timeout => @timeout)
     end
   end
 end

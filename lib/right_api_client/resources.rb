@@ -48,6 +48,12 @@ module RightApi
       end if Helper::RESOURCE_SPECIAL_ACTIONS[resource_type]
     end
 
+    # Catch to_ary in cases like 'puts @client.<resources>' so it doesn't go into method_missing
+    def to_ary
+      ["#<#{self.class.name} ", 
+      "resource_type=\"#{@resource_type}\">"]
+    end
+
     # Any other method other than standard actions (create, index)
     # is simply appended to the href and called with a POST.
     def method_missing(m, *args)
