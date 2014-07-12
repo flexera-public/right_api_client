@@ -16,6 +16,7 @@ end
 
 # Gems used during test and development that should be OMITTED from the gemspec
 group :test do
+  gem 'right_api_client', :path=>File.dirname(__FILE__)
   gem 'ruby-debug',
       :platforms => [:ruby_18]
   gem 'debugger',

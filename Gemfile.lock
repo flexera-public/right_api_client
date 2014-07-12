@@ -1,3 +1,11 @@
+PATH
+  remote: .
+  specs:
+    right_api_client (1.5.17)
+      json (~> 1.0)
+      mime-types (~> 1.0)
+      rest-client (~> 1.6)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -84,6 +92,7 @@ DEPENDENCIES
   mime-types (~> 1.0)
   rake (= 0.8.7)
   rest-client (~> 1.6)
+  right_api_client!
   rspec (= 2.9.0)
   ruby-debug
   simplecov (= 0.4.2)
