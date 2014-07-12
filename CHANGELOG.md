@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## Next
+ - \#64 Jewelerize the project to make maintenance easier.
+
 ## 1.5.19
  - \#38 Specify `:allow_nan => true` in calls to `JSON.parse` so we don't choke on NAN values.
  - \#60 Make exception [namespace change](https://github.com/rightscale/right_api_client/commit/84f477907eef0a583ee5bec0ee5336309d933c75) fully backwards compatible.
