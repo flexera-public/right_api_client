@@ -1,12 +1,11 @@
-
 require 'pp'
 require 'yaml'
 
-require File.expand_path('../../lib/right_api_client', __FILE__)
+$: << File.expand_path('../../lib', __FILE__)
 
+require 'right_api_client'
 
 RSpec.configure do |config|
-
   #
   # include helpers
 
@@ -21,4 +20,3 @@ RSpec.configure do |config|
 
   config.mock_with :flexmock
 end
-
