@@ -1,7 +1,7 @@
 require File.expand_path('../../spec_helper', __FILE__)
 include RightApi::Helper
 
-describe RightApi::Helper do
+describe RightApi::Helper, :unit=>true do
 
   API_MEDIA_TYPES = %w{audit_entry ip_address process server}
 
