@@ -16,14 +16,17 @@ describe RightApi::Client, :functional=>true do
       puts "=" * 80
     end
 
-    server_arrays =
-      @client.server_arrays.index
+    unless @client.nil?
+      server_arrays =
+        @client.server_arrays.index
 
-    @server_array =
-      server_arrays.find { |sa| sa.name.match(/test/i) } ||
-      server_arrays.first
+      @server_array =
+        server_arrays.find { |sa| sa.name.match(/test/i) } ||
+        server_arrays.first
+    end
 
-    raise "sorry, can't test, no server arrays in your RS" unless @server_array
+  #  Commented while we dont execute credential tests
+  #  raise "sorry, can't test, no server arrays in your RS" unless @server_array
   end
 
   describe '#audit_entries' do
@@ -31,6 +34,7 @@ describe RightApi::Client, :functional=>true do
     describe '#create' do
 
       it 'creates audit entries' do
+        pending("Not running tests based on credentials")
 
         ae = @client.audit_entries.create(:audit_entry => {
           'auditee_href' => @server_array.href,
@@ -49,6 +53,7 @@ describe RightApi::Client, :functional=>true do
     describe '#detail' do
 
       it 'returns the detail plain text' do
+        pending("Not running tests based on credentials")
 
         ae = @client.audit_entries.create(:audit_entry => {
           'auditee_href' => @server_array.href,
