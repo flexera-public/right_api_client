@@ -5,5 +5,5 @@ rvm:
   - 2.0.0
   - 2.1.0
 script: 
-  - RACK_ENV=test bundle exec rspec spec/unit
+  - RACK_ENV=test bundle exec rspec spec
 bundler_args: --without test
