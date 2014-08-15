@@ -6,4 +6,4 @@ rvm:
   - 2.1.0
 script: 
   - RACK_ENV=test bundle exec rspec spec/unit
-bundler_args: --without development nocitest
+bundler_args: --without development test

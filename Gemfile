@@ -15,8 +15,7 @@ group :development do
 end
 
 # Gems used during test and development that should be OMITTED from the gemspec
-# group 'nocitest' omitted at ci tests
-group :test, :nocitest do
+group :test do
   gem 'ruby-debug',
       :platforms => [:ruby_18]
   gem 'debugger',
