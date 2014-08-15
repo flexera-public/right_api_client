@@ -1,6 +1,7 @@
 # CHANGELOG.md
 
 ## Next
+ - \#66 Add [TravisCI support](https://travis-ci.org/rightscale/right_api_client).
  - \#64 Jewelerize the project to make maintenance easier.
 
 ## 1.5.19
