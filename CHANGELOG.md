@@ -2,6 +2,7 @@
 
 ## Next
  - \#66 Add [TravisCI support](https://travis-ci.org/rightscale/right_api_client).
+ - \#65 Set client DEFAULT_TIMEOUT to nil to quiet "please set timeout to nil instead of -1" warning in rest_client.
  - \#64 Jewelerize the project to make maintenance easier.
 
 ## 1.5.19
