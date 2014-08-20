@@ -17,7 +17,6 @@ Gem::Specification.new do |s|
     "README.md"
   ]
   s.files = [
-    ".rspec",
     ".travis.yml",
     "CHANGELOG.md",
     "Gemfile",
@@ -26,7 +25,6 @@ Gem::Specification.new do |s|
     "README.md",
     "Rakefile",
     "VERSION",
-    "config/login.yml.example",
     "lib/right_api_client.rb",
     "lib/right_api_client/client.rb",
     "lib/right_api_client/errors.rb",
@@ -37,17 +35,7 @@ Gem::Specification.new do |s|
     "lib/right_api_client/resources.rb",
     "lib/right_api_client/version.rb",
     "login_to_client_irb.rb",
-    "right_api_client.gemspec",
-    "right_api_client.rconf",
-    "spec/functional/audit_entries_spec.rb",
-    "spec/functional/client_spec.rb",
-    "spec/spec_helper.rb",
-    "spec/support/mock_spec_helper.rb",
-    "spec/unit/helper_spec.rb",
-    "spec/unit/instance_facing_spec.rb",
-    "spec/unit/resource_detail_spec.rb",
-    "spec/unit/resource_spec.rb",
-    "spec/unit/resources_spec.rb"
+    "right_api_client.rconf"
   ]
   s.homepage = "https://github.com/rightscale/right_api_client"
   s.licenses = ["MIT"]
