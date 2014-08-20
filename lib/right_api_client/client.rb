@@ -18,7 +18,7 @@ module RightApi
     include Helper
 
     DEFAULT_OPEN_TIMEOUT = nil
-    DEFAULT_TIMEOUT = nil
+    DEFAULT_TIMEOUT = -1
     DEFAULT_MAX_ATTEMPTS = 5
 
     ROOT_RESOURCE = '/api/session'
@@ -45,7 +45,7 @@ module RightApi
 
       # Initializing all instance variables from hash
       args.each { |key,value|
-        instance_variable_set("@#{key}", value) if value && AUTH_PARAMS.include?(key.to_s)
+        instance_variable_set("@#{key}", value) if AUTH_PARAMS.include?(key.to_s)
       } if args.is_a? Hash
 
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
