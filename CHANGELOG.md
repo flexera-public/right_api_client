@@ -1,6 +1,6 @@
 # CHANGELOG.md
 
-## Next
+## 1.5.20
  - \#67 Fix bug preventing configuration from setting nil for :timeout.
  - \#67 Lock rest-client to 1.6.x due to requirement for Ruby 1.8.7 support.
  - \#66 Add [TravisCI support](https://travis-ci.org/rightscale/right_api_client).
