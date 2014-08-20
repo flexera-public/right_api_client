@@ -30,10 +30,11 @@ describe RightApi::Resources, :unit=>true do
   end
 
   context ".method_missing" do
-    let (:resource) {RightApi::Resources.new(@client, '/api/resources', 'resources')}
     it "should do send request with path/method" do
-      flexmock(@client).should_receive(:send).with(:do_post, "#{resource.path}/method")
-      resource.method_missing("method")
+      client = flexmock(@client)
+      resource = RightApi::Resource.new(client, '/api/resource', 'resource')
+      client.should_receive(:send).with(:do_post, "#{resource.href}/method")
+      resource.method_missing('method')
     end
   end
 
