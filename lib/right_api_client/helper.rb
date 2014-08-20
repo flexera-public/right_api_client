@@ -159,7 +159,7 @@ module RightApi::Helper
     when "audit_entry"
       return true
     when "ip_address"
-      return true
+      return false
     when "process"
       return true
     else
