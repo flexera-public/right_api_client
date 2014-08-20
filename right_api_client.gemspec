@@ -4,23 +4,21 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{right_api_client}
-  s.version = "1.5.19"
+  s.name = "right_api_client"
+  s.version = "1.5.20"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["RightScale, Inc."]
-  s.date = %q{2014-07-11}
-  s.description = %q{
-The right_api_client gem simplifies the use of RightScale's MultiCloud API.
-It provides a simple object model of the API resources, and handles all of the
-fine details involved in making HTTP calls and translating their responses.
-}
-  s.email = %q{rubygems@rightscale.com}
+  s.date = "2014-08-20"
+  s.description = "\nThe right_api_client gem simplifies the use of RightScale's MultiCloud API.\nIt provides a simple object model of the API resources, and handles all of the\nfine details involved in making HTTP calls and translating their responses.\n"
+  s.email = "rubygems@rightscale.com"
   s.extra_rdoc_files = [
     "LICENSE.txt",
     "README.md"
   ]
   s.files = [
+    ".rspec",
+    ".travis.yml",
     "CHANGELOG.md",
     "Gemfile",
     "Gemfile.lock",
@@ -28,6 +26,7 @@ fine details involved in making HTTP calls and translating their responses.
     "README.md",
     "Rakefile",
     "VERSION",
+    "config/login.yml.example",
     "lib/right_api_client.rb",
     "lib/right_api_client/client.rb",
     "lib/right_api_client/errors.rb",
@@ -38,22 +37,31 @@ fine details involved in making HTTP calls and translating their responses.
     "lib/right_api_client/resources.rb",
     "lib/right_api_client/version.rb",
     "login_to_client_irb.rb",
-    "right_api_client.rconf"
+    "right_api_client.gemspec",
+    "right_api_client.rconf",
+    "spec/functional/audit_entries_spec.rb",
+    "spec/functional/client_spec.rb",
+    "spec/spec_helper.rb",
+    "spec/support/mock_spec_helper.rb",
+    "spec/unit/helper_spec.rb",
+    "spec/unit/instance_facing_spec.rb",
+    "spec/unit/resource_detail_spec.rb",
+    "spec/unit/resource_spec.rb",
+    "spec/unit/resources_spec.rb"
   ]
-  s.homepage = %q{https://github.com/rightscale/right_api_client}
+  s.homepage = "https://github.com/rightscale/right_api_client"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.7}
-  s.summary = %q{RightScale MultiCloud API HTTP Client}
+  s.rubygems_version = "1.8.23"
+  s.summary = "RightScale MultiCloud API HTTP Client"
 
   if s.respond_to? :specification_version then
-    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<json>, ["~> 1.0"])
       s.add_runtime_dependency(%q<mime-types>, ["~> 1.0"])
-      s.add_runtime_dependency(%q<rest-client>, ["~> 1.6"])
+      s.add_runtime_dependency(%q<rest-client>, ["~> 1.6.7"])
       s.add_development_dependency(%q<rake>, ["= 0.8.7"])
       s.add_development_dependency(%q<rspec>, ["= 2.9.0"])
       s.add_development_dependency(%q<flexmock>, ["= 0.8.7"])
@@ -61,7 +69,7 @@ fine details involved in making HTTP calls and translating their responses.
     else
       s.add_dependency(%q<json>, ["~> 1.0"])
       s.add_dependency(%q<mime-types>, ["~> 1.0"])
-      s.add_dependency(%q<rest-client>, ["~> 1.6"])
+      s.add_dependency(%q<rest-client>, ["~> 1.6.7"])
       s.add_dependency(%q<rake>, ["= 0.8.7"])
       s.add_dependency(%q<rspec>, ["= 2.9.0"])
       s.add_dependency(%q<flexmock>, ["= 0.8.7"])
@@ -70,7 +78,7 @@ fine details involved in making HTTP calls and translating their responses.
   else
     s.add_dependency(%q<json>, ["~> 1.0"])
     s.add_dependency(%q<mime-types>, ["~> 1.0"])
-    s.add_dependency(%q<rest-client>, ["~> 1.6"])
+    s.add_dependency(%q<rest-client>, ["~> 1.6.7"])
     s.add_dependency(%q<rake>, ["= 0.8.7"])
     s.add_dependency(%q<rspec>, ["= 2.9.0"])
     s.add_dependency(%q<flexmock>, ["= 0.8.7"])
