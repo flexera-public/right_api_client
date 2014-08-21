@@ -1,6 +1,6 @@
 # CHANGELOG.md
 
-## Next
+## 1.5.21
  - \#71 Stop locking rest-client to 1.6.x and return to locking it to 1.x
 
 ## 1.5.20
