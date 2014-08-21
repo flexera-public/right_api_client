@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## Next
+ - \#71 Stop locking rest-client to 1.6.x and return to locking it to 1.x
+
 ## 1.5.20
  - \#67 Fix bug preventing configuration from setting nil for :timeout.
  - \#67 Lock rest-client to 1.6.x due to requirement for Ruby 1.8.7 support.
