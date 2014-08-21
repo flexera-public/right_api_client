@@ -84,7 +84,7 @@ DEPENDENCIES
   json (~> 1.0)
   mime-types (~> 1.0)
   rake (= 0.8.7)
-  rest-client (~> 1.6.7)
+  rest-client (~> 1.6)
   rspec (= 2.9.0)
   ruby-debug
   simplecov (= 0.4.2)
