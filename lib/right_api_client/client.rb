@@ -12,6 +12,28 @@ require File.expand_path('../resources', __FILE__)
 require File.expand_path('../errors', __FILE__)
 require File.expand_path('../exceptions', __FILE__)
 
+# Monkey patch RestClient::Request.log_request to redact the email and passsword
+# used for authentication from logging
+#
+class RestClient::Request #  < RestClient::Request
+  def log_request
+    if RestClient.log
+      out = []
+      out << "RestClient.#{method} #{url.inspect}"
+      if !payload.nil?
+        if (payload.short_inspect.include? "email") || (payload.short_inspect.include? "password")
+          out << "<hidden credentials>"
+        else
+          out <<  payload.short_inspect
+        end
+      end
+      out << processed_headers.to_a.sort.map { |(k, v)| [k.inspect, v.inspect].join("=>") }.join(", ")
+      RestClient.log << out.join(', ') + "\n"
+    end
+  end
+end
+
+
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
   class Client
