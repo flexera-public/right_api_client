@@ -1,6 +1,5 @@
 require File.expand_path('../../spec_helper', __FILE__)
-require 'ruby-debug'
-require 'pry'
+
 describe RightApi::Client, :functional=>true do
   before(:each) do
     @rest_client = flexmock("rest_client")
@@ -92,7 +91,6 @@ describe RightApi::Client, :functional=>true do
     end
 
     it "returns the resource when calling #resource(href)" do
-      # debugger
       resource_session = flexmock("Resource Session")
       response = "deployment","{\"links\":[{\"rel\":\"self\",\"href\":\"/api/deployments/1\"}],\"name\":\"Mock Deployment\"}"
       resource_session.should_receive(:get).and_return(response)
