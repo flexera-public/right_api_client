@@ -14,29 +14,29 @@ describe RightApi::Resource, :unit=>true do
   end
 
   context "#process" do
-    it "should create resource_detail with data" do
+    it "creates resource_detail with data" do
       flexmock(RightApi::ResourceDetail).should_receive(:new)
       RightApi::Resource.process(@client, 'resource', '/api/resource', :right => ['scale'])
     end
 
-    it "should create resource without data" do
+    it "creates resource without data" do
       flexmock(RightApi::Resource).should_receive(:new)
       RightApi::Resource.process(@client, 'resource', '/api/resource')
     end
   end
 
   context "#process_detailed" do
-    it "should call process with data array" do
+    it "calls process with data array" do
       flexmock(RightApi::Resource).should_receive(:process)
       RightApi::Resource.process(@client, 'resource', '/api/resource', :right => ['scale'])
     end
 
-    it "should call process with data array" do
+    it "calls process with data array" do
       flexmock(RightApi::Resource).should_receive(:process)
       RightApi::Resource.process(@client, 'resource', '/api/resource')
     end
 
-    it "should create new process detail with data links" do
+    it "creates new process detail with data links" do
       flexmock(RightApi::ResourceDetail).should_receive(:new)
       RightApi::Resource.process(@client, 'resource', '/api/resource', 'links' => 'scale')
     end
@@ -44,14 +44,14 @@ describe RightApi::Resource, :unit=>true do
 
   context ".inspect" do
     let(:resource) {RightApi::Resource.new(@client, 'resource', '/api/resource')}
-    it "should return correct inspect text" do
+    it "returns correct inspect text" do
       inspect_text = "#<#{resource.class.name} resource_type=\"#{resource.resource_type}\">"
       resource.inspect.should == inspect_text
     end
   end
 
   context ".method_missing" do
-    it "should send correct post request" do
+    it "sends correct post request" do
       client = flexmock(@client)
       resource = RightApi::Resource.new(client, 'resource', '/api/resource')
       client.should_receive(:send).with(:do_post, "#{resource.href}/method")

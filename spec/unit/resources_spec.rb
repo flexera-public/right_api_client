@@ -15,7 +15,7 @@ describe RightApi::Resources, :unit=>true do
 
   context ".inspect" do
     let (:resource) {RightApi::Resources.new(@client, '/api/resources', 'resources')}
-    it "should return correct inspect value" do
+    it "returns correct inspect value" do
       inspect_text = "#<#{resource.class.name} resource_type=\"#{resource.resource_type}\">"
       resource.inspect.should == inspect_text
     end
@@ -23,14 +23,14 @@ describe RightApi::Resources, :unit=>true do
 
   context ".to_ary" do
     let (:resource) {RightApi::Resources.new(@client, '/api/resources', 'resources')}
-    it "should return correct to_array value" do
+    it "returns correct to_array value" do
       to_array_text = ["#<#{resource.class.name} ","resource_type=\"#{resource.resource_type}\">"]
       resource.to_ary.should == to_array_text
     end
   end
 
   context ".method_missing" do
-    it "should do send request with path/method" do
+    it "sends request with path/method" do
       client = flexmock(@client)
       resource = RightApi::Resource.new(client, '/api/resource', 'resource')
       client.should_receive(:send).with(:do_post, "#{resource.href}/method")
