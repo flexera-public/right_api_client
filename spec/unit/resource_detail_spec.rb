@@ -1,10 +1,30 @@
 require File.expand_path('../../spec_helper', __FILE__)
 
 describe RightApi::ResourceDetail, :unit=>true do
-  context "given a logged in RightScale user" do
-    before(:each) do
-      given_user_facing_client
+  before(:each) do
+    given_user_facing_client
+  end
+
+  subject {RightApi::ResourceDetail.new(@client, 'resource_detail', '/api/resource_detail', {})}
+
+  context "attributes" do
+    its(:client) {should eq @client}
+    its(:attributes) {should eq Set.new << :links}
+    its(:resource_type) {should eq 'resource_detail'}
+    its(:associations) {should eq Set.new}
+    its(:actions) {should eq Set.new}
+    its(:raw) {should eq Hash.new}
+  end
+
+  context ".inspect" do
+    let(:resource_detail){RightApi::ResourceDetail.new(@client, 'resource_detail', '/api/resource_detail', {})}
+    it "returns correct inspect infos" do
+      inspect_text = "#<#{resource_detail.class.name} resource_type=\"#{resource_detail.resource_type}\">"
+      resource_detail.inspect.should == inspect_text
     end
+  end
+
+  context "given a logged in RightScale user" do
 
     it "has the required methods for instances of the ResourceDetail class" do
       resource = RightApi::ResourceDetail.new(@client, 'deployment', '/api/deployments/1', {})
