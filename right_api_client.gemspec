@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "right_api_client"
-  s.version = "1.5.21"
+  s.version = "1.5.22"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["RightScale, Inc."]
-  s.date = "2014-08-21"
+  s.date = "2014-09-19"
   s.description = "\nThe right_api_client gem simplifies the use of RightScale's MultiCloud API.\nIt provides a simple object model of the API resources, and handles all of the\nfine details involved in making HTTP calls and translating their responses.\n"
   s.email = "rubygems@rightscale.com"
   s.extra_rdoc_files = [
@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
     "README.md"
   ]
   s.files = [
+    ".coveralls.yml",
     ".travis.yml",
     "CHANGELOG.md",
     "Gemfile",
@@ -40,7 +41,7 @@ Gem::Specification.new do |s|
   s.homepage = "https://github.com/rightscale/right_api_client"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.15"
+  s.rubygems_version = "1.8.23"
   s.summary = "RightScale MultiCloud API HTTP Client"
 
   if s.respond_to? :specification_version then
@@ -53,7 +54,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<rake>, ["= 0.8.7"])
       s.add_development_dependency(%q<rspec>, ["= 2.9.0"])
       s.add_development_dependency(%q<flexmock>, ["= 0.8.7"])
-      s.add_development_dependency(%q<simplecov>, ["= 0.4.2"])
+      s.add_development_dependency(%q<coveralls>, [">= 0"])
     else
       s.add_dependency(%q<json>, ["~> 1.0"])
       s.add_dependency(%q<mime-types>, ["~> 1.0"])
@@ -61,7 +62,7 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<rake>, ["= 0.8.7"])
       s.add_dependency(%q<rspec>, ["= 2.9.0"])
       s.add_dependency(%q<flexmock>, ["= 0.8.7"])
-      s.add_dependency(%q<simplecov>, ["= 0.4.2"])
+      s.add_dependency(%q<coveralls>, [">= 0"])
     end
   else
     s.add_dependency(%q<json>, ["~> 1.0"])
@@ -70,7 +71,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<rake>, ["= 0.8.7"])
     s.add_dependency(%q<rspec>, ["= 2.9.0"])
     s.add_dependency(%q<flexmock>, ["= 0.8.7"])
-    s.add_dependency(%q<simplecov>, ["= 0.4.2"])
+    s.add_dependency(%q<coveralls>, [">= 0"])
   end
 end
 
