@@ -1,5 +1,12 @@
 # CHANGELOG.md
 
+## Next
+ - <Your change here>
+
+## 1.5.22
+ - \#76 Add ability to directly access attributes of a ResourceDetail
+ - \#74 Add coveralls support
+
 ## 1.5.21
  - \#71 Stop locking rest-client to 1.6.x and return to locking it to 1.x
 
