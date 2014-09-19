@@ -10,8 +10,7 @@ group :development do
   gem 'rake', '0.8.7'
   gem 'rspec', '2.9.0'
   gem 'flexmock', '0.8.7'
-  gem 'simplecov', '0.4.2',
-      :platforms => [:ruby_19, :ruby_20, :ruby_21]
+  gem 'coveralls', :require => false
 end
 
 # Gems used during test and development that should be OMITTED from the gemspec

@@ -1,5 +1,6 @@
 # RightScale API Client
 [![Build Status](https://travis-ci.org/rightscale/right_api_client.svg?branch=master)](https://travis-ci.org/rightscale/right_api_client)
+[![Coverage Status](https://img.shields.io/coveralls/rightscale/right_api_client.svg)](https://coveralls.io/r/rightscale/right_api_client?branch=master)
 
 The right\_api\_client gem simplifies the use of RightScale's MultiCloud API. It provides
 a simple object model of the API resources, and handles all of the fine details involved
