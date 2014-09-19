@@ -17,6 +17,7 @@ module RightApi
       @resource_type = resource_type
       @raw = hash.dup
       @attributes, @associations, @actions = Set.new, Set.new, Set.new
+      @attributes_with_values = {}
 
       links = hash.delete('links') || []
       raw_actions = hash.delete('actions') || []
@@ -63,10 +64,11 @@ module RightApi
 
       # Add the rest as instance methods
       hash.each do |k, v|
+        k = k.to_sym
         # If a parent resource is requested with a view then it might return
         # extra data that can be used to build child resources here, without
         # doing another get request.
-        if associations.include?(k.to_sym)
+        if associations.include?(k)
           # v might be an array or hash so use include rather than has_key
           if v.include?('links')
             child_self_link = v['links'].find { |target| target['rel'] == 'self' }
@@ -84,11 +86,18 @@ module RightApi
                 end
               end
             end
+          else
+            # This is an attribute whose name coincides with the name of a link,
+            # but which isn't actually an embedded subrecource (it has no links
+            # or other media-type decorators). Add it to attributes.
+            attributes << k
+            @attributes_with_values[k] = v
           end
         else
           # Add it to the attributes set and create a method for it
-          attributes << k.to_sym
-          define_instance_method(k) { return v }
+          attributes << k
+          @attributes_with_values[k] = v
+          define_instance_method(k) { return @attributes_with_values[k] }
         end
       end
 
@@ -112,6 +121,18 @@ module RightApi
       define_instance_method('show') do |*args|
         self
       end
+    end
+    
+    # Access attributes of this resource in a Hash-like manner. This is useful
+    # in cases where an attribute name coincides with a link name, e.g. a resource
+    # that contains embedded subresources.
+    #
+    # This method can accept String or Symbol attribute names. The data type of the
+    # returned object is unspecified; it could be a String, Integer, Hash, Array or
+    # any other JSON data type. If a Hash is returned, then its keys will always be
+    # String.
+    def [](k)
+      @attributes_with_values[k.to_sym]
     end
 
     # Any other method other than standard actions(show,update,destroy)

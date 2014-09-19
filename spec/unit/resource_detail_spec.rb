@@ -70,4 +70,24 @@ describe RightApi::ResourceDetail, :unit=>true do
       resource.api_methods.collect{|s| s.to_s}.sort.should == ["current_instance", "destroy", "href", "links", "show", "update"]
     end
   end
+
+  context ".[]" do
+    let(:resource) { RightApi::ResourceDetail.new(@client, 'deployment', '/api/deployments/1',
+                                            {'links' => [{'rel' => 'link1', 'href' => 'link1_href'}],
+                                             'real_attribute'=>'hi mom',
+                                             'link1' => 'sneaky'}) }
+
+    it 'reads attributes whose name overlaps with a link' do
+      resource['link1'].should == 'sneaky'
+      resource.link1.should_not == resource['link1']
+    end
+
+    it 'accepts String keys' do
+      resource['real_attribute'].should == 'hi mom'
+    end
+
+    it 'accepts Symbol keys' do
+      resource[:real_attribute].should == 'hi mom'
+    end
+  end
 end
