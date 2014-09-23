@@ -21,22 +21,60 @@ module RightApi
     DEFAULT_TIMEOUT = -1
     DEFAULT_MAX_ATTEMPTS = 5
 
-    ROOT_RESOURCE = '/api/session'
+    ROOT_RESOURCE  = '/api/session'
+    OAUTH_ENDPOINT = '/api/oauth2'
     ROOT_INSTANCE_RESOURCE = '/api/session/instance'
     DEFAULT_API_URL = 'https://my.rightscale.com'
 
     # permitted parameters for initializing
     AUTH_PARAMS = %w[
-      email password_base64 password account_id api_url api_version
-      cookies instance_token access_token timeout open_timeout max_attempts
+      email password_base64 password
+      instance_token
+      refresh_token access_token
+      cookies
+      account_id api_url api_version
+      timeout open_timeout max_attempts
       enable_retry rest_client_class
     ]
 
-    attr_reader :cookies, :instance_token, :access_token, :last_request, :timeout, :open_timeout, :max_attempts, :enable_retry
-    attr_accessor :account_id, :api_url
+    # @return [String] OAuth 2.0 refresh token if provided
+    attr_reader :refresh_token
 
+    # @return [String] OAuth 2.0 access token, if present
+    attr_reader :access_token
+
+    # @return [Time] expiry timestamp for OAuth 2.0 access token
+    attr_reader :access_token_expires_at
+
+    attr_accessor :account_id
+
+    # @return [String] Base API url, e.g. https://us-3.rightscale.com
+    attr_accessor :api_url
+
+    # @return [String] instance API token as included in user-data
+    attr_reader :instance_token
+
+    # @return [Hash] collection of API cookies
+    # @deprecated please use OAuth 2.0 refresh tokens instead of password-based authentication
+    attr_reader :cookies
+
+    # @return [Hash] debug information about the last request and response
+    attr_reader :last_request
+
+    # @return [Integer] number of seconds to wait for socket open
+    attr_reader :open_timeout
+
+    # @return [Integer] number of seconds to wait for API response
+    attr_reader :timeout
+
+    # @return [Integer] number of times to retry idempotent requests (iff enable_retry == true)
+    attr_reader :max_attempts
+
+    # @return [Boolean] whether to retry idempotent requests that fail
+    attr_reader :enable_retry
+
+    # Instantiate a new Client.
     def initialize(args)
-
       raise 'This API client is only compatible with Ruby 1.8.7 and upwards.' if (RUBY_VERSION < '1.8.7')
 
       @api_url, @api_version = DEFAULT_API_URL, API_VERSION
@@ -55,8 +93,9 @@ module RightApi
       @rest_client = @rest_client_class.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout)
       @last_request = {}
 
-      # There are four options for login:
-      #  - credentials
+      # There are five options for login:
+      #  - user email/password (using plaintext or base64-obfuscated password)
+      #  - user OAuth refresh token
       #  - instance API token
       #  - existing user-supplied cookies
       #  - existing user-supplied OAuth access token
@@ -103,7 +142,7 @@ module RightApi
     end
 
     def to_s
-      "#<RightApi::Client>"
+      "#<RightApi::Client #{api_url}>"
     end
 
     # Log HTTP calls to file (file can be STDOUT as well)
@@ -127,7 +166,6 @@ module RightApi
     # so this is a workaround.
     #
     def resources(type, path)
-
       Resources.new(self, path, type)
     end
 
@@ -162,7 +200,7 @@ module RightApi
         end
       rescue ApiError => e
         if re_login?(e)
-          # Session cookie is expired or invalid
+          # Session is expired or invalid
           login()
           retry
         else
@@ -172,23 +210,34 @@ module RightApi
     end
 
     def login
-      params, path = if @instance_token
-        [ { 'instance_token' => @instance_token },
-          ROOT_INSTANCE_RESOURCE ]
+      account_href = "/api/accounts/#{@account_id}"
+
+      params, path =
+      if @refresh_token
+        [ {'grant_type' => 'refresh_token',
+           'refresh_token'=>@refresh_token},
+          OAUTH_ENDPOINT ]
+      elsif @instance_token
+          [ { 'instance_token' => @instance_token,
+              'account_href' => account_href },
+            ROOT_INSTANCE_RESOURCE ]
       elsif @password_base64
-        [ { 'email' => @email, 'password' => Base64.decode64(@password_base64) },
+        [ { 'email' => @email,
+            'password' => Base64.decode64(@password_base64),
+            'account_href' => account_href },
           ROOT_RESOURCE ]
       else
-        [ { 'email' => @email, 'password' => @password },
+        [ { 'email' => @email,
+            'password' => @password,
+            'account_href' => account_href },
           ROOT_RESOURCE ]
       end
-      params['account_href'] = "/api/accounts/#{@account_id}"
 
       response = nil
       attempts = 0
       begin
         response = @rest_client[path].post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
-          if response.code == 302
+          if [301, 302, 307].include?(response.code)
             update_api_url(response)
             response.follow_redirection(request, result, &block)
           else
@@ -202,16 +251,23 @@ module RightApi
         retry
       end
 
-      update_cookies(response)
+      if path == OAUTH_ENDPOINT
+        update_access_token(response)
+      else
+        update_cookies(response)
+      end
     end
 
     # Returns the request headers
     def headers
       h = {
         'X-Api-Version' => @api_version,
-        'X-Account' => @account_id,
         :accept => :json,
       }
+
+      if @account_id
+        h['X-Account'] = @account_id
+      end
 
       if @access_token
         h['Authorization'] = "Bearer #{@access_token}"
@@ -230,6 +286,7 @@ module RightApi
     # Generic get
     # params are NOT read only
     def do_get(path, params={})
+      login if need_login?
 
       # Resource id is a special param as it needs to be added to the path
       path = add_id_and_params_to_path(path, params)
@@ -280,6 +337,8 @@ module RightApi
 
     # Generic post
     def do_post(path, params={})
+      login if need_login?
+
       params = fix_array_of_hashes(params)
 
       req, res, resource_type, body = nil
@@ -334,6 +393,8 @@ module RightApi
 
     # Generic delete
     def do_delete(path, params={})
+      login if need_login?
+
       # Resource id is a special param as it needs to be added to the path
       path = add_id_and_params_to_path(path, params)
 
@@ -367,6 +428,8 @@ module RightApi
 
     # Generic put
     def do_put(path, params={})
+      login if need_login?
+
       params = fix_array_of_hashes(params)
 
       req, res, resource_type, body = nil
@@ -396,14 +459,31 @@ module RightApi
       end
     end
 
-    def re_login?(e)
-      # cannot successfully re-login with only an access token; we want the
-      # expiration error to be raised.
-      return false if @access_token
-      e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid)
+    # Determine whether the client needs a fresh round of authentication based on state of
+    # cookies/tokens and their expiration timestamps.
+    #
+    # @return [Boolean] true if re-login is suggested
+    def need_login?
+      (@refresh_token && @refresh_token_expires_at && @refresh_token_expires_at - Time.now < 900) ||
+      (@cookies.respond_to?(:empty?) && @cookies.empty?)
     end
 
-    # returns the resource_type
+    # Determine whether an exception can be fixed by logging in again.
+    #
+    # @return [Boolean] true if re-login is appropriate
+    def re_login?(e)
+      auth_error =
+        (e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid)) ||
+        e.message.index('401')
+
+      renewable_creds =
+        (@instance_token || (@email && (@password || @password_base64)) || @refresh_token)
+
+      auth_error && renewable_creds
+    end
+
+    # @param [String] content_type an HTTP Content-Type header
+    # @return [String] the resource_type associated with content_type
     def get_resource_type(content_type)
       content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
     end
@@ -411,17 +491,23 @@ module RightApi
     # Makes sure the @cookies have a timestamp.
     #
     def timestamp_cookies
-
       return unless @cookies
 
       class << @cookies; attr_accessor :timestamp; end
       @cookies.timestamp = Time.now
     end
 
+    # Sets the @access_token and @access_token_expires_at
+    #
+    def update_access_token(response)
+      h = JSON.load(response)
+      @access_token = String(h['access_token'])
+      @access_token_expires_at = Time.at(Time.now.to_i + Integer(h['expires_in']))
+    end
+
     # Sets the @cookies (and timestamp it).
     #
     def update_cookies(response)
-
       return unless response.cookies
 
       (@cookies ||= {}).merge!(response.cookies)
@@ -432,7 +518,6 @@ module RightApi
     # A helper class for error details
     #
     class ErrorDetails
-
       attr_reader :method, :path, :params, :request, :response
 
       def initialize(me, pt, ps, rq, rs)
