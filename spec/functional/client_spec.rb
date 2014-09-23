@@ -36,6 +36,11 @@ describe RightApi::Client, :functional=>true do
       client.access_token.should == "access token only"
     end
 
+    it "accepts a refresh_token when creating a new client" do
+      client = RightApi::Client.new({:refresh_tokeb=> "refresh token only"})
+      client.refresh_token.should == "refresh token only"
+    end
+
     it "post request works" do
       deployment_session = flexmock("Deployment Session")
       deployment_session.should_receive(:post).and_return(1)
