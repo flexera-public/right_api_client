@@ -94,7 +94,7 @@ module RightApi
       @last_request = {}
 
       # There are five options for login:
-      #  - user email/password
+      #  - user email/password (using plaintext or base64-obfuscated password)
       #  - user OAuth refresh token
       #  - instance API token
       #  - existing user-supplied cookies
