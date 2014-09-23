@@ -501,7 +501,7 @@ module RightApi
     #
     def update_access_token(response)
       h = JSON.load(response)
-      @access_token = h['access_token']
+      @access_token = String(h['access_token'])
       @access_token_expires_at = Time.at(Time.now.to_i + Integer(h['expires_in']))
     end
 

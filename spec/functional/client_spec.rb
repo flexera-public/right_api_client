@@ -1,23 +1,45 @@
 require File.expand_path('../../spec_helper', __FILE__)
 
 describe RightApi::Client, :functional=>true do
-  before(:each) do
-    @rest_client = flexmock("rest_client")
-    flexmock(RestClient::Resource).should_receive(:new).and_return(@rest_client)
+  context "given valid OAuth credentials" do
+    before(:each) do
+      @rest_client = flexmock("rest_client")
+      flexmock(RestClient::Resource).should_receive(:new).and_return(@rest_client)
 
-    cookies = {"cookies" => "cookies"}
-    get_response = "session", "{\"links\":[{\"rel\":\"deployments\",\"href\":\"/api/deployments\"}, {\"rel\":\"tags\",\"href\":\"/api/tags\"}],\"message\":\"You have successfully logged into the RightScale API.\"}"
-    post_response = flexmock("post_response", :code => 204, :cookies => cookies, :body => " ")
-    session = flexmock("session")
+      oauth_endpoint = flexmock("OAuth endpoint")
+      oauth_post_response = '{"refresh_token": "moo", "expires_in": 3600}'
+      @rest_client.should_receive(:[]).with('/api/oauth2').and_return(oauth_endpoint)
+      oauth_endpoint.should_receive(:post).and_return(oauth_post_response)
 
-    @rest_client.should_receive(:[]).with('/api/session').and_return(session)
-    session.should_receive(:get).and_return(get_response)
-    session.should_receive(:post).and_return(post_response)
+      get_response = "session", "{\"links\":[{\"rel\":\"deployments\",\"href\":\"/api/deployments\"}, {\"rel\":\"tags\",\"href\":\"/api/tags\"}],\"message\":\"You have successfully logged into the RightScale API.\"}"
+      session_resource = flexmock("session resource")
+      @rest_client.should_receive(:[]).with('/api/session').and_return(session_resource)
+      session_resource.should_receive(:get).and_return(get_response)
+    end
 
-    @client = RightApi::Client.new(:email => "email", :password => "password", :account_id => 60073)
+    it "accepts a refresh_token when creating a new client" do
+      client = RightApi::Client.new({:refresh_token => "refresh token only"})
+      client.refresh_token.should == "refresh token only"
+    end
   end
 
-  context "mocking a valid set of credentials" do
+  context "given a logged-in client" do
+    before(:each) do
+      @rest_client = flexmock("rest_client")
+      flexmock(RestClient::Resource).should_receive(:new).and_return(@rest_client)
+
+      cookies = {"cookies" => "cookies"}
+      get_response = "session", "{\"links\":[{\"rel\":\"deployments\",\"href\":\"/api/deployments\"}, {\"rel\":\"tags\",\"href\":\"/api/tags\"}],\"message\":\"You have successfully logged into the RightScale API.\"}"
+      post_response = flexmock("post_response", :code => 204, :cookies => cookies, :body => " ")
+      session = flexmock("session")
+
+      @rest_client.should_receive(:[]).with('/api/session').and_return(session)
+      session.should_receive(:get).and_return(get_response)
+      session.should_receive(:post).and_return(post_response)
+
+      @client = RightApi::Client.new(:email => "email", :password => "password", :account_id => 60073)
+    end
+
     it "logs in" do
       @client.send(:headers)[:cookies].should == {"cookies" => "cookies"}
       @client.cookies.class.should == Hash
@@ -34,11 +56,6 @@ describe RightApi::Client, :functional=>true do
     it "accepts an access_token argument when creating a new client" do
       client = RightApi::Client.new({:access_token => "access token only"})
       client.access_token.should == "access token only"
-    end
-
-    it "accepts a refresh_token when creating a new client" do
-      client = RightApi::Client.new({:refresh_tokeb=> "refresh token only"})
-      client.refresh_token.should == "refresh token only"
     end
 
     it "post request works" do
