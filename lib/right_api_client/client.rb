@@ -4,13 +4,6 @@ require 'set'
 require 'cgi'
 require 'base64'
 
-require File.expand_path('../version', __FILE__) unless defined?(RightApi::Client::VERSION)
-require File.expand_path('../helper', __FILE__)
-require File.expand_path('../resource', __FILE__)
-require File.expand_path('../resource_detail', __FILE__)
-require File.expand_path('../resources', __FILE__)
-require File.expand_path('../errors', __FILE__)
-
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
   class Client
@@ -33,6 +26,18 @@ module RightApi
     attr_reader :cookies, :instance_token, :access_token, :last_request, :timeout, :open_timeout, :max_attempts, :enable_retry
     attr_accessor :account_id, :api_url
 
+    # @option args [String] :email
+    # @option args [String] :password
+    # @option args [String] :password_base64
+    # @option args [Integer] :account_id
+    # @option args [String] :api_url
+    # @option args [String] :api_version
+    # @option args [String] :api_url
+    # @option args [Hash] :cookies
+    # @option args [String] :instance_token
+    # @option args [String] :access_token
+    # @option args [Integer] :timeout
+    # @option args [Boolean] :skip_login true to skip immediate auto-login
     def initialize(args)
 
       raise 'This API client is only compatible with Ruby 1.8.7 and upwards.' if (RUBY_VERSION < '1.8.7')
@@ -59,7 +64,7 @@ module RightApi
       #
       # The latter two options are not really login; they imply that the user logged in out of band.
       # See config/login.yml.example for more info.
-      login() unless @cookies || @access_token
+      login() unless args[:skip_login] || @cookies || @access_token
 
       timestamp_cookies
 
@@ -463,4 +468,3 @@ module RightApi
     end
   end
 end
-

@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'right_api_client'
+require 'right_api_client/cli'
+
+begin
+  RightApi::CLI.new.console
+rescue Exception => e
+  exit(-1)
+end

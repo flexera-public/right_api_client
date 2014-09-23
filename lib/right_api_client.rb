@@ -1,1 +1,7 @@
-require File.expand_path('../right_api_client/client', __FILE__)
+require 'right_api_client/version'
+require 'right_api_client/helper'
+require 'right_api_client/resource'
+require 'right_api_client/resource_detail'
+require 'right_api_client/resources'
+require 'right_api_client/errors'
+require 'right_api_client/client'
