@@ -12,6 +12,39 @@ require File.expand_path('../resources', __FILE__)
 require File.expand_path('../errors', __FILE__)
 require File.expand_path('../exceptions', __FILE__)
 
+module PostOverride
+  def post(payload, additional_headers={}, &block)
+    headers = (options[:headers] || {}).merge(additional_headers)
+    requestor =  ::RestClient::Request.new(options.merge(
+      :method => :post,
+      :url => url,
+      :payload => payload,
+      :headers => headers)
+    )
+    requestor.extend(LogOverride)
+    requestor.execute(&block)
+  end
+end
+
+
+module LogOverride
+  def log_request
+   if RestClient.log
+      out = []
+      out << "RestClient.#{method} #{url.inspect}"
+      if !payload.nil?
+        if (payload.short_inspect.include? "email") || (payload.short_inspect.include? "password")
+          out << "<hidden credentials>"
+        else
+          out <<  payload.short_inspect
+        end
+      end
+      out << processed_headers.to_a.sort.map { |(k, v)| [k.inspect, v.inspect].join("=>") }.join(", ")
+      RestClient.log << out.join(', ') + "\n"
+    end
+  end
+end
+
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
   class Client
@@ -90,6 +123,7 @@ module RightApi
 
       # allow a custom resource-style REST client (for special logging, etc.)
       @rest_client_class ||= ::RestClient::Resource
+      ::RestClient.log = STDOUT
       @rest_client = @rest_client_class.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout)
       @last_request = {}
 
@@ -236,14 +270,16 @@ module RightApi
       response = nil
       attempts = 0
       begin
-        response = @rest_client[path].post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
-          if [301, 302, 307].include?(response.code)
-            update_api_url(response)
-            response.follow_redirection(request, result, &block)
-          else
-            response.return!(request, result)
-          end
+      @rester = @rest_client[path]
+      @rester.extend(PostOverride)
+      response = @rester.post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
+        if [301, 302, 307].include?(response.code)
+          update_api_url(response)
+          response.follow_redirection(request, result, &block)
+        else
+          response.return!(request, result)
         end
+      end
       rescue Errno::ECONNRESET, RestClient::RequestTimeout, OpenSSL::SSL::SSLError, RestClient::ServerBrokeConnection
         raise unless @enable_retry
         raise if attempts >= @max_attempts
