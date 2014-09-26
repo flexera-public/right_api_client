@@ -203,7 +203,7 @@ module RightApi
       Resources.new(self, path, type)
     end
 
-    protected
+    #protected
     # Users shouldn't need to call the following methods directly
 
     def retry_request(is_read_only = false)
@@ -270,16 +270,26 @@ module RightApi
       response = nil
       attempts = 0
       begin
-      @rester = @rest_client[path]
-      @rester.extend(PostOverride)
-      response = @rester.post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
-        if [301, 302, 307].include?(response.code)
-          update_api_url(response)
-          response.follow_redirection(request, result, &block)
-        else
-          response.return!(request, result)
+        @rest = @rest_client[path]
+        rester = @rest.dup
+        rester.extend(PostOverride)
+        response = rester.post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
+          if [301, 302, 307].include?(response.code)
+            update_api_url(response)
+            response.follow_redirection(request, result, &block)
+          else
+            response.return!(request, result)
+          end
         end
-      end
+        response = @rest.post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
+          if [301, 302, 307].include?(response.code)
+            update_api_url(response)
+            response.follow_redirection(request, result, &block)
+          else
+            response.return!(request, result)
+          end
+        end
+        rester = nil
       rescue Errno::ECONNRESET, RestClient::RequestTimeout, OpenSSL::SSL::SSLError, RestClient::ServerBrokeConnection
         raise unless @enable_retry
         raise if attempts >= @max_attempts
