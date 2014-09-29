@@ -12,6 +12,9 @@ require File.expand_path('../resources', __FILE__)
 require File.expand_path('../errors', __FILE__)
 require File.expand_path('../exceptions', __FILE__)
 
+# This is used to extend a temporary local copy of the client during login.
+# It overrides the post functionality, which in turn creates a new instance of RestClient::Request
+#   which is then extended to override log_request to keep creds from getting into our logs.
 module PostOverride
   def post(payload, additional_headers={}, &block)
     headers = (options[:headers] || {}).merge(additional_headers)
@@ -26,7 +29,8 @@ module PostOverride
   end
 end
 
-
+# This is used to extend a new instance of RestClient::Request and override it's log_request.
+# Override version keeps email/password from getting into the logs.
 module LogOverride
   def log_request
    if RestClient.log
@@ -123,7 +127,6 @@ module RightApi
 
       # allow a custom resource-style REST client (for special logging, etc.)
       @rest_client_class ||= ::RestClient::Resource
-      ::RestClient.log = STDOUT
       @rest_client = @rest_client_class.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout)
       @last_request = {}
 
@@ -270,10 +273,11 @@ module RightApi
       response = nil
       attempts = 0
       begin
-        @rest = @rest_client[path]
-        rester = @rest.dup
-        rester.extend(PostOverride)
-        response = rester.post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
+        # Create a local temp copy of the client, so we can override log functionality and block creds.
+        temp_client = @rest_client[path].dup
+        temp_client.extend(PostOverride)
+
+        response = temp_client.post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
           if [301, 302, 307].include?(response.code)
             update_api_url(response)
             response.follow_redirection(request, result, &block)
@@ -281,15 +285,6 @@ module RightApi
             response.return!(request, result)
           end
         end
-        response = @rest.post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
-          if [301, 302, 307].include?(response.code)
-            update_api_url(response)
-            response.follow_redirection(request, result, &block)
-          else
-            response.return!(request, result)
-          end
-        end
-        rester = nil
       rescue Errno::ECONNRESET, RestClient::RequestTimeout, OpenSSL::SSL::SSLError, RestClient::ServerBrokeConnection
         raise unless @enable_retry
         raise if attempts >= @max_attempts
