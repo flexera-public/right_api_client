@@ -206,7 +206,7 @@ module RightApi
       Resources.new(self, path, type)
     end
 
-    #protected
+    protected
     # Users shouldn't need to call the following methods directly
 
     def retry_request(is_read_only = false)
