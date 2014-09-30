@@ -273,8 +273,6 @@ module RightApi
       response = nil
       attempts = 0
       begin
-        # Create a local temp copy of the client, so we can override log functionality and block creds.
-
         response = @rest_client[path].extend(PostOverride).post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
           if [301, 302, 307].include?(response.code)
             update_api_url(response)
