@@ -4,12 +4,14 @@ describe RightApi::Client, :functional=>true do
   context "given valid OAuth credentials" do
     before(:each) do
       @rest_client = flexmock("rest_client")
-      flexmock(RestClient::Resource).should_receive(:new).and_return(@rest_client)
+      flexmock(RestClient::Resource.extend(PostOverride)).should_receive(:new).and_return(@rest_client)
 
       oauth_endpoint = flexmock("OAuth endpoint")
+      overwrite_post = flexmock("Overwrite Post")
       oauth_post_response = '{"refresh_token": "moo", "expires_in": 3600}'
       @rest_client.should_receive(:[]).with('/api/oauth2').and_return(oauth_endpoint)
-      oauth_endpoint.should_receive(:post).and_return(oauth_post_response)
+      oauth_endpoint.should_receive(:extend).and_return(overwrite_post)
+      overwrite_post.should_receive(:post).and_return(oauth_post_response)
 
       get_response = "session", "{\"links\":[{\"rel\":\"deployments\",\"href\":\"/api/deployments\"}, {\"rel\":\"tags\",\"href\":\"/api/tags\"}],\"message\":\"You have successfully logged into the RightScale API.\"}"
       session_resource = flexmock("session resource")
@@ -26,16 +28,18 @@ describe RightApi::Client, :functional=>true do
   context "given a logged-in client" do
     before(:each) do
       @rest_client = flexmock("rest_client")
-      flexmock(RestClient::Resource).should_receive(:new).and_return(@rest_client)
+      flexmock(RestClient::Resource.extend(PostOverride)).should_receive(:new).and_return(@rest_client)
 
       cookies = {"cookies" => "cookies"}
       get_response = "session", "{\"links\":[{\"rel\":\"deployments\",\"href\":\"/api/deployments\"}, {\"rel\":\"tags\",\"href\":\"/api/tags\"}],\"message\":\"You have successfully logged into the RightScale API.\"}"
       post_response = flexmock("post_response", :code => 204, :cookies => cookies, :body => " ")
       session = flexmock("session")
+      overwrite_post = flexmock("Overwrite Post")
 
       @rest_client.should_receive(:[]).with('/api/session').and_return(session)
       session.should_receive(:get).and_return(get_response)
-      session.should_receive(:post).and_return(post_response)
+      session.should_receive(:extend).and_return(overwrite_post)
+      overwrite_post.should_receive(:post).and_return(post_response)
 
       @client = RightApi::Client.new(:email => "email", :password => "password", :account_id => 60073)
     end

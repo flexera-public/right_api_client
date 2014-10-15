@@ -12,6 +12,43 @@ require File.expand_path('../resources', __FILE__)
 require File.expand_path('../errors', __FILE__)
 require File.expand_path('../exceptions', __FILE__)
 
+# This is used to extend a temporary local copy of the client during login.
+# It overrides the post functionality, which in turn creates a new instance of RestClient::Request
+#   which is then extended to override log_request to keep creds from getting into our logs.
+module PostOverride
+  def post(payload, additional_headers={}, &block)
+    headers = (options[:headers] || {}).merge(additional_headers)
+    requestor =  ::RestClient::Request.new(options.merge(
+      :method => :post,
+      :url => url,
+      :payload => payload,
+      :headers => headers)
+    )
+    requestor.extend(LogOverride)
+    requestor.execute(&block)
+  end
+end
+
+# This is used to extend a new instance of RestClient::Request and override it's log_request.
+# Override version keeps email/password from getting into the logs.
+module LogOverride
+  def log_request
+   if RestClient.log
+      out = []
+      out << "RestClient.#{method} #{url.inspect}"
+      if !payload.nil?
+        if (payload.short_inspect.include? "email") || (payload.short_inspect.include? "password")
+          out << "<hidden credentials>"
+        else
+          out <<  payload.short_inspect
+        end
+      end
+      out << processed_headers.to_a.sort.map { |(k, v)| [k.inspect, v.inspect].join("=>") }.join(", ")
+      RestClient.log << out.join(', ') + "\n"
+    end
+  end
+end
+
 # RightApiClient has the generic get/post/delete/put calls that are used by resources
 module RightApi
   class Client
@@ -236,10 +273,10 @@ module RightApi
       response = nil
       attempts = 0
       begin
-        response = @rest_client[path].post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
+        response = @rest_client[path].extend(PostOverride).post(params, 'X-Api-Version' => @api_version) do |response, request, result, &block|
           if [301, 302, 307].include?(response.code)
             update_api_url(response)
-            response.follow_redirection(request, result, &block)
+            response = @rest_client[path].extend(PostOverride).post(params, 'X-Api-Version' => @api_version)
           else
             response.return!(request, result)
           end
