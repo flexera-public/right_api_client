@@ -55,7 +55,7 @@ module RightApi
     include Helper
 
     DEFAULT_OPEN_TIMEOUT = nil
-    DEFAULT_TIMEOUT = -1
+    DEFAULT_TIMEOUT = nil
     DEFAULT_MAX_ATTEMPTS = 5
 
     ROOT_RESOURCE  = '/api/session'
