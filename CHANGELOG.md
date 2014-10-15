@@ -1,7 +1,10 @@
 # CHANGELOG.md
 
 ## Next
- - <Your change here>
+
+## 1.5.23
+ - \#78 Prevent logging of credentials during login requests
+ - \#77 Add support for OAuth2 authentication via refresh token
 
 ## 1.5.22
  - \#76 Add ability to directly access attributes of a ResourceDetail
