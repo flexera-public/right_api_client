@@ -2,6 +2,9 @@
 
 ## Next
 
+## 1.5.24
+ - \#81 Pass ssl_version option of TLSv1 to rest-client
+
 ## 1.5.23
  - \#78 Prevent logging of credentials during login requests
  - \#77 Add support for OAuth2 authentication via refresh token
