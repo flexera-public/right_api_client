@@ -58,6 +58,8 @@ module RightApi
     DEFAULT_TIMEOUT = -1
     DEFAULT_MAX_ATTEMPTS = 5
 
+    DEFAULT_SSL_VERSION = 'TLSv1'
+
     ROOT_RESOURCE  = '/api/session'
     OAUTH_ENDPOINT = '/api/oauth2'
     ROOT_INSTANCE_RESOURCE = '/api/session/instance'
@@ -116,6 +118,7 @@ module RightApi
 
       @api_url, @api_version = DEFAULT_API_URL, API_VERSION
       @open_timeout, @timeout, @max_attempts = DEFAULT_OPEN_TIMEOUT, DEFAULT_TIMEOUT, DEFAULT_MAX_ATTEMPTS
+      @ssl_version = DEFAULT_SSL_VERSION
       @enable_retry = false
 
       # Initializing all instance variables from hash
@@ -127,7 +130,7 @@ module RightApi
 
       # allow a custom resource-style REST client (for special logging, etc.)
       @rest_client_class ||= ::RestClient::Resource
-      @rest_client = @rest_client_class.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout)
+      @rest_client = @rest_client_class.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout, :ssl_version => @ssl_version)
       @last_request = {}
 
       # There are five options for login:
@@ -593,7 +596,7 @@ module RightApi
       # redirect (i.e. always set :timeout => -1) but that seems like an
       # oversight; always use configured timeout values regardless of redirect.
       @rest_client = @rest_client_class.new(
-        @api_url, :open_timeout => @open_timeout, :timeout => @timeout)
+        @api_url, :open_timeout => @open_timeout, :timeout => @timeout, :ssl_version => @ssl_version)
     end
   end
 end

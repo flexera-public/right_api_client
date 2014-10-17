@@ -33,3 +33,4 @@
 # The following are optional parameters:
 :api_url: (this defaults to https://my.rightscale.com)
 :api_version: (this defaults to 1.5)
+:ssl_version: (this defaults to TLSv1)
