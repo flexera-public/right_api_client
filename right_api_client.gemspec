@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "right_api_client"
-  s.version = "1.5.23"
+  s.version = "1.5.24"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["RightScale, Inc."]
-  s.date = "2014-10-15"
+  s.date = "2014-10-17"
   s.description = "\nThe right_api_client gem simplifies the use of RightScale's MultiCloud API.\nIt provides a simple object model of the API resources, and handles all of the\nfine details involved in making HTTP calls and translating their responses.\n"
   s.email = "rubygems@rightscale.com"
   s.extra_rdoc_files = [
