@@ -96,6 +96,11 @@ Log to STDOUT:
 
     @client.log(STDOUT)
 
+### Retrying HTTP Requests
+HTTP calls can sometimes fail. To enable retrying idempotent requests automatically, enable the `:enable_retry` flag. By default, this value is `false`
+
+    @client = RightApi::Client.new(:email => 'my@email.com', :password => 'my_password', :account_id => 'my_account_id', :enable_retry => true)
+
 ### Managing multiple accounts
 Multiple accounts can be managed by using the api\_url and account\_id attributes on the client.
 
