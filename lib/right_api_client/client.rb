@@ -73,7 +73,7 @@ module RightApi
       cookies
       account_id api_url api_version
       timeout open_timeout max_attempts
-      enable_retry rest_client_class
+      enable_retry rest_client_class ssl_version
     ]
 
     # @return [String] OAuth 2.0 refresh token if provided
@@ -105,6 +105,9 @@ module RightApi
 
     # @return [Integer] number of seconds to wait for API response
     attr_reader :timeout
+
+    # @return [String] SSL protocol version to use
+    attr_reader :ssl_version
 
     # @return [Integer] number of times to retry idempotent requests (iff enable_retry == true)
     attr_reader :max_attempts
