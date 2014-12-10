@@ -57,12 +57,37 @@ describe RightApi::Client, :functional=>true do
       client.cookies.should == "cookies only"
     end
 
-    it "accepts an access_token argument when creating a new client" do
-      client = RightApi::Client.new({:access_token => "access token only"})
-      client.access_token.should == "access token only"
+    context 'given :access_token parameter' do
+      let(:client) { RightApi::Client.new({:access_token => "access token only"}) }
+
+      it "accepts the token" do
+        client.access_token.should == "access token only"
+
+        @rest_client.should_receive(:[]).with('/api/oauth2').never
+        deployment_session = flexmock("Deployment Session")
+        deployment_session.should_receive(:post).and_return(1)
+        @rest_client.should_receive(:[]).with('/api/deployments').and_return(deployment_session)
+
+        response = @client.deployments.create(:deployment => {:name => "deployment_name"})
+        response.should == 1
+      end
+
+      it "doesn't try to login" do
+        client.access_token.should == "access token only"
+
+        @rest_client.should_receive(:[]).with('/api/oauth2').never
+        @rest_client.should_receive(:[]).with('/api/session').never
+
+        deployment_session = flexmock("Deployment Session")
+        deployment_session.should_receive(:post).and_return(1)
+        @rest_client.should_receive(:[]).with('/api/deployments').and_return(deployment_session)
+
+        response = @client.deployments.create(:deployment => {:name => "deployment_name"})
+        response.should == 1
+      end
     end
 
-    it "post request works" do
+    it "posts" do
       deployment_session = flexmock("Deployment Session")
       deployment_session.should_receive(:post).and_return(1)
       @rest_client.should_receive(:[]).with('/api/deployments').and_return(deployment_session)
@@ -70,7 +95,7 @@ describe RightApi::Client, :functional=>true do
       response.should == 1
     end
 
-    it "get request works" do
+    it "gets" do
       deployment_session = flexmock("Deployment Session")
       deployment_session.should_receive(:get).and_return(nil)
       @rest_client.should_receive(:[]).with("/api/deployments/1/to_ary").and_return(deployment_session)
@@ -78,7 +103,7 @@ describe RightApi::Client, :functional=>true do
       deployment.href.should == "/api/deployments/1"
     end
 
-    it "put request works" do
+    it "puts" do
       deployment_session = flexmock("Deployment Session")
       deployment_session.should_receive(:get)
       @rest_client.should_receive(:[]).with("/api/deployments/1/to_ary").and_return(deployment_session)
@@ -89,7 +114,7 @@ describe RightApi::Client, :functional=>true do
       deployment.update(:deployment => {:name => "updated"}).should == 1
     end
 
-    it "delete request works" do
+    it "deletes" do
       deployment_session = flexmock("Deployment Session")
       deployment_session.should_receive(:get)
       @rest_client.should_receive(:[]).with("/api/deployments/1/to_ary").and_return(deployment_session)
@@ -100,7 +125,7 @@ describe RightApi::Client, :functional=>true do
       deployment.destroy.should == 1
     end
 
-    it "special request:adds tag to deployment works" do
+    it "multi-adds tags as a special request" do
       tag_session = flexmock("Tag Session")
       tag_session.should_receive(:post).and_return(1)
       @rest_client.should_receive(:[]).with("/api/tags/multi_add").and_return(tag_session)
