@@ -1,6 +1,9 @@
 # CHANGELOG.md
 
 ## Next
+ - Your info here
+
+## 1.5.25
  - \#85 Fix bug causing useless and malformed login if client is passed an access token with no expiry timestamp
 
 ## 1.5.24
