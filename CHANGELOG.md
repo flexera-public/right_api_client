@@ -1,6 +1,7 @@
 # CHANGELOG.md
 
 ## Next
+ - \#85 Fix bug causing useless and malformed login if client is passed an access token with no expiry timestamp
 
 ## 1.5.24
  - \#81 Pass ssl_version option of TLSv1 to rest-client

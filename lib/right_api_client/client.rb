@@ -112,7 +112,7 @@ module RightApi
     # @return [Boolean] whether to retry idempotent requests that fail
     attr_reader :enable_retry
 
-    # Instantiate a new Client.
+    # Instantiate a new Client, then login if necessary.
     def initialize(args)
       raise 'This API client is only compatible with Ruby 1.8.7 and upwards.' if (RUBY_VERSION < '1.8.7')
 
@@ -142,7 +142,7 @@ module RightApi
       #
       # The latter two options are not really login; they imply that the user logged in out of band.
       # See config/login.yml.example for more info.
-      login() unless @cookies || @access_token
+      login() if need_login?
 
       timestamp_cookies
 
@@ -499,13 +499,28 @@ module RightApi
       end
     end
 
-    # Determine whether the client needs a fresh round of authentication based on state of
-    # cookies/tokens and their expiration timestamps.
+    # Determine whether the client should login based on known state of cookies/tokens and their
+    # expiration timestamps.
     #
-    # @return [Boolean] true if re-login is suggested
+    # If the method returns true, then the client MUST login based on known state.
+    #
+    # If the method returns false, login MAY still be required; we simply cannot determine with
+    # confidence that login is required. This can happen in the following cases:
+    #   - cookie jar has cookies, but they are expired, corrupted or unrelated to auth
+    #   - #initialize method received an access_token but no access_token_expires_at
+    #
+    # @return [Boolean] true if re-login is known to be required
     def need_login?
-      (@refresh_token && @refresh_token_expires_at && @refresh_token_expires_at - Time.now < 900) ||
-      (@cookies.respond_to?(:empty?) && @cookies.empty?)
+      if @access_token
+        # If our access token is expired and we know it...
+        @access_token_expires_at && @access_token_expires_at - Time.now < 900
+      elsif @cookies
+        # Or if we have a cookie jar and it's empty
+        @cookies.respond_to?(:empty?) && @cookies.empty?
+      else
+        # Or if we have neither cookies nor an access token (because how else can a man auth?)
+        true
+      end
     end
 
     # Determine whether an exception can be fixed by logging in again.
@@ -513,7 +528,7 @@ module RightApi
     # @return [Boolean] true if re-login is appropriate
     def re_login?(e)
       auth_error =
-        (e.message.index('403') && e.message =~ %r(.*Session cookie is expired or invalid)) ||
+        (e.message.index('403') && e.message =~ %r(.*cookie is expired or invalid)) ||
         e.message.index('401')
 
       renewable_creds =
