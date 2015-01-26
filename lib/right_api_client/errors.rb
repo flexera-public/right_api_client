@@ -28,6 +28,14 @@ module RightApi
 
       'Error: '
     end
+
+    # Get the HTTP response code that triggered this error.
+    #
+    # @return [Integer] the response code
+    #
+    def response_code
+      @response.code
+    end
   end
 
   class UnknownRouteError < ApiError

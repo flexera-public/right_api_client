@@ -525,11 +525,14 @@ module RightApi
 
     # Determine whether an exception can be fixed by logging in again.
     #
+    # @param e [ApiError] the exception to check
+    #
     # @return [Boolean] true if re-login is appropriate
+    #
     def re_login?(e)
       auth_error =
-        (e.message.index('403') && e.message =~ %r(.*cookie is expired or invalid)) ||
-        e.message.index('401')
+        (e.response_code == 403 && e.message =~ %r(.*cookie is expired or invalid)) ||
+        e.response_code == 401
 
       renewable_creds =
         (@instance_token || (@email && (@password || @password_base64)) || @refresh_token)
