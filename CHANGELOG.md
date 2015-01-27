@@ -3,6 +3,9 @@
 ## Next
  - Your info here
 
+## 1.5.26
+ - \#87 Use the actual response code to determine if re-login is appropriate
+
 ## 1.5.25
  - \#85 Fix bug causing useless and malformed login if client is passed an access token with no expiry timestamp
 
