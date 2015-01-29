@@ -10,7 +10,7 @@ It is assumed that users are already familiar with the RightScale API:
   - API Documentation: http://support.rightscale.com/12-Guides/RightScale_API_1.5
   - API Reference Docs: http://reference.rightscale.com/api1.5/index.html
 
-Maintained by the RightScale Salmon team
+Maintained by the RightScale QA ServerTemplate and Ivory Automation Team
 
 ## Installation
 Ruby 1.8.7 or higher is required.
@@ -296,3 +296,17 @@ bundle exec rspec spec/functional
 ## Wrong ruby version
 
 Ruby 1.8.7 or higher is required.
+
+## Warning message: To disable read timeouts, please set timeout to nil instead of -1
+
+To avoid this message you can set ```:timeout```  when creating your RightAp::Client object.  You will need
+to use a different value depending on which version of rest-client is being used.
+
+### rest-client 1.6.x supports ruby 1.8.x
+* ```:timeout => nil```, 60 second timeout (default of Net::HTTP)
+* ```:timeout => -1```, infinite timeout.
+
+### rest-client 1.7.x supports ruby >= 1.9.x
+* **```:timeout => nil```, infinite timeout - no warning message.**
+* ```:timeout => -1```, infinite timeout - plus the error message above being displayed.
+
