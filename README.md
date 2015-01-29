@@ -300,7 +300,7 @@ Ruby 1.8.7 or higher is required.
 ## Warning message: To disable read timeouts, please set timeout to nil instead of -1
 
 To avoid this message you can set ```:timeout```  when creating your RightAp::Client object.  You will need
-to use a different value Depending on which version of rest-client is being used.
+to use a different value depending on which version of rest-client is being used.
 
 ### rest-client 1.6.x supports ruby 1.8.x
 * ```:timeout => nil```, timeout of 60s (default of Net::HTTP)
