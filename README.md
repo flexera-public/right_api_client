@@ -303,7 +303,7 @@ To avoid this message you can set ```:timeout```  when creating your RightAp::Cl
 to use a different value depending on which version of rest-client is being used.
 
 ### rest-client 1.6.x supports ruby 1.8.x
-* ```:timeout => nil```, timeout of 60s (default of Net::HTTP)
+* ```:timeout => nil```, 60 second timeout (default of Net::HTTP)
 * ```:timeout => -1```, infinite timeout.
 
 ### rest-client 1.7.x supports ruby >= 1.9.x
