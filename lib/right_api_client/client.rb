@@ -369,7 +369,7 @@ module RightApi
       data = if resource_type == 'text'
         { 'text' => body }
       else
-        if res.headers[:content_type].split(';').first.strip == 'text/plain'
+        if res && res.headers[:content_type].split(';').first.strip == 'text/plain'
           {:value => body}
         else
           JSON.parse(body, :allow_nan => true)
