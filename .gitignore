@@ -1,6 +1,6 @@
 .DS_Store
 nbproject
-*login.yml
+*login*.yml
 cookies
 .loadpath
 .project
