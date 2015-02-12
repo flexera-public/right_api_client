@@ -347,6 +347,8 @@ module RightApi
               # will be used later to add relevant methods to relevant resources
               type = if result.content_type.index('rightscale')
                 get_resource_type(result.content_type)
+              elsif result.content_type.index('text/plain')
+                'text'
               else
                 ''
               end
@@ -369,11 +371,7 @@ module RightApi
       data = if resource_type == 'text'
         { 'text' => body }
       else
-        if res && res.headers[:content_type].split(';').first.strip == 'text/plain'
-          {:value => body}
-        else
-          JSON.parse(body, :allow_nan => true)
-        end
+        JSON.parse(body, :allow_nan => true)
       end
 
       [resource_type, path, data]
