@@ -347,6 +347,8 @@ module RightApi
               # will be used later to add relevant methods to relevant resources
               type = if result.content_type.index('rightscale')
                 get_resource_type(result.content_type)
+              elsif result.content_type.index('text/plain')
+                'text'
               else
                 ''
               end
