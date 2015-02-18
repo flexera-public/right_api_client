@@ -163,6 +163,7 @@ module RightApi
             # Following are special cases that need to over-ride the obj_path
             obj_path = '/api/backups'                if meth == :backups
             obj_path = instance_href + '/live/tasks' if meth == :live_tasks
+            obj_path = '/api/tags'                   if meth == :tags
             if has_id(*args)
               obj_path = add_id_and_params_to_path(obj_path, *args)
               RightApi::Resource.process(self, get_singular(meth), obj_path)

@@ -19,6 +19,7 @@ describe RightApi::Client, :unit=>true do
     it "returns an instance of the Resources class when user does not provide an id" do
       @client.volumes.class.should == RightApi::Resources
       @client.backups.class.should == RightApi::Resources
+      @client.tags.class.should == RightApi::Resources
     end
   end
 end
