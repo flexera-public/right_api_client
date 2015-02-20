@@ -60,6 +60,9 @@ Examples:
    
     # A non-CRUD action: POST /api/servers/:server_id/launch
     @client.servers(:id => 4).show.launch
+    
+    # Get an resource by it's href
+    @client.resource('/api/clouds/1/volumes/bfd53dbc005f').show
 
 As seen above, whenever you need to chain methods, you must call .show before specifying the next method.
 
