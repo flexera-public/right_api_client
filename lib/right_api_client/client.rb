@@ -355,7 +355,7 @@ module RightApi
 
               # work around getting ASCII-8BIT from some resources like audit entry detail
               charset = get_charset(response.headers)
-              if response.body.encoding != charset
+              if charset && response.body.encoding != charset
                 response.body.force_encoding(charset)
               end
 
@@ -559,8 +559,6 @@ module RightApi
       charset = headers[:content_type].split(';').map(&:strip).detect { |item| item =~ /^charset=/i }
       if charset
         Encoding.find(charset.gsub(/^charset=/i, ''))
-      else
-        Encoding::UTF_8
       end
     end
 
