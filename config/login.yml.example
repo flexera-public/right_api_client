@@ -28,7 +28,8 @@
 # 4. Use the following parameter to send an existing OAuth access token with every request:
 # To learn more about OAuth and how to obtain an access token, see
 # http://support.rightscale.com/12-Guides/03-Rightscale_API/OAuth
-:access_token: my_token_string
+# ex: @client = RightApi::Client.new(:api_url => "https://us-x.rightscale.com", :account_id => <account_id>, :refresh_token => <token>)
+:refresh_token: my_token_string
 
 # The following are optional parameters:
 :api_url: (this defaults to https://my.rightscale.com)
