@@ -7,7 +7,7 @@ describe RightApi::Client, :unit=>true do
     end
 
     it "has the required methods for the client" do
-      @client.api_methods.sort.collect{|s| s.to_s}.should == ["backups", "get_instance", "live_tasks", "volume_attachments", "volume_snapshots", "volume_types", "volumes"]
+      @client.api_methods.sort.collect{|s| s.to_s}.should == ["backups", "get_instance", "live_tasks", "tags","volume_attachments", "volume_snapshots", "volume_types", "volumes"]
     end
 
     it "returns an instance of the Resource class when user provides an id" do
@@ -19,6 +19,7 @@ describe RightApi::Client, :unit=>true do
     it "returns an instance of the Resources class when user does not provide an id" do
       @client.volumes.class.should == RightApi::Resources
       @client.backups.class.should == RightApi::Resources
+      @client.tags.class.should == RightApi::Resources
     end
   end
 end

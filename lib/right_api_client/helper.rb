@@ -17,7 +17,7 @@ module RightApi::Helper
   }
 
   # List of resources that are available as instance-facing calls
-  INSTANCE_FACING_RESOURCES = [:backups, :live_tasks, :volumes, :volume_attachments, :volume_snapshots, :volume_types]
+  INSTANCE_FACING_RESOURCES = [:backups, :live_tasks, :volumes, :volume_attachments, :volume_snapshots, :volume_types, :tags]
 
   # Helper used to add methods to classes dynamically
   def define_instance_method(meth, &blk)
