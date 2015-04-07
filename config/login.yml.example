@@ -6,7 +6,7 @@
 # The account number is at the end of the browser address bar.
 :account_id: my_account_id
 
-# There are five login mechanisms:
+# There are six login mechanisms:
 
 # 0. Use the following parameters to login with your email and base64-encoded password:
 # To encode your plaintext password, use 'base64' command or similar.
@@ -28,6 +28,12 @@
 # 4. Use the following parameter to send an existing OAuth access token with every request:
 # To learn more about OAuth and how to obtain an access token, see
 # http://support.rightscale.com/12-Guides/03-Rightscale_API/OAuth
+:access_token: my_token_string
+
+# 5. Use the following parameter to use your personal OAuth Token with your requests:
+# Please be careful! This is a user-specific OAuth 2.0 refresh token representing a grant with unrestricted scope.
+# Anyone who possesses it can login to RightScale's API and perform requests on this account with all of your permissions.
+# For more information, consult http://support.rightscale.com/12-Guides/03-Rightscale_API/OAuth
 # ex: @client = RightApi::Client.new(:api_url => "https://us-x.rightscale.com", :account_id => <account_id>, :refresh_token => <token>)
 :refresh_token: my_token_string
 
