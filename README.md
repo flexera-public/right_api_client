@@ -34,8 +34,8 @@ navigate to the Settings > Account Settings page. The account is is at the end o
 
 The client makes working with and getting to know the API much easier. It spiders the API dynamically to
 discover its resources on the fly. At every step, the user has the ability to query api_methods(), which
-indicates the potential methods that can be called. The ```config/login.yml.example``` file provides
-details of different login parameters.
+indicates the potential methods that can be called. **The ```config/login.yml.example``` file provides
+details of different login parameters, for example, oauth authentication.**
 
 ### Making API calls
 Essentially, just follow the RightScale API documentation (available from http://support.rightscale.com)
