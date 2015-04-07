@@ -354,6 +354,12 @@ module RightApi
                 ''
               end
 
+              # work around getting ASCII-8BIT from some resources like audit entry detail
+              charset = get_charset(response.headers)
+              if charset && response.body.encoding != charset
+                response.body.force_encoding(charset)
+              end
+
               [type, response.body]
             when 301, 302
               update_api_url(response)
@@ -547,6 +553,14 @@ module RightApi
     # @return [String] the resource_type associated with content_type
     def get_resource_type(content_type)
       content_type.scan(/\.rightscale\.(.*)\+json/)[0][0]
+    end
+
+    # @param [Hash{Symbol => String}] headers the HTTP headers
+    def get_charset(headers)
+      charset = headers[:content_type].split(';').map(&:strip).detect { |item| item =~ /^charset=/i }
+      if charset
+        Encoding.find(charset.gsub(/^charset=/i, ''))
+      end
     end
 
     # Makes sure the @cookies have a timestamp.
