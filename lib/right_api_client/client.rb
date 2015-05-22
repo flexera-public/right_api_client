@@ -55,7 +55,7 @@ module RightApi
     include Helper
 
     DEFAULT_OPEN_TIMEOUT = nil
-    DEFAULT_TIMEOUT = -1
+    DEFAULT_TIMEOUT = 6 * 60
     DEFAULT_MAX_ATTEMPTS = 5
 
     DEFAULT_SSL_VERSION = 'TLSv1'
