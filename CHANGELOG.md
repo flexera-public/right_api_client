@@ -3,6 +3,14 @@
 ## Next
  - Your info here
 
+## 1.5.27
+ - \#96 Set default timeout to 6 minutes since the RightScale API has a timeout of 5 minutes for calls
+ - \#94 Updating the README and config/login.yml.example with oauth info
+ - \#93 Work around getting ASCII-8BIT for audit entry detail.
+ - \#91 Fix for issue #83 instance facing client should support tags
+ - \#90 Allow GET /api/right_scripts/:id/source to work since it comes back as text/plain
+ - \#88 Update maintainer info, and add description to bypass the timeout warning
+
 ## 1.5.26
  - \#87 Use the actual response code to determine if re-login is appropriate
 
