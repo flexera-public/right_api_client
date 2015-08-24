@@ -14,7 +14,7 @@ module RightApi::Helper
     'inputs'    => {:multi_update    => 'do_put'},
     'tags'      => {:by_tag          => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'},
     'backups'   => {:cleanup         => 'do_post'},
-    'runnable_bindings' => {:multi_update => 'do_put'}
+    'runnable_bindings' => {:multi_update => 'do_put'},
 
   }
 
