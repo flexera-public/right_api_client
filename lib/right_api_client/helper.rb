@@ -13,7 +13,9 @@ module RightApi::Helper
     'instances' => {:multi_terminate => 'do_post', :multi_run_executable => 'do_post'},
     'inputs'    => {:multi_update    => 'do_put'},
     'tags'      => {:by_tag          => 'do_post', :by_resource => 'do_post', :multi_add => 'do_post', :multi_delete =>'do_post'},
-    'backups'   => {:cleanup         => 'do_post'}
+    'backups'   => {:cleanup         => 'do_post'},
+    'runnable_bindings' => {:multi_update => 'do_put'},
+
   }
 
   # List of resources that are available as instance-facing calls
