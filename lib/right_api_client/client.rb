@@ -483,9 +483,12 @@ module RightApi
 
       req, res, resource_type, body = nil
 
+      # Altering headers to set Content-Type to text/plain when updating rightscript content
+      put_headers = path =~ %r(^/api/right_scripts/.+/source$) ? headers.merge('Content-Type' => 'text/plain') : headers
+
       begin
         retry_request do
-          @rest_client[path].put(params, headers) do |response, request, result|
+          @rest_client[path].put(params, put_headers) do |response, request, result|
             req, res = request, response
             update_cookies(response)
             update_last_request(request, response)
