@@ -3,6 +3,7 @@ GEM
   specs:
     addressable (2.3.6)
     builder (3.2.2)
+    byebug (6.0.2)
     coderay (1.1.0)
     columnize (0.3.6)
     coveralls (0.7.1)
@@ -98,6 +99,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  byebug
   coveralls
   debugger
   flexmock (= 0.8.7)
@@ -109,3 +111,6 @@ DEPENDENCIES
   rest-client (~> 1.6)
   rspec (= 2.9.0)
   ruby-debug
+
+BUNDLED WITH
+   1.10.6
