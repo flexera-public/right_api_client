@@ -3,6 +3,10 @@
 ## Next
  - Your info here
 
+## 1.5.28
+ - \#98 Update do_put to add text/plain Content-type
+ - \#97 Added put action for the runnable_binding resource
+
 ## 1.5.27
  - \#96 Set default timeout to 6 minutes since the RightScale API has a timeout of 5 minutes for calls
  - \#94 Updating the README and config/login.yml.example with oauth info
