@@ -74,6 +74,7 @@ module RightApi
       account_id api_url api_version
       timeout open_timeout max_attempts
       enable_retry rest_client_class
+      local_token
     ]
 
     # @return [String] OAuth 2.0 refresh token if provided
@@ -92,6 +93,9 @@ module RightApi
 
     # @return [String] instance API token as included in user-data
     attr_reader :instance_token
+
+    # @return [String] local proxy RL10 API token
+    attr_reader :local_token
 
     # @return [Hash] collection of API cookies
     # @deprecated please use OAuth 2.0 refresh tokens instead of password-based authentication
@@ -147,7 +151,7 @@ module RightApi
       timestamp_cookies
 
       # Add the top level links for instance_facing_calls
-      if @instance_token
+      if @instance_token || @local_token
         resource_type, path, data = self.do_get(ROOT_INSTANCE_RESOURCE)
         instance_href = get_href_from_links(data['links'])
         cloud_href = instance_href.split('/instances')[0]
@@ -262,6 +266,10 @@ module RightApi
           [ { 'instance_token' => @instance_token,
               'account_href' => account_href },
             ROOT_INSTANCE_RESOURCE ]
+      elsif @local_token
+          [ { 'local_token' => @local_token,
+              'account_href' => account_href },
+            ROOT_INSTANCE_RESOURCE ]
       elsif @password_base64
         [ { 'email' => @email,
             'password' => Base64.decode64(@password_base64),
@@ -314,6 +322,10 @@ module RightApi
         h['Authorization'] = "Bearer #{@access_token}"
       elsif @cookies
         h[:cookies] = @cookies
+      end
+
+      if @local_token
+        h['X-RLL-Secret'] = @local_token
       end
 
       h
@@ -547,7 +559,7 @@ module RightApi
         e.response_code == 401
 
       renewable_creds =
-        (@instance_token || (@email && (@password || @password_base64)) || @refresh_token)
+        (@instance_token || (@email && (@password || @password_base64)) || @refresh_token || @local_token)
 
       auth_error && renewable_creds
     end
