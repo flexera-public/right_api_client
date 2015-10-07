@@ -74,6 +74,7 @@ module RightApi
       account_id api_url api_version
       timeout open_timeout max_attempts
       enable_retry rest_client_class
+      local_token
     ]
 
     # @return [String] OAuth 2.0 refresh token if provided
