@@ -243,8 +243,8 @@ Having RightLink10 installed on an instance allows 'instance facing calls' via a
 [reverse proxy](http://docs.rightscale.com/rl10/reference/rl10_local_and_proxied_http_requests.html).  To use
 the reverse proxy on the instance, you will need need to provide the following parameters:
 
-    `:local_token`
-    `:api_url` containing the local ephemeral port
+- ```:local_token``` See [documentation]((http://docs.rightscale.com/rl10/reference/rl10_local_and_proxied_http_requests.html) where to find this token on the instance
+- ```:api_url``` This would be `localhost` with the ephemeral port number
 
 ### Example
     @instance_client = RightApi::Client.new(:local_token => 'local_token', :account_id => 'http://localhost:12345')
