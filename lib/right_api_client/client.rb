@@ -74,7 +74,6 @@ module RightApi
       account_id api_url api_version
       timeout open_timeout max_attempts
       enable_retry rest_client_class
-      local_token
     ]
 
     # @return [String] OAuth 2.0 refresh token if provided
@@ -93,9 +92,6 @@ module RightApi
 
     # @return [String] instance API token as included in user-data
     attr_reader :instance_token
-
-    # @return [String] local proxy RL10 API token
-    attr_reader :local_token
 
     # @return [Hash] collection of API cookies
     # @deprecated please use OAuth 2.0 refresh tokens instead of password-based authentication
@@ -264,10 +260,6 @@ module RightApi
           OAUTH_ENDPOINT ]
       elsif @instance_token
           [ { 'instance_token' => @instance_token,
-              'account_href' => account_href },
-            ROOT_INSTANCE_RESOURCE ]
-      elsif @local_token
-          [ { 'local_token' => @local_token,
               'account_href' => account_href },
             ROOT_INSTANCE_RESOURCE ]
       elsif @password_base64
@@ -535,7 +527,10 @@ module RightApi
     #
     # @return [Boolean] true if re-login is known to be required
     def need_login?
-      if @access_token
+      # @local_token is the secret to use the local proxy
+      if @local_token
+        false
+      elsif @access_token
         # If our access token is expired and we know it...
         @access_token_expires_at && @access_token_expires_at - Time.now < 900
       elsif @cookies
@@ -559,7 +554,7 @@ module RightApi
         e.response_code == 401
 
       renewable_creds =
-        (@instance_token || (@email && (@password || @password_base64)) || @refresh_token || @local_token)
+        (@instance_token || (@email && (@password || @password_base64)) || @refresh_token)
 
       auth_error && renewable_creds
     end
