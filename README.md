@@ -238,6 +238,16 @@ Due to the limiting scope of the instance-facing calls, only a subset of these m
 (see the API Reference Docs for valid methods). If you call a method that instance's are not authorized to access,
 you will get a 403 Permission Denied error.
 
+## RightLink10 and Instance Facing Calls:
+Having RightLink10 installed on an instance allows 'instance facing calls' via a local
+[reverse proxy](http://docs.rightscale.com/rl10/reference/rl10_local_and_proxied_http_requests.html).  To use
+the reverse proxy on the instance, you will need need to provide the following parameters:
+
+    `:local_token`
+    `:api_url` containing the local ephemeral port
+
+### Example
+    @instance_client = RightApi::Client.new(:local_token => 'local_token', :account_id => 'http://localhost:12345')
 
 # Design Decisions
 In the code, we only hard-code CRUD operations for resources. We use the .show and .index methods to make the client

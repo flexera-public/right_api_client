@@ -528,7 +528,8 @@ module RightApi
     #
     # @return [Boolean] true if re-login is known to be required
     def need_login?
-      # @local_token is the secret to use the local proxy
+      # @local_token is the key to use the local proxy.  Connecting using this key
+      # and the local proxy does not require login.
       if @local_token
         false
       elsif @access_token
