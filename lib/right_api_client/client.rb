@@ -74,7 +74,7 @@ module RightApi
       account_id api_url api_version
       timeout open_timeout max_attempts
       enable_retry rest_client_class
-      local_token
+      rl10
     ]
 
     # @return [String] OAuth 2.0 refresh token if provided
@@ -128,6 +128,13 @@ module RightApi
       } if args.is_a? Hash
 
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
+
+      # If rl10 parameter was passed true, read secrets file to set @local_token, and @api_url
+      if @rl10
+        local_auth_info = Hash[File.open('/var/run/rightlink/secret').map{ |line| line.chomp.split('=') }]
+        @local_token = local_auth_info['RS_RLL_SECRET']
+        @api_url = "http://localhost:#{local_auth_info['RS_RLL_PORT']}"
+      end
 
       # allow a custom resource-style REST client (for special logging, etc.)
       @rest_client_class ||= ::RestClient::Resource
