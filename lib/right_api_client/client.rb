@@ -3,6 +3,7 @@ require 'json'
 require 'set'
 require 'cgi'
 require 'base64'
+require 'rbconfig'
 
 require File.expand_path('../version', __FILE__) unless defined?(RightApi::Client::VERSION)
 require File.expand_path('../helper', __FILE__)
@@ -131,7 +132,13 @@ module RightApi
 
       # If rl10 parameter was passed true, read secrets file to set @local_token, and @api_url
       if @rl10
-        local_auth_info = Hash[File.open('/var/run/rightlink/secret').map{ |line| line.chomp.split('=') }]
+        case RbConfig::CONFIG['host_os']
+        when /mswin|mingw|cygwin/
+          local_secret_file = File.join(ENV['ProgramData'] || 'C:/ProgramData', 'RightScale/RightLink/secret')
+        else
+          local_secret_file = '/var/run/rightlink/secret'
+        end
+        local_auth_info = Hash[File.readlines(local_secret_file).map{ |line| line.chomp.split('=', 2) }]
         @local_token = local_auth_info['RS_RLL_SECRET']
         @api_url = "http://localhost:#{local_auth_info['RS_RLL_PORT']}"
       end
