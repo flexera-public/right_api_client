@@ -323,11 +323,6 @@ Version 1.6.x  Ruby 2.0 or higher is required.
 To avoid this message you can set ```:timeout```  when creating your RightAp::Client object.  You will need
 to use a different value depending on which version of rest-client is being used.
 
-### for right\_api\_client versions 1.5x,  rest-client 1.6.x supports ruby 1.8.x
-* ```:timeout => nil```, 60 second timeout (default of Net::HTTP)
-* ```:timeout => -1```, infinite timeout.
-
-### rest-client 1.7.x supports ruby >= 1.9.x
 * **```:timeout => nil```, infinite timeout - no warning message.**
 * ```:timeout => -1```, infinite timeout - plus the error message above being displayed.
 
