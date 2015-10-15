@@ -3,6 +3,10 @@
 ## Next
  - Your info here
 
+## 1.6
+ - \#101 Deprecate support for ruby 1.x
+ - \#100 Add support for using local proxy with RightLink10
+
 ## 1.5.28
  - \#98 Update do_put to add text/plain Content-type
  - \#97 Added put action for the runnable_binding resource
