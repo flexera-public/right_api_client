@@ -17,12 +17,6 @@ Ruby 2.0 or higher is required as of version 1.6
 
     gem install right_api_client
 
-## Known issues:
- * Cookies are lost on follow redirect.  This is a bug introduced in rest-client. 
-[Github issue #406](https://github.com/rest-client/rest-client/issues/406)
-has already been filed for this.  To work around this, please lock the rest-client version 
-to 1.7 until the issue is fixed.
-
 ## Versioning
 The right\_api\_client gem is versioned using the usual X.Y.Z notation, where X.Y is the
 RightScale API version, and Z is the client version. For example, if you want to use
@@ -313,10 +307,17 @@ bundle exec rspec spec/functional
 
 # Troubleshooting
 
+## Known issues:
+ * Cookies are lost on follow redirect.  This is a bug introduced in rest-client. 
+[Github issue #406](https://github.com/rest-client/rest-client/issues/406)
+has already been filed for this.  To work around this, please lock the rest-client version 
+to 1.7 until the issue is fixed.
+
+
 ## Wrong ruby version
 
-Version 1.5.x: Ruby 1.x is required.
-Version 1.6.x  Ruby 2.0 or higher is required.
+* As of right\_api\_client gem version 1.6, only Ruby 2.0 or higher is supported.
+* right\_api\_client version 1.5.28 was tested with ruby 1.9, but it no longer supported.
 
 ## Warning message: To disable read timeouts, please set timeout to nil instead of -1
 
