@@ -3,6 +3,7 @@ require 'json'
 require 'set'
 require 'cgi'
 require 'base64'
+require 'rbconfig'
 
 require File.expand_path('../version', __FILE__) unless defined?(RightApi::Client::VERSION)
 require File.expand_path('../helper', __FILE__)
@@ -74,6 +75,7 @@ module RightApi
       account_id api_url api_version
       timeout open_timeout max_attempts
       enable_retry rest_client_class
+      rl10
     ]
 
     # @return [String] OAuth 2.0 refresh token if provided
@@ -128,6 +130,19 @@ module RightApi
 
       raise 'This API client is only compatible with the RightScale API 1.5 and upwards.' if (Float(@api_version) < 1.5)
 
+      # If rl10 parameter was passed true, read secrets file to set @local_token, and @api_url
+      if @rl10
+        case RbConfig::CONFIG['host_os']
+        when /mswin|mingw|cygwin/
+          local_secret_file = File.join(ENV['ProgramData'] || 'C:/ProgramData', 'RightScale/RightLink/secret')
+        else
+          local_secret_file = '/var/run/rightlink/secret'
+        end
+        local_auth_info = Hash[File.readlines(local_secret_file).map{ |line| line.chomp.split('=', 2) }]
+        @local_token = local_auth_info['RS_RLL_SECRET']
+        @api_url = "http://localhost:#{local_auth_info['RS_RLL_PORT']}"
+      end
+
       # allow a custom resource-style REST client (for special logging, etc.)
       @rest_client_class ||= ::RestClient::Resource
       @rest_client = @rest_client_class.new(@api_url, :open_timeout => @open_timeout, :timeout => @timeout, :ssl_version => @ssl_version)
@@ -147,7 +162,7 @@ module RightApi
       timestamp_cookies
 
       # Add the top level links for instance_facing_calls
-      if @instance_token
+      if @instance_token || @local_token
         resource_type, path, data = self.do_get(ROOT_INSTANCE_RESOURCE)
         instance_href = get_href_from_links(data['links'])
         cloud_href = instance_href.split('/instances')[0]
@@ -314,6 +329,10 @@ module RightApi
         h['Authorization'] = "Bearer #{@access_token}"
       elsif @cookies
         h[:cookies] = @cookies
+      end
+
+      if @local_token
+        h['X-RLL-Secret'] = @local_token
       end
 
       h
@@ -523,7 +542,11 @@ module RightApi
     #
     # @return [Boolean] true if re-login is known to be required
     def need_login?
-      if @access_token
+      # @local_token is the key to use the local proxy.  Connecting using this key
+      # and the local proxy does not require login.
+      if @local_token
+        false
+      elsif @access_token
         # If our access token is expired and we know it...
         @access_token_expires_at && @access_token_expires_at - Time.now < 900
       elsif @cookies
