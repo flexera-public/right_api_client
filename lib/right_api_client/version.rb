@@ -2,7 +2,7 @@
 module RightApi
   class Client
     VERSION        = File.read(File.expand_path('../../../VERSION', __FILE__)).strip
-    API_VERSION    = VERSION.split('.')[0..1].join('.')
+    API_VERSION    = "1.5"
     CLIENT_VERSION = VERSION.split('.')[1..-1].join('.')
   end
 end
