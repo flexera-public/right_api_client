@@ -18,10 +18,14 @@ Ruby 2.0 or higher is required as of version 1.6
     gem install right_api_client
 
 ## Versioning
-The right\_api\_client gem is versioned using the usual X.Y.Z notation, where X.Y is the
-RightScale API version, and Z is the client version. For example, if you want to use
-RightScale API 1.5, you should use the latest version of the 1.6 gem. This will ensure
-that you get the latest bug fixes for the client that is compatible with that API version.
+* Version 1.6.x
+  - API 1.5
+  - Ruby 2.0 and above
+  - Patch level recieves improvements and bug fixes moving forward.
+* Version 1.5.x
+  - API 1.5
+  - Ruby 1.8, 1.9.3
+  - Patch level receives only security or high priority fixes if requested.
 
 ## Usage Instructions
 New users can start with the following few lines of code and navigate their way around the API by following
