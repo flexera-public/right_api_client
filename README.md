@@ -18,14 +18,14 @@ Ruby 2.0 or higher is required as of version 1.6
     gem install right_api_client
 
 ## Versioning
-* version 1.6.x
-  - api 1.5
-  - ruby 2.0 and above
-  - patch level recieves improvements and bug fixes moving forward.
-* version 1.5.x
-  - api 1.5
-  - ruby 1.8, 1.9.3
-  - patch level receives only security or high priority fixes if requested.
+* Version 1.6.x
+  - Api 1.5
+  - Ruby 2.0 and above
+  - Patch level recieves improvements and bug fixes moving forward.
+* Version 1.5.x
+  - Api 1.5
+  - Ruby 1.8, 1.9.3
+  - Patch level receives only security or high priority fixes if requested.
 
 ## Usage Instructions
 New users can start with the following few lines of code and navigate their way around the API by following
