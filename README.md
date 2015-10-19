@@ -19,11 +19,11 @@ Ruby 2.0 or higher is required as of version 1.6
 
 ## Versioning
 * Version 1.6.x
-  - Api 1.5
+  - API 1.5
   - Ruby 2.0 and above
   - Patch level recieves improvements and bug fixes moving forward.
 * Version 1.5.x
-  - Api 1.5
+  - API 1.5
   - Ruby 1.8, 1.9.3
   - Patch level receives only security or high priority fixes if requested.
 
