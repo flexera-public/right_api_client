@@ -34,6 +34,7 @@
 # Please be careful! This is a user-specific OAuth 2.0 refresh token representing a grant with unrestricted scope.
 # Anyone who possesses it can login to RightScale's API and perform requests on this account with all of your permissions.
 # For more information, consult http://support.rightscale.com/12-Guides/03-Rightscale_API/OAuth
+# Note that api_url must be set to your shard when refresh_token is used.
 # ex: @client = RightApi::Client.new(:api_url => "https://us-x.rightscale.com", :account_id => <account_id>, :refresh_token => <token>)
 :refresh_token: my_token_string
 
