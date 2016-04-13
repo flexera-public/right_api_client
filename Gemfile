@@ -8,7 +8,7 @@ gem 'rest-client', '~> 1.6'
 # Development dependencies that should appear in the gemspec.
 group :development do
   gem 'rake'
-  gem 'rspec'
+  gem 'rspec', '~> 2.9'
   gem 'flexmock'
   gem 'coveralls', :require => false
   gem 'pry'
