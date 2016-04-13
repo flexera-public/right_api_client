@@ -7,16 +7,15 @@ gem 'rest-client', '~> 1.6'
 
 # Development dependencies that should appear in the gemspec.
 group :development do
-  gem 'rake', '0.8.7'
-  gem 'rspec', '2.9.0'
-  gem 'flexmock', '0.8.7'
+  gem 'rake'
+  gem 'rspec'
+  gem 'flexmock'
   gem 'coveralls', :require => false
   gem 'pry'
 end
 
 # Gems used during test and development that should be OMITTED from the gemspec
 group :test do
-  gem 'byebug',
-      :platforms => [:ruby_20, :ruby_21]
-  gem 'jeweler', '~> 2.0'
+  gem 'pry-byebug'
+  gem 'jeweler'
 end

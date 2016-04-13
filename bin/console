@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+GIT_ROOT    = File.expand_path('../..', __FILE__)
+CONFIG_FILE = "#{GIT_ROOT}/config/login.yml"
+
+require 'yaml'
+
+require 'bundler/setup'
+
+# TODO convert from jeweler to bundler workflow and use `gemspec` directive in Gemfile
+$: << "#{GIT_ROOT}/lib"
+require 'right_api_client'
+
+begin
+  puts "Using configuration file #{CONFIG_FILE}"
+  if File.readable? CONFIG_FILE
+    @client = RightApi::Client.new(YAML.load_file(CONFIG_FILE))
+    STDERR.puts "Logged in to Rightscale CM API."
+  else
+    STDERR.puts "Configuration file is unreadable or nonexistent!"
+    STDERR.puts "Please copy login.yml.example and add your RightScale API credentials."
+    exit 1
+  end
+end
+
+puts
+puts "Opening pry or irb session; call API methods on self"
+puts "Example: self.deployments.index"
+puts
+
+begin
+  require 'pry'
+  Pry.start(@client)
+rescue LoadError
+  require 'irb'
+  IRB.setup nil
+  IRB.conf[:MAIN_CONTEXT] = IRB::Irb.new.context
+  require 'irb/ext/multi-irb'
+  IRB.irb nil, @client
+end

@@ -1,5 +1,5 @@
 # The API login details can be put in a YAML file. This is an example login.yml which
-# will be needed for login_to_client_irb.rb quick login method.
+# will be needed for bin/console
 
 # Account ID is a required parameter. You can find your account number by logging into the
 # RightScale dashboard (https://my.rightscale.com), navigate to the Settings > Account Settings page.

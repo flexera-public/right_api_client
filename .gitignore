@@ -12,3 +12,4 @@ cookies
 coverage/*
 doc/*
 *~
+Gemfile.lock

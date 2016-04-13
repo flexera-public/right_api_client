@@ -35,7 +35,6 @@ Gem::Specification.new do |s|
     "lib/right_api_client/resource_detail.rb",
     "lib/right_api_client/resources.rb",
     "lib/right_api_client/version.rb",
-    "login_to_client_irb.rb",
     "right_api_client.rconf"
   ]
   s.homepage = "https://github.com/rightscale/right_api_client"
