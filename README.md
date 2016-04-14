@@ -21,7 +21,7 @@ Ruby 2.0 or higher is required as of version 1.6
 * Version 1.6.x
   - API 1.5
   - Ruby 2.0 and above
-  - Patch level recieves improvements and bug fixes moving forward.
+  - Patch level receives improvements and bug fixes moving forward.
 * Version 1.5.x
   - API 1.5
   - Ruby 1.8, 1.9.3

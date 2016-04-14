@@ -198,8 +198,11 @@ module RightApi
     end
 
     def to_s
-      "#<RightApi::Client #{api_url}>"
+      api_host = URI.parse(api_url).host.split('.').first rescue 'unknown'
+      "#<RightApi::Client host=#{api_host} account=#{@account_id}>"
     end
+
+    alias inspect to_s
 
     # Log HTTP calls to file (file can be STDOUT as well)
     def log(file)
