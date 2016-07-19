@@ -48,7 +48,7 @@ Gem::Specification.new do |s|
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<json>, ["~> 1.0"])
-      s.add_runtime_dependency(%q<mime-types>, ["~> 1.0"])
+      s.add_runtime_dependency(%q<mime-types>, ["~> 2.0"])
       s.add_runtime_dependency(%q<rest-client>, ["~> 1.6"])
       s.add_development_dependency(%q<rake>, ["= 0.8.7"])
       s.add_development_dependency(%q<rspec>, ["= 2.9.0"])
@@ -67,7 +67,7 @@ Gem::Specification.new do |s|
     end
   else
     s.add_dependency(%q<json>, ["~> 1.0"])
-    s.add_dependency(%q<mime-types>, ["~> 1.0"])
+    s.add_dependency(%q<mime-types>, ["~> 2.0"])
     s.add_dependency(%q<rest-client>, ["~> 1.6"])
     s.add_dependency(%q<rake>, ["= 0.8.7"])
     s.add_dependency(%q<rspec>, ["= 2.9.0"])
