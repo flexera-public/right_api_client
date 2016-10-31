@@ -397,7 +397,7 @@ module RightApi
         raise wrap(e, :get, path, params, req, res)
       end
 
-      data = if resource_type == 'text'
+      data = if (resource_type == 'text' || resource_type == '')
         { 'text' => body }
       else
         JSON.parse(body, :allow_nan => true)
@@ -664,4 +664,3 @@ module RightApi
     end
   end
 end
-
