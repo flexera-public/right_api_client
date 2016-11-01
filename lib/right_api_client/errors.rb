@@ -39,10 +39,14 @@ module RightApi
   end
 
   class UnknownRouteError < ApiError
-
     def prefix
-
       'Unknown action or route. '
+    end
+  end
+
+  class EmptyBodyError < ApiError
+    def prefix
+      'Empty response body: '
     end
   end
 end
