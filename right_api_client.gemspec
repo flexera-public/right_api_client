@@ -14,6 +14,7 @@ Gem::Specification.new do |s|
   s.date = "2016-11-02"
   s.description = "\nThe right_api_client gem simplifies the use of RightScale's MultiCloud API.\nIt provides a simple object model of the API resources, and handles all of the\nfine details involved in making HTTP calls and translating their responses.\n"
   s.email = "rubygems@rightscale.com"
+  s.executables = ["console", "setup"]
   s.extra_rdoc_files = [
     "LICENSE.txt",
     "README.md"
