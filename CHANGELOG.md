@@ -3,7 +3,16 @@
 ## Next
  - Your info here
 
-## 1.6
+## 1.6.2
+ - \#108 Raise a specific error if the API returns an empty 200 response
+ - \#106 Bump mime-types version to resolve dependencies with fog-azure-rm gem
+ - \#104 Switch to a more bundlerish dev workflow
+ - \#102 Rework README to reflect gem version not tied to api version
+
+## 1.6.1
+ - Disassociate API version number from gem version number
+
+## 1.6.0
  - \#101 Deprecate support for ruby 1.x
  - \#100 Add support for using local proxy with RightLink10
 
