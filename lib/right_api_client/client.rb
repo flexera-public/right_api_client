@@ -382,6 +382,11 @@ module RightApi
                 response.body.force_encoding(charset)
               end
 
+              # raise an error if the API is misbehaving and returning an empty response when it shouldn't
+              if type != 'text' && response.body.empty?
+                raise EmptyBodyError.new(request, response)
+              end
+
               [type, response.body]
             when 301, 302
               update_api_url(response)
@@ -437,6 +442,8 @@ module RightApi
               # This is needed for the tags Resource -- which returns a 200 and has a content type
               # therefore, ResourceDetail objects needs to be returned
               if response.code == 200 && response.headers[:content_type].index('rightscale')
+                # raise an error if the API is misbehaving and returning an empty response when it shouldn't
+                raise EmptyBodyError.new(request, response) if response.body.empty?
                 resource_type = get_resource_type(response.headers[:content_type])
                 data = JSON.parse(response, :allow_nan => true)
                 # Resource_tag is returned after querying tags.by_resource or tags.by_tags.
@@ -479,8 +486,7 @@ module RightApi
             update_last_request(request, response)
 
             case response.code
-            when 200
-            when 204
+            when 200, 204
               nil
             when 301, 302
               update_api_url(response)

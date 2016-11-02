@@ -11,5 +11,6 @@ cookies
 .ruby-version
 coverage/*
 doc/*
+pkg
 *~
 Gemfile.lock
