@@ -244,8 +244,8 @@ you will get a 403 Permission Denied error.
 
 ## RightLink10 and Instance Facing Calls:
 Having RightLink10 installed on an instance allows 'instance facing calls' via a local
-[reverse proxy](http://docs.rightscale.com/rl10/reference/rl10_local_and_proxied_http_requests.html).  To use
-the reverse proxy on the instance, you will only need to provide the following parameter:
+[proxy](http://docs.rightscale.com/rl10/reference/rl10_local_and_proxied_http_requests.html).  To use
+the proxy on the instance, you will only need to provide the following parameter:
 
 - ```:rl10``` Set this to ```true```
 
