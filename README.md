@@ -112,8 +112,9 @@ HTTP calls can sometimes fail. To enable retrying idempotent requests automatica
 Multiple accounts can be managed by using the api\_url and account\_id attributes on the client.
 
 The api\_url attribute allows users to modify the shard which the client is being used to connect to.
-This should not be required as the client will find the correct shard using the account id but is
-included for completeness.
+This should not be required as the client will find the correct shard using the account id (except
+when using a refresh\_token for authorization; in this case api\_url must be set to your shard
+address).
 
 Example:
 
