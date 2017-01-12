@@ -3,6 +3,9 @@
 ## Next
  - Your info here
 
+## 1.6.3
+ - \#109 Update json version requirement for ruby2.4 compatibility
+
 ## 1.6.2
  - \#108 Raise a specific error if the API returns an empty 200 response
  - \#106 Bump mime-types version to resolve dependencies with fog-azure-rm gem
