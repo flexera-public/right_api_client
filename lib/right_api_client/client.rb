@@ -59,7 +59,7 @@ module RightApi
     DEFAULT_TIMEOUT = 6 * 60
     DEFAULT_MAX_ATTEMPTS = 5
 
-    DEFAULT_SSL_VERSION = 'TLSv1'
+    DEFAULT_SSL_VERSION = 'TLSv1_2'
 
     ROOT_RESOURCE  = '/api/session'
     OAUTH_ENDPOINT = '/api/oauth2'
