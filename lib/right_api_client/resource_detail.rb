@@ -41,6 +41,7 @@ module RightApi
         # Add it to the actions set
         actions << action_name.to_sym
 
+        # JUSTIN: Add the action here always using the correct HTTP method
         define_instance_method(action_name.to_sym) do |*args|
           client.send(:do_post, "#{hash['href']}/#{action['rel']}", *args)
         end
@@ -49,6 +50,7 @@ module RightApi
       # Follow the links to create methods
       get_associated_resources(client, links, associations)
 
+      # JUSTIN: What does this do?
       # Some resources are not linked together, so they have to be manually
       # added here.
       case resource_type
@@ -62,6 +64,7 @@ module RightApi
         end
       end
 
+      # JUSTIN: What does this do?
       # Add the rest as instance methods
       hash.each do |k, v|
         k = k.to_sym
@@ -101,11 +104,13 @@ module RightApi
         end
       end
 
+      # JUSTIN: This should only be done if the resource supports it
       # Add destroy method to relevant resources
       define_instance_method('destroy') do |*args|
         client.send(:do_delete, href, *args)
       end
 
+      # JUSTIN: This should only be done if the resource supports it
       # Add update method to relevant resources
       define_instance_method('update') do |*args|
 
@@ -117,12 +122,13 @@ module RightApi
         end
       end
 
+      # JUSTIN: This should only be done if the resource supports it
       # Add show method to relevant resources
       define_instance_method('show') do |*args|
         self
       end
     end
-    
+
     # Access attributes of this resource in a Hash-like manner. This is useful
     # in cases where an attribute name coincides with a link name, e.g. a resource
     # that contains embedded subresources.

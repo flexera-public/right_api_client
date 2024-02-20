@@ -60,6 +60,9 @@ module RightApi
       @hash = hash
       @href = href
 
+      # JUSTIN: Update this to only add the collection actions listed in
+      # @api_metadata[resource_type]["methods"]
+
       # Add destroy method to relevant resources
       define_instance_method('destroy') do |*args|
         client.send(:do_delete, href, *args)
@@ -79,6 +82,7 @@ module RightApi
     # Any other method other than standard actions(show,update,destroy)
     # is simply appended to the href and called with a POST.
     def method_missing(m, *args)
+      # JUSTIN: Remove this?
       client.send(:do_post, [ href, m.to_s ].join('/'), *args)
     end
   end

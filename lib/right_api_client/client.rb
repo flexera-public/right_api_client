@@ -66,6 +66,8 @@ module RightApi
     ROOT_INSTANCE_RESOURCE = '/api/session/instance'
     DEFAULT_API_URL = 'https://my.rightscale.com'
 
+    API_15_METADATA_URL = 'http://reference.rightscale.com/api1.5/api_data.json'
+
     # permitted parameters for initializing
     AUTH_PARAMS = %w[
       email password_base64 password
@@ -114,9 +116,22 @@ module RightApi
     # @return [Boolean] whether to retry idempotent requests that fail
     attr_reader :enable_retry
 
+    # @return [Hash] hash of RS API 1.5 metadata
+    attr_reader :api_metadata
+
     # Instantiate a new Client, then login if necessary.
     def initialize(args)
       raise 'This API client is only compatible with Ruby 1.8.7 and upwards.' if (RUBY_VERSION < '1.8.7')
+
+      api_json = begin
+        RestClient.get(API_15_METADATA_URL)
+      rescue RestClient::Forbidden => e
+        # Failed to fetch the API 1.5 metadata JSON, so use the most recent
+        # copy stored in this repo
+        puts 'Failed to fetch RS API 1.5 metadata - using local copy.'
+        File.read('metadata/api_data.json')
+      end
+      @api_metadata = JSON.parse(api_json)
 
       @api_url, @api_version = DEFAULT_API_URL, API_VERSION
       @open_timeout, @timeout, @max_attempts = DEFAULT_OPEN_TIMEOUT, DEFAULT_TIMEOUT, DEFAULT_MAX_ATTEMPTS
